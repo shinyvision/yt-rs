@@ -6,7 +6,7 @@ use gtk::prelude::*;
 use serde_json::{Value, json};
 
 use super::follow;
-use super::logo::LogoMark;
+use super::logo::{Logo, Part};
 use crate::app::app;
 
 /// The menu button (☰) and the logo, which start the top bar and the
@@ -18,10 +18,12 @@ pub fn menu_and_logo() -> gtk::Box {
     menu.set_tooltip_text(Some("Menu"));
     menu.connect_clicked(|_| run("sidebar.toggle", Value::Null));
 
-    let mark = LogoMark::default();
-    mark.set_valign(gtk::Align::Center);
-    let name = gtk::Label::new(Some("YouTube"));
-    name.add_css_class("logo");
+    let mark = Logo::new(Part::Mark);
+    let name = Logo::new(Part::Name);
+    for part in [&mark, &name] {
+        part.set_valign(gtk::Align::Center);
+    }
+    // As far apart as in YouTube's wordmark.
     let logo_box = gtk::Box::new(gtk::Orientation::Horizontal, 3);
     logo_box.append(&mark);
     logo_box.append(&name);

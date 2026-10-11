@@ -52,13 +52,9 @@ window.yt-window {
   min-height: 56px;
   padding: 0 16px;
 }
-/* The logo: the play button (drawn in `color`) and the name. */
-.topbar .logo, .drawer-header .logo {
-  font-weight: 700;
-  font-size: 20px;
-  letter-spacing: -1.2px;
-}
-.topbar .logo-mark, .drawer-header .logo-mark { color: var(--yt-accent); min-height: 20px; }
+/* The logo: the play button and the name, each drawn in its `color`. */
+.topbar .logo, .drawer-header .logo { color: var(--yt-text); }
+.topbar .logo-mark, .drawer-header .logo-mark { color: var(--yt-accent); }
 .icon-button {
   font-size: 20px;
   min-width: 40px;

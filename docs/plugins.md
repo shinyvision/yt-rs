@@ -39,7 +39,7 @@ itself, wait for the window:
 
 ```lua
 app.on("app.ready", function()
-  app.find("topbar"):find(".logo").label = "my tube"
+  app.find("topbar"):find(".logo"):get_parent():append(ui.label("beta"))
 end)
 ```
 
@@ -619,10 +619,10 @@ app.uncss(id)
 
 The built-in stylesheet is `crates/yt-app/src/ui/style.css`; colors and the
 corner radius are CSS variables (`--yt-bg`, `--yt-raised`, `--yt-text`,
-`--yt-text-dim`, `--yt-accent`, `--yt-radius`). The logo's play button is
-drawn in its CSS `color` (`.logo-mark`, the accent by default) and the name
-is the `.logo` label. Every button gets the pointing-hand cursor unless it
-was given another one.
+`--yt-text-dim`, `--yt-accent`, `--yt-radius`). The logo is YouTube's
+wordmark, its play button (`.logo-mark`) and its name (`.logo`) each drawn
+in their CSS `color`: the accent and the text color by default. Every
+button gets the pointing-hand cursor unless it was given another one.
 
 ### The widget tree
 

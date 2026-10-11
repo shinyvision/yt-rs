@@ -13,8 +13,12 @@ app.css [[
   .video-card .title { font-size: 17px; }
 ]]
 
+-- The name in the logo becomes "my tube" (the play button stays).
 app.on("app.ready", function()
   local topbar = app.find("topbar")
-  local logo = topbar and topbar:find(".logo")
-  if logo then logo.label = "my tube" end
+  local name = topbar and topbar:find(".logo")
+  if not name then return end
+  name.visible = false
+  name:get_parent():append(ui.label("my tube", { class = "my-logo" }))
 end)
+app.css [[ .my-logo { font-size: 20px; font-weight: 700; letter-spacing: -1px; } ]]
