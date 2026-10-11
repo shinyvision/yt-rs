@@ -109,3 +109,14 @@ signed out (`SIGNED_OUT=1`): it searches "hello" every round.
 `startup` logs when the window is ready and when Home has its first videos,
 counted from when plugins load (the app's own steps, from the start, log
 with `YT_RS_LOG=startup=debug`).
+
+## All subscriptions
+
+`channels` opens "All subscriptions" from the sidebar's heading and checks
+a row for every subscription, A to Z, unsubscribing (it asks; the row stays,
+saying Subscribe) and a row opening its channel. It needs
+`YT_RS_DRY_RUN=1`: unsubscribing sends nothing then.
+
+`probe` plays one video (`E2E_VIDEO`) and logs the player every second;
+`E2E_SEEKS=600,3000` seeks there, `E2E_START` starts there, and
+`E2E_SHOT_AT=N` takes a screenshot of the watch page at N seconds.

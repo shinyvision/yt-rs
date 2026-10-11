@@ -442,6 +442,7 @@ app.components()
 | `save_dialog` | `{ video_id }`: "Save video to..." |
 | `settings` | the Settings page |
 | `downloads` | the Downloads page |
+| `channels` | "All subscriptions" (youtube.com's feed/channels): every subscription, as YouTube orders them or A to Z, each with its subscribe button; the sidebar's "Subscriptions ›" opens it |
 | `search_box` | the search field in the top bar, with its list of earlier searches and suggestions |
 | `search` | `{ query, filters?, chip?, chips? }`: the search page |
 | `search_video`, `search_channel`, `search_playlist`, `search_shelf` | a result (an item of `search.page`); shelves are "People also watched", a row of Shorts, ... |

@@ -8,6 +8,7 @@ pub mod avatar;
 pub mod bezel;
 pub mod card;
 pub mod channel;
+pub mod channels_page;
 pub mod comments;
 pub mod controls;
 pub mod cursor;
@@ -104,6 +105,7 @@ pub fn register(app: &App) {
         Component::new(downloads_page::build).with_update(downloads_page::update),
     );
     c.define("list_panel", Component::new(list_panel::build));
+    c.define("channels", Component::new(channels_page::build));
     c.define("live_chat", Component::new(live_chat::build));
     c.define(
         "playlists",
@@ -203,6 +205,7 @@ pub fn register(app: &App) {
         ("playlists", "Playlists", false),
         ("settings", "Settings", false),
         ("downloads", "Downloads", false),
+        ("channels", "All subscriptions", false),
     ] {
         pages.register(Page {
             name: name.into(),

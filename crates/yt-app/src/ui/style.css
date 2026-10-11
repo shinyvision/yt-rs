@@ -729,3 +729,9 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .signin-button image { color: #3ea6ff; }
 .sidebar-signin { padding: 12px 16px 12px 24px; }
 .sidebar-signin > label { font-size: 14px; }
+
+/* All subscriptions (youtube.com's feed/channels). */
+.channels-page { padding: 24px 24px 48px 24px; }
+.channels-row { padding: 12px 0; }
+.channels-name { font-size: 18px; }
+.channels-meta { font-size: 12px; }

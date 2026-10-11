@@ -166,17 +166,22 @@ fn you() -> NavItem {
 
 /// "You ›", which opens the "You" page, over the user's own pages.
 fn you_heading() -> gtk::Button {
+    section_link("You", "nav:library", "library")
+}
+
+/// A section's title that opens its page: "You ›", "Subscriptions ›".
+fn section_link(title: &str, name: &str, page: &'static str) -> gtk::Button {
     let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let title = gtk::Label::new(Some("You"));
-    title.add_css_class("section-title");
-    content.append(&title);
+    let label = gtk::Label::new(Some(title));
+    label.add_css_class("section-title");
+    content.append(&label);
     content.append(&gtk::Image::from_icon_name("yt-chevron-right-symbolic"));
     let button = gtk::Button::builder()
         .child(&content)
         .css_classes(["nav-item", "section-link"])
         .build();
-    button.set_widget_name("nav:library");
-    button.connect_clicked(|_| app().navigate("library", Value::Null, true));
+    button.set_widget_name(name);
+    button.connect_clicked(move |_| app().navigate(page, Value::Null, true));
     button
 }
 
@@ -262,9 +267,8 @@ struct Subscriptions {
 /// avatars, from the channel directory, kept up to date by
 /// `channels.updated`.
 pub fn build_subscriptions(_props: &Value) -> gtk::Widget {
-    let title = gtk::Label::new(Some("Subscriptions"));
-    title.set_xalign(0.0);
-    title.add_css_class("section-title");
+    // "Subscriptions ›" opens all of them, as on youtube.com.
+    let title = section_link("Subscriptions", "nav:channels", "channels");
     let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
     let more = gtk::Button::new();
     more.add_css_class("nav-item");

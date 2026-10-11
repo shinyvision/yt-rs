@@ -53,7 +53,8 @@ of it.
   own.
 - **Channels:** channel pages with banner, about, Home (its shelves as rows),
   Videos (Latest, Popular or Oldest first), Shorts, Live and Playlists,
-  subscribe and unsubscribe, and your subscriptions in the sidebar.
+  subscribe and unsubscribe, your subscriptions in the sidebar, and all of
+  them on one page ("Subscriptions ›"), as youtube.com's channel list.
   Channel pictures appear on every video, comment and channel.
 - **Plugins:** Lua (LuaJIT) plugins can replace or wrap any component, command,
   key, page or style, and add new ones. That includes widgets from C libraries,
