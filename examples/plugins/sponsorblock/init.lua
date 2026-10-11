@@ -21,7 +21,14 @@
 -- Settings, "About").
 
 local NAME = "sponsorblock"
+local _, DIR = ...
 local store = app.storage(NAME)
+
+local Gtk = gi.require("Gtk", "4.0")
+local Gdk = gi.require("Gdk", "4.0")
+-- The extension's own player icons, found by name as the app's are (see
+-- icons/NOTICE).
+Gtk.IconTheme.get_for_display(Gdk.Display.get_default()):add_search_path(DIR .. "/icons")
 
 -- id, as people say it, color, what it does unless set otherwise.
 local CATEGORIES = {
@@ -70,10 +77,13 @@ local muted_by_us = false
 local exact_timer = nil
 local last_skipped = nil            -- for "Unskip" and votes
 local marks, mark_start = {}, nil   -- segments being marked for submitting
+local lookup = "idle"               -- idle, looking, done or failed
 
 -- Widgets, made in their slots.
 local overlay = {}   -- notice, skip, highlight
 local label_box = nil
+local controls = {}  -- the player's buttons
+local refresh_controls -- updates them; set with them below
 
 ---------------------------------------------------------------------------
 -- The server
@@ -252,6 +262,7 @@ local function clear()
   if muted_by_us then muted_by_us = false; app.api.mpv.set_property("mute", "no") end
   for name in pairs(overlay) do hide(name) end
   show_label()
+  refresh_controls()
 end
 
 local function look_up(id)
@@ -259,7 +270,8 @@ local function look_up(id)
   for _, c in ipairs(CATEGORIES) do
     if action(c.id) ~= "off" then table.insert(categories, c.id); wanted[c.id] = true end
   end
-  if #categories == 0 then return end
+  if #categories == 0 then lookup = "done"; return end
+  lookup = "looking"
   local prefix = app.hash.sha256(id):sub(1, 4)
   local url = store.server .. "/api/skipSegments/" .. prefix
     .. "?categories=" .. url_encode(app.json.encode(categories))
@@ -267,8 +279,10 @@ local function look_up(id)
   app.http({ url = url }, function(response, err)
     if id ~= video_id then return end
     if not response or (response.status ~= 200 and response.status ~= 404) then
+      lookup = "failed"
       return log("lookup failed:", err or response.status)
     end
+    lookup = "done"
     local found = {}
     for _, entry in ipairs(response.status == 200 and (app.json.decode(response.body) or {}) or {}) do
       if entry.videoID == id then
@@ -292,6 +306,7 @@ end
 app.on("player.loading", function(e)
   clear()
   video_id = e.video_id
+  lookup = "idle"
 end)
 app.on("player.loaded", function()
   local state = app.api.player.state()
@@ -368,22 +383,132 @@ app.slot("watch.actions", function()
   return label_box
 end, -10)
 
--- A button in the player's controls: marking and submitting segments.
+-- The player's buttons, as the extension puts them in YouTube's: the
+-- segments of the video ("i"), and marking new ones: "Segment starts now"
+-- (then "Segment ends now"), with Cancel while marking, and Clear and
+-- Submit once there are segments marked.
+function refresh_controls()
+  if not controls.start then return end
+  local creating = mark_start ~= nil
+  controls.start.icon_name = creating and "sponsorblock-stop" or "sponsorblock-start"
+  controls.start.tooltip_text = creating and "Segment ends now" or "Segment starts now"
+  controls.cancel.visible = creating
+  controls.submit.visible = #marks > 0
+  controls.clear.visible = #marks > 1 or (#marks > 0 and not creating)
+end
+
+local function small_button(icon, tooltip, on_click)
+  local b = Gtk.Button { icon_name = icon, tooltip_text = tooltip, valign = "center" }
+  b:add_css_class("flat")
+  b:add_css_class("sb-info-button")
+  b:on("clicked", on_click)
+  return b
+end
+
+-- A segment in the info popover: its category, when, votes, and a jump to it.
+local function segment_row(s, popover)
+  local c = BY_ID[s.category] or { name = s.category, color = "#888888" }
+  local when = s.actionType == "full" and "The whole video"
+    or s.actionType == "poi" and ("At " .. fmt(s.segment[1]))
+    or (fmt(s.segment[1]) .. " to " .. fmt(s.segment[2]))
+  local up, down
+  local function voted(is_up)
+    vote(s, is_up)
+    up.sensitive, down.sensitive = false, false
+  end
+  up = small_button("yt-like-symbolic", "This segment is right", function() voted(true) end)
+  down = small_button("yt-dislike-symbolic", "This segment is wrong", function() voted(false) end)
+  local row = ui.box { orientation = "horizontal", spacing = 10, class = "sb-info-row", children = {
+    Gtk.Label { use_markup = true, valign = "center",
+      label = string.format("<span foreground='%s'>\u{25CF}</span>", c.color) },
+    ui.box { orientation = "vertical", hexpand = true, valign = "center", children = {
+      { "GtkLabel", label = c.name, xalign = 0, class = "sb-info-category", ellipsize = "end" },
+      { "GtkLabel", label = when, xalign = 0, class = "sb-info-time" },
+    } },
+    up, down,
+  } }
+  if s.actionType ~= "full" then
+    row:append(small_button("yt-play-symbolic", "Jump to it", function()
+      app.run("player.seek", { position = s.segment[1] })
+      popover:popdown()
+    end))
+  else
+    -- Where the jump would be, so the votes line up with the others'.
+    row:append(Gtk.Box { width_request = 32 })
+  end
+  return row
+end
+
+-- What the info popover shows, made each time it opens.
+local function fill_info(popover)
+  local status
+  if not video_id then status = "Nothing is playing"
+  elseif lookup == "looking" or lookup == "idle" then status = "Looking for segments\u{2026}"
+  elseif lookup == "failed" then status = "SponsorBlock couldn't be reached"
+  elseif #segments == 0 then status = "No segments for this video"
+  elseif #segments == 1 then status = "This video has 1 segment"
+  else status = "This video has " .. #segments .. " segments" end
+  local list = ui.box { orientation = "vertical", spacing = 2, name = "sb-info-list" }
+  for _, s in ipairs(segments) do list:append(segment_row(s, popover)) end
+  local scroller = Gtk.ScrolledWindow { child = list, hscrollbar_policy = "never",
+    propagate_natural_height = true, max_content_height = 360 }
+  scroller.visible = #segments > 0
+  local content = ui.box { orientation = "vertical", spacing = 10, class = "sb-info", name = "sb-info", children = {
+    ui.box { orientation = "horizontal", spacing = 10, children = {
+      Gtk.Image { icon_name = "sponsorblock-info", pixel_size = 24 },
+      { "GtkLabel", label = "SponsorBlock", xalign = 0, hexpand = true, class = "sb-info-title" },
+    } },
+    { "GtkLabel", label = status, xalign = 0, wrap = true, class = "sb-info-status", name = "sb-info-status" },
+    scroller,
+  } }
+  if #marks > 0 or mark_start then
+    local marked = #marks == 1 and "1 segment marked" or (#marks .. " segments marked")
+    if mark_start then marked = marked .. ", one being marked from " .. fmt(mark_start) end
+    local submit = ui.button("Submit", function() popover:popdown(); app.run("sponsorblock.submit") end,
+      { class = "sb-info-action" })
+    submit.visible = #marks > 0
+    content:append(ui.box { orientation = "horizontal", spacing = 10, children = {
+      { "GtkLabel", label = marked, xalign = 0, hexpand = true, wrap = true, class = "sb-info-status" },
+      submit,
+    } })
+  end
+  local settings = ui.button("Settings", function()
+    popover:popdown()
+    app.navigate("settings")
+  end, { class = "sb-info-action", halign = "start" })
+  content:append(settings)
+  popover.child = content
+end
+
 app.slot("player.controls.end", function()
-  local button = ui.new("GtkMenuButton", { icon_name = "yt-not-interested-symbolic", tooltip_text = "SponsorBlock",
-    name = "sb-menu" })
-  button:add_css_class("control")
-  button:on("notify::active", function(self)
-    if not self.active then return end
-    self.popover = ui.new("GtkPopover", { has_arrow = false, child = app.build("menu", { items = {
-      { label = mark_start and ("Segment ends now (started " .. fmt(mark_start) .. ")") or "Segment starts now",
-        icon = "yt-add-symbolic", command = "sponsorblock.mark" },
-      { label = "Submit segments" .. (#marks > 0 and (" (" .. #marks .. ")") or ""), icon = "yt-check-symbolic",
-        command = "sponsorblock.submit" },
-      { label = "SponsorBlock settings", icon = "yt-settings-symbolic", command = "app.navigate", args = { page = "settings" } },
-    } }) })
-  end)
-  return button
+  local function control(name, icon, tooltip, command)
+    local b = Gtk.Button { icon_name = icon, tooltip_text = tooltip, name = "sb-control-" .. name }
+    b:add_css_class("control")
+    b:add_css_class("sb-control")
+    b:on("clicked", function()
+      local ok, err = pcall(app.run, command)
+      if not ok then app.toast(tostring(err)) end
+    end)
+    controls[name] = b
+    return b
+  end
+  local popover = Gtk.Popover { has_arrow = false }
+  popover:add_css_class("sb-info-popover")
+  popover:on("show", function() fill_info(popover) end)
+  local info = Gtk.MenuButton { icon_name = "sponsorblock-info", tooltip_text = "SponsorBlock", name = "sb-control-info",
+    popover = popover }
+  info:add_css_class("control")
+  info:add_css_class("sb-control")
+  controls.info = info
+  local box = ui.box { orientation = "horizontal", spacing = 2, children = {
+    info,
+    control("submit", "sponsorblock-submit", "Submit segments", "sponsorblock.submit"),
+    control("clear", "sponsorblock-clear", "Clear segments", "sponsorblock.clear_marks"),
+    control("cancel", "sponsorblock-cancel", "Cancel marking the segment", "sponsorblock.cancel_mark"),
+    control("start", "sponsorblock-start", "Segment starts now", "sponsorblock.mark"),
+  } }
+  refresh_controls()
+  return box
 end)
 
 ---------------------------------------------------------------------------
@@ -435,6 +560,26 @@ app.command("sponsorblock.mark", function()
     end
   end
   show_marks()
+  refresh_controls()
+end)
+
+app.command("sponsorblock.cancel_mark", function()
+  mark_start = nil
+  show_marks()
+  refresh_controls()
+end)
+
+-- Forgets the segments marked, after asking.
+app.command("sponsorblock.clear_marks", function(args)
+  if #marks == 0 and not mark_start then return end
+  if not (args and args.confirmed) then
+    app.run("app.confirm", { title = "Clear the segments marked?", body = "They haven't been submitted.",
+      confirm = "Clear", command = "sponsorblock.clear_marks", args = { confirmed = true } })
+    return
+  end
+  marks, mark_start = {}, nil
+  show_marks()
+  refresh_controls()
 end)
 
 local function submit(dialog_rows)
@@ -452,6 +597,7 @@ local function submit(dialog_rows)
     if ok then
       marks = {}
       show_marks()
+      refresh_controls()
       app.toast("Submitted. Thank you for helping everyone skip these!")
       app.run("app.close_dialog")
       look_up(state.video_id)
@@ -476,6 +622,7 @@ app.command("sponsorblock.submit", function()
     remove:on("clicked", function()
       table.remove(marks, i)
       show_marks()
+      refresh_controls()
       app.run("app.close_dialog")
       if #marks > 0 then app.run("sponsorblock.submit") end
     end)
@@ -550,6 +697,19 @@ app.css([[
     font-size: 13px; font-weight: 500; box-shadow: none; }
   .sb-button:hover { background: rgba(70, 70, 70, 0.95); }
   .sb-label { padding: 4px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.1); font-size: 13px; }
+  popover.sb-info-popover > contents { background: rgba(28, 28, 28, 0.96); border-radius: 12px; padding: 14px 16px;
+    box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5); color: #eee; }
+  .sb-info { min-width: 360px; }
+  .sb-info-title { font-size: 15px; font-weight: 600; }
+  .sb-info-status { font-size: 13px; color: #aaa; }
+  .sb-info-row { padding: 4px 0; }
+  .sb-info-category { font-size: 14px; }
+  .sb-info-time { font-size: 12px; color: #aaa; font-feature-settings: "tnum"; }
+  .sb-info-button { min-width: 32px; min-height: 32px; padding: 0; border-radius: 999px; color: #eee; }
+  .sb-info-button:hover { background: rgba(255, 255, 255, 0.12); }
+  .sb-info-action { background: rgba(255, 255, 255, 0.1); color: white; border-radius: 16px; padding: 0 14px;
+    min-height: 32px; font-size: 13px; font-weight: 500; box-shadow: none; }
+  .sb-info-action:hover { background: rgba(255, 255, 255, 0.2); }
 ]])
 
 log("ready; segments from", store.server)

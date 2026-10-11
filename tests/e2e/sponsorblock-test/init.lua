@@ -40,7 +40,23 @@ local steps = {
       check("Jump to highlight shows before the highlight", visible("sb-highlight"))
       check("playback is before the sponsor", position() < 39.5, position())
       shot("before")
+      -- The player's buttons, as the extension's: info and "Segment starts now".
+      local function shown(name) local w = app.find("sb-control-" .. name); return w ~= nil and w.visible end
+      check("the extension's icons are there", gi.require("Gtk", "4.0").IconTheme.get_for_display(
+        gi.require("Gdk", "4.0").Display.get_default()):has_icon("sponsorblock-info"))
+      check("info and start buttons show", shown("info") and shown("start"))
+      check("submit, clear and cancel don't yet", not shown("submit") and not shown("clear") and not shown("cancel"))
+      app.find("sb-control-info").active = true
     end },
+  { 800, function()
+      local status = app.find("sb-info-status")
+      check("the info popover opens on the info button", status ~= nil and status:get_mapped(), status and status.label)
+      check("it lists the segments", status and status.label == "This video has 6 segments"
+        and #app.find("sb-info-list"):children() == 6, status and status.label)
+      shot("info")
+    end },
+  -- (The screenshot is taken at the next frame: close it after.)
+  { 500, function() app.find("sb-control-info").active = false end },
   -- Playback reaches 40: skipped to 45.
   { 100, wait = function() return position() >= 45.3 end, function()
       watching = false
@@ -86,9 +102,17 @@ local steps = {
       check("a segment only to show isn't skipped", p >= 8 and p < 11, p)
       app.run("player.seek", { position = 120 })
     end },
-  { 1500, function() app.run("sponsorblock.mark") end },
+  { 1500, function()
+      app.run("sponsorblock.mark")
+      local start = app.find("sb-control-start")
+      check("marking: start becomes stop", start.icon_name == "sponsorblock-stop", start.icon_name)
+      check("and Cancel shows", app.find("sb-control-cancel").visible)
+    end },
   { 2500, function()
       app.run("sponsorblock.mark")
+      check("marked: Submit and Clear show, Cancel goes",
+        app.find("sb-control-submit").visible and app.find("sb-control-clear").visible
+        and not app.find("sb-control-cancel").visible)
       local marked = 0
       for _, r in ipairs(app.run("seekbar.ranges")) do if r.label == "To submit" then marked = marked + 1 end end
       check("a marked segment shows on the seek bar", marked == 1, marked)
@@ -101,6 +125,7 @@ local steps = {
     end },
   { 2000, function()
       check("submitting closes the dialog", not visible("sb-submit"))
+      check("and Submit goes from the player", not app.find("sb-control-submit").visible)
       -- The plugin's widgets lie over the video, but clicks get through.
       local player = app.find("player")
       local w, h = player:size()

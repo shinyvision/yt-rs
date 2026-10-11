@@ -1,0 +1,13 @@
+These icons are the SponsorBlock browser extension's own player icons
+(public/icons/Player*IconSponsorBlocker.svg in
+https://github.com/ajayyy/SponsorBlock), by Ajay Ramachandran and the
+SponsorBlock contributors, licensed under the GNU General Public License,
+version 3 (https://www.gnu.org/licenses/gpl-3.0.html). They're used here
+unchanged but for their file names:
+
+  sponsorblock-info.svg    PlayerInfoIconSponsorBlocker.svg
+  sponsorblock-start.svg   PlayerStartIconSponsorBlocker.svg
+  sponsorblock-stop.svg    PlayerStopIconSponsorBlocker.svg
+  sponsorblock-cancel.svg  PlayerCancelSegmentIconSponsorBlocker.svg
+  sponsorblock-clear.svg   PlayerDeleteIconSponsorBlocker.svg
+  sponsorblock-submit.svg  PlayerUploadIconSponsorBlocker.svg
