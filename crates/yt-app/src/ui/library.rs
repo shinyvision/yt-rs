@@ -178,11 +178,14 @@ fn load_section(place: &gtk::Box, section: &'static str) {
     });
 }
 
-/// The `playlists` component: the user's playlists as a grid.
-pub fn build_playlists(_props: &Value) -> gtk::Widget {
+/// The `playlists` component: playlists as a grid; the user's, or with
+/// `{ browse_id, params }` a page's (a channel's Playlists tab), which has
+/// no title.
+pub fn build_playlists(props: &Value) -> gtk::Widget {
     let title = gtk::Label::new(Some("Playlists"));
     title.add_css_class("page-title");
     title.set_xalign(0.0);
+    title.set_visible(props.get("browse_id").is_none());
     let grid = gtk::FlowBox::new();
     grid.add_css_class("playlist-grid");
     grid.set_selection_mode(gtk::SelectionMode::None);
@@ -202,13 +205,16 @@ pub fn build_playlists(_props: &Value) -> gtk::Widget {
         .vexpand(true)
         .build();
     scroller.set_widget_name("page-playlists");
-    let page = Rc::new(grid);
+    let page = Rc::new(Grid {
+        grid,
+        source: std::cell::RefCell::new(source(props)),
+    });
     attach(&scroller, page.clone());
     for event in ["playlist.created", "playlist.deleted", "playlist.changed"] {
         let weak = Rc::downgrade(&page);
         follow(&scroller, event, move |_| {
-            if let Some(grid) = weak.upgrade() {
-                load_playlists(&grid);
+            if let Some(page) = weak.upgrade() {
+                load_playlists(&page);
             }
         });
     }
@@ -216,17 +222,39 @@ pub fn build_playlists(_props: &Value) -> gtk::Widget {
     scroller.upcast()
 }
 
-pub fn update_playlists(widget: &gtk::Widget, _props: &Value) {
-    if let Some(grid) = attached::<gtk::FlowBox>(widget) {
-        load_playlists(&grid);
+pub fn update_playlists(widget: &gtk::Widget, props: &Value) {
+    if let Some(page) = attached::<Grid>(widget) {
+        *page.source.borrow_mut() = source(props);
+        load_playlists(&page);
     }
 }
 
-fn load_playlists(grid: &gtk::FlowBox) {
-    let weak = grid.downgrade();
+struct Grid {
+    grid: gtk::FlowBox,
+    /// A browse page and its params; `None` for the user's playlists.
+    source: std::cell::RefCell<Option<(String, String)>>,
+}
+
+fn source(props: &Value) -> Option<(String, String)> {
+    let text = |key: &str| props.get(key).and_then(Value::as_str).map(str::to_owned);
+    Some((text("browse_id")?, text("params").unwrap_or_default()))
+}
+
+fn load_playlists(page: &Grid) {
+    let weak = page.grid.downgrade();
+    let source = page.source.borrow().clone();
     runtime::spawn_local(async move {
         let youtube = app().youtube.clone();
-        let result = runtime::background(async move { youtube.playlists().await }).await;
+        let result = runtime::background(async move {
+            match source {
+                Some((browse_id, params)) => youtube
+                    .browse_with(&browse_id, &params)
+                    .await
+                    .map(|page| page.shelves.into_iter().flat_map(|s| s.playlists).collect()),
+                None => youtube.playlists().await,
+            }
+        })
+        .await;
         let Some(grid) = weak.upgrade() else { return };
         match result {
             Ok(playlists) => {

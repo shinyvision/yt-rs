@@ -266,6 +266,7 @@ app.commands()                     -- all names
 | `app.quit`, `app.plugins` (loaded plugin names) | |
 | `app.toast` | `{ message, action?, seconds? }`: a toast in the bottom-left corner; `action = { label, command, args? }` adds a button ("Undo") that runs the command |
 | `app.dismiss_toast` | hides the toast showing |
+| `app.close_dialog` | closes the dialog showing (while one is open, keys go to it) |
 | `app.screenshot` | `{ path }`, a PNG of the window after the next frame |
 | `sidebar.toggle`, `window.toggle_fullscreen` | |
 | `window.fullscreen` | `{ fullscreen }` |
@@ -357,7 +358,7 @@ Keys use GTK's names (`space`, `Left`, `F5`, `<Control>f`) or the short form
 (`ctrl+shift+f`). Shifted symbols are named by what they type: Shift+. is
 `greater`. The `player` scope applies on the watch page and wherever the mini
 player shows (k, j, l, m, c, <, >, Shift+N are there by default; space, the
-arrows, digits, f and t only on the watch page). A page's own bindings win
+arrows, digits, f and t only on the watch page; Shift+P plays the list's previous video). A page's own bindings win
 over `player` ones, and those over global ones. Keys without Ctrl or
 Alt (Escape too) don't fire while you type in a text field.
 

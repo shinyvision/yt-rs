@@ -46,6 +46,12 @@ pub fn register(this: &Rc<App>) {
         app().toast_with(&args);
         Ok(Value::Null)
     });
+    c.register("app.close_dialog", |_| {
+        if let Some(dialog) = app().window().and_then(|w| w.visible_dialog()) {
+            dialog.close();
+        }
+        Ok(Value::Null)
+    });
     c.register("app.dismiss_toast", |_| {
         app().dismiss_toast();
         Ok(Value::Null)
@@ -573,6 +579,7 @@ fn default_keys(app: &App) {
     bind("End", "watch", "player.seek_end", Value::Null);
     bind("t", "watch", "watch.toggle_theater", Value::Null);
     bind("shift+n", PLAYER, "player.next", Value::Null);
+    bind("shift+p", PLAYER, "list.previous", Value::Null);
 }
 
 /// Runs key bindings for key presses anywhere in the window, except plain
@@ -586,6 +593,10 @@ pub fn key_controller() -> gtk::EventControllerKey {
         let mut scopes = vec![page.as_str()];
         if crate::ui::player_dock::current().is_some() {
             scopes.push(PLAYER);
+        }
+        // An open dialog has the keys (Escape closes it).
+        if app.window().is_some_and(|w| w.visible_dialog().is_some()) {
+            return glib::Propagation::Proceed;
         }
         // Escape closes the sidebar's drawer first.
         if key == gdk::Key::Escape && crate::ui::shell::close_drawer() {

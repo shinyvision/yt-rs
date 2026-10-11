@@ -24,6 +24,9 @@ const NARROW_WIDTH: i32 = 320;
 
 struct Mini {
     root: gtk::Box,
+    previous: gtk::Button,
+    balance: gtk::Box,
+    list: gtk::Label,
     frame: AspectBin,
     title: gtk::Label,
     channel: gtk::Label,
@@ -50,6 +53,12 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let play = button("yt-pause-symbolic", "Pause (k)", "player.toggle_pause");
     play.add_css_class("mini-play");
     let next = button("yt-next-symbolic", "Next (Shift+N)", "player.next");
+    let previous = button(
+        "yt-previous-symbolic",
+        "Previous (Shift+P)",
+        "list.previous",
+    );
+    previous.set_visible(false);
     let top = gtk::CenterBox::new();
     top.set_start_widget(Some(&expand));
     top.set_end_widget(Some(&close));
@@ -62,9 +71,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     middle.set_halign(gtk::Align::Center);
     middle.set_valign(gtk::Align::Center);
     middle.set_vexpand(true);
-    next.bind_property("visible", &balance, "visible")
-        .sync_create()
-        .build();
+    middle.append(&previous);
     middle.append(&balance);
     middle.append(&play);
     middle.append(&next);
@@ -122,10 +129,15 @@ pub fn build(_props: &Value) -> gtk::Widget {
     };
     let title = label("mini-title", 1);
     let channel = label("mini-channel", 1);
+    // The list playing, and where: "Watch later • 2 / 15".
+    let list = label("mini-channel", 1);
+    list.add_css_class("mini-list");
+    list.set_visible(false);
     let info = gtk::Box::new(gtk::Orientation::Vertical, 2);
     info.add_css_class("mini-info");
     info.append(&title);
     info.append(&channel);
+    info.append(&list);
     info.append(
         &app()
             .ext
@@ -144,6 +156,9 @@ pub fn build(_props: &Value) -> gtk::Widget {
 
     let mini = Rc::new(Mini {
         root: root.clone(),
+        previous,
+        balance,
+        list,
         frame: frame.clone(),
         title,
         channel,
@@ -157,6 +172,12 @@ pub fn build(_props: &Value) -> gtk::Widget {
 }
 
 fn connect(mini: &Rc<Mini>) {
+    let weak = Rc::downgrade(mini);
+    follow(&mini.root, "list.changed", move |_| {
+        if let Some(mini) = weak.upgrade() {
+            show_list(&mini);
+        }
+    });
     let weak = Rc::downgrade(mini);
     follow(&mini.root, "shell.layout", move |payload| {
         if let Some(mini) = weak.upgrade() {
@@ -173,7 +194,7 @@ fn connect(mini: &Rc<Mini>) {
             mini.root.set_visible(here);
             if here {
                 show_state(&mini, &app().player.state());
-                mini.next.set_visible(crate::playback::up_next().is_some());
+                show_list(&mini);
             }
         }
     });
@@ -200,7 +221,7 @@ fn connect(mini: &Rc<Mini>) {
         if let Some(name) = payload.pointer("/page/owner/name").and_then(Value::as_str) {
             mini.channel.set_label(name);
         }
-        mini.next.set_visible(crate::playback::up_next().is_some());
+        show_list(&mini);
     });
     let weak = Rc::downgrade(mini);
     app().player.connect(move |event, state| {
@@ -217,6 +238,30 @@ fn connect(mini: &Rc<Mini>) {
             _ => {}
         }
     });
+}
+
+/// Previous and next, and the list's name and place; with no list, "play"
+/// stays in the middle with a spacer the size of "previous".
+fn show_list(mini: &Mini) {
+    let list = crate::lists::current();
+    let next = crate::playback::up_next().is_some();
+    mini.next.set_visible(next);
+    mini.previous.set_visible(list.is_some());
+    mini.previous
+        .set_sensitive(list.as_ref().is_some_and(|l| l.position > 0));
+    mini.balance.set_visible(list.is_none() && next);
+    match &list {
+        Some(list) => {
+            mini.list.set_label(&format!(
+                "{} \u{2022} {} / {}",
+                list.title,
+                list.position + 1,
+                list.order.len()
+            ));
+            mini.list.set_visible(true);
+        }
+        None => mini.list.set_visible(false),
+    }
 }
 
 fn show_state(mini: &Mini, state: &PlayerState) {

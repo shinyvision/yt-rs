@@ -64,13 +64,17 @@ pub struct ChannelPage {
 }
 
 /// The TV client's channel tabs. Its tab tiles show pictures, not titles,
-/// so the params tell which is which. Playlists and releases are left out
-/// until the app has playlist pages.
+/// so the params tell which is which. Releases (albums) are YouTube
+/// Music's, and left out.
 const TABS: &[(&str, &str)] = &[
     ("8gYHEgVqAIABAg%3D%3D", "Videos"),
     ("8gYHEgVyAIABAg%3D%3D", "Shorts"),
     ("8gYHEgVKAIABAg%3D%3D", "Live"),
+    (PLAYLISTS_TAB, "Playlists"),
 ];
+
+/// The params of a channel's Playlists tab.
+pub const PLAYLISTS_TAB: &str = "8gYLEgliBAoCEGiAAQI%3D";
 
 pub fn parse_page(resp: &Value, browse_id: &str) -> ChannelPage {
     let header = find(resp, "channelHeaderRenderer");

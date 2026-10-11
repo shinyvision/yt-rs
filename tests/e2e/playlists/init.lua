@@ -137,6 +137,10 @@ local steps = {
       check("ticking a playlist saves to it (dry run)", e ~= nil, e and (e.playlist_id .. " added " .. tostring(e.added)) or "nothing")
       shot("save-ticked")
       app.run("app.dismiss_toast")
+      app.run("app.close_dialog")
+    end },
+  { 500, function()
+      check("the dialog closes", mapped("save-option") == 0)
       app.run("app.back")
     end },
   { 800, function() app.run("player.mini") end },
@@ -148,8 +152,8 @@ local steps = {
       check("Add to queue makes a queue of the video playing and the new one", list and list.playlist_id == nil and #list.order == 2,
         list and (#list.order .. " in " .. list.title) or "no list")
       shot("queue-mini")
-      app.run("player.stop")
     end },
+  { 800, function() app.run("player.stop") end },
   { 1000, function()
       log(string.format("SUMMARY %d passed, %d failed", results.pass, results.fail))
       app.quit()

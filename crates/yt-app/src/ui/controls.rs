@@ -30,6 +30,8 @@ struct Controls {
     seekbar: SeekBar,
     play: gtk::Button,
     next: gtk::Button,
+    /// The previous video of the list playing (shown only then).
+    previous: gtk::Button,
     mute: gtk::Button,
     volume: gtk::Scale,
     time: gtk::Label,
@@ -68,6 +70,12 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let play = button("yt-play-symbolic", "Play (k)", "player.toggle_pause");
     let next = button("yt-next-symbolic", "Next (Shift+N)", "player.next");
     next.set_visible(false);
+    let previous = button(
+        "yt-previous-symbolic",
+        "Previous (Shift+P)",
+        "list.previous",
+    );
+    previous.set_visible(false);
     let mute = button("yt-volume-up-symbolic", "Mute (m)", "player.toggle_mute");
     let volume = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);
     volume.set_width_request(64);
@@ -167,7 +175,8 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 2);
     row.add_css_class("controls-row");
     for widget in [
-        play.upcast_ref::<gtk::Widget>(),
+        previous.upcast_ref::<gtk::Widget>(),
+        play.upcast_ref(),
         next.upcast_ref(),
         volume_box.upcast_ref(),
         time.upcast_ref(),
@@ -234,6 +243,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
         seekbar,
         play,
         next,
+        previous,
         mute,
         volume,
         time,
@@ -304,6 +314,18 @@ fn connect(controls: &Rc<Controls>, root: &gtk::Overlay) {
     app().player.connect(move |event, state| {
         if let Some(controls) = weak.upgrade() {
             on_player_event(&controls, event, state);
+        }
+    });
+    // The list playing: previous, and next within it.
+    let weak = Rc::downgrade(controls);
+    follow(root, "list.changed", move |_| {
+        if let Some(controls) = weak.upgrade() {
+            let list = crate::lists::current();
+            controls.previous.set_visible(list.is_some());
+            controls
+                .previous
+                .set_sensitive(list.as_ref().is_some_and(|l| l.position > 0));
+            controls.next.set_visible(playback::up_next().is_some());
         }
     });
     let weak = Rc::downgrade(controls);

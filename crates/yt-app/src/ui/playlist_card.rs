@@ -50,7 +50,6 @@ pub fn build(props: &Value) -> gtk::Widget {
         let edge = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         edge.add_css_class("playlist-edge");
         edge.add_css_class(class);
-        edge.set_halign(gtk::Align::Center);
         stack.append(&edge);
     }
     stack.append(&thumb);
@@ -67,6 +66,11 @@ pub fn build(props: &Value) -> gtk::Widget {
     };
     let title = label("title", 2);
     let details = label("meta", 2);
+    // A grid fits as many cards in a row as their natural widths allow,
+    // and wrapping text's is its whole length: the picture's decides.
+    for label in [&title, &details] {
+        label.set_max_width_chars(1);
+    }
     details.add_css_class("dim");
     let view = gtk::Label::new(Some("View full playlist"));
     view.add_css_class("meta");

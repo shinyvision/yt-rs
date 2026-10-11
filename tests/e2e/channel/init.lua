@@ -41,6 +41,13 @@ local steps = {
   { 1500, function() shot("home-scrolled") end },
   { 100, function() tab("Videos") end },
   { 4000, function() log("videos: grid", tostring(app.find("video-grid") and app.find("video-grid"):mapped())); shot("videos") end },
+  { 100, function() tab("Playlists") end },
+  { 4000, function()
+      local cards = 0
+      for _, w in ipairs(find_all(app.window(), "playlist-card")) do if w:mapped() then cards = cards + 1 end end
+      log("playlists tab: cards", cards)
+      shot("playlists")
+    end },
   { 100, function() tab("Home") end },
   { 2000, function() log("home again: shelves", tostring(app.find("shelves") and app.find("shelves"):mapped())); shot("home-again") end },
   { 100, function() app.quit() end },

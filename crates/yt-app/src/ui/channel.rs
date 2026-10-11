@@ -305,11 +305,16 @@ fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
         "on_channel": true,
     });
     let home = tab.params.is_empty();
+    let playlists = tab.params == yt_core::channel::PLAYLISTS_TAB;
     // Home came with the channel page; the other tabs load when chosen.
     if home && let Some(page) = view.page.borrow().as_ref() {
         props["page"] = serde_json::to_value(&page.home).unwrap_or_default();
     }
-    let component = if home { "shelves" } else { "feed" };
+    let component = match (home, playlists) {
+        (true, _) => "shelves",
+        (_, true) => "playlists",
+        _ => "feed",
+    };
     let components = &app().ext.components;
     match view.feed.first_child() {
         Some(feed)
@@ -336,10 +341,9 @@ fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
 /// which moves its scroll position, so following the position would fold
 /// and unfold in a loop.
 fn connect_folding(view: &Rc<ChannelView>, feed: &gtk::Widget) {
-    let scroller = match super::find_widget(feed, "shelves") {
-        Some(shelves) => Some(shelves),
-        None => super::find_widget(feed, "video-grid").and_then(|g| g.parent()),
-    };
+    let scroller = super::find_widget(feed, "shelves")
+        .or_else(|| super::find_widget(feed, "page-playlists"))
+        .or_else(|| super::find_widget(feed, "video-grid").and_then(|g| g.parent()));
     let Some(scroller) = scroller.and_downcast::<gtk::ScrolledWindow>() else {
         return;
     };
