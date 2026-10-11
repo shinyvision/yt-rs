@@ -791,7 +791,10 @@ pub fn to_lua(
                         data,
                         &mut item_arg,
                     );
-                    out.raw_set(i, to_lua(lua, &item_arg, item, item_transfer, None)?)?;
+                    out.raw_set(
+                        i,
+                        container_item_to_lua(lua, &item_arg, item, item_transfer)?,
+                    )?;
                     i += 1;
                     node = next;
                 }
@@ -818,8 +821,8 @@ pub fn to_lua(
                     sys::gi_type_info_argument_from_hash_pointer(key.info.ptr(), k, &mut ka);
                     sys::gi_type_info_argument_from_hash_pointer(value.info.ptr(), v, &mut va);
                     out.raw_set(
-                        to_lua(lua, &ka, key, sys::TRANSFER_NOTHING, None)?,
-                        to_lua(lua, &va, value, sys::TRANSFER_NOTHING, None)?,
+                        container_item_to_lua(lua, &ka, key, sys::TRANSFER_NOTHING)?,
+                        container_item_to_lua(lua, &va, value, sys::TRANSFER_NOTHING)?,
                     )?;
                 }
                 if transfer != sys::TRANSFER_NOTHING {
@@ -835,6 +838,31 @@ pub fn to_lua(
             }
             Ty::Unresolved(_) => mlua::Value::Nil,
         })
+    }
+}
+
+// Lists and hash tables hold pointers to records, never embedded records.
+// GI may omit the pointer flag on their element type (e.g. Soup.Cookie).
+// Copying its declared struct size would lose opaque contents and ownership.
+fn container_item_to_lua(
+    lua: &Lua,
+    arg: &GIArgument,
+    ty: &Type,
+    transfer: GITransfer,
+) -> mlua::Result<mlua::Value> {
+    match &ty.kind {
+        Ty::Struct(info) | Ty::Union(info) => {
+            // SAFETY: container record elements are pointers of this type.
+            let pointer = unsafe { arg.v_pointer };
+            record_to_lua(
+                lua,
+                pointer,
+                info,
+                true,
+                transfer == sys::TRANSFER_EVERYTHING,
+            )
+        }
+        _ => to_lua(lua, arg, ty, transfer, None),
     }
 }
 
@@ -1005,6 +1033,71 @@ pub fn caller_allocated(lua: &Lua, p: *mut c_void, info: &Info) -> mlua::Result<
 mod tests {
     use super::*;
     use std::ffi::CStr;
+
+    #[test]
+    fn list_records_are_pointers_even_without_the_element_pointer_flag() {
+        crate::repo::require("GLib", Some("2.0")).unwrap();
+        let date_info = crate::repo::find_by_name("GLib", "Date").unwrap();
+        // SAFETY: GLib.Date.new returns a Date pointer.
+        let mut item = unsafe {
+            let function = Info::from_full(sys::gi_struct_info_find_method(
+                date_info.ptr(),
+                c"new".as_ptr(),
+            ))
+            .unwrap();
+            Type::new(
+                Info::from_full(sys::gi_callable_info_get_return_type(function.ptr())).unwrap(),
+            )
+        };
+        item.pointer = false;
+        let lua = Lua::new();
+        for single in [false, true] {
+            for transfer in [sys::TRANSFER_NOTHING, sys::TRANSFER_EVERYTHING] {
+                let ty = Type {
+                    kind: Ty::List {
+                        single,
+                        item: std::rc::Rc::new(item.clone()),
+                    },
+                    pointer: true,
+                    info: item.info.clone(),
+                };
+                // SAFETY: construct the list and the Date it owns; to_lua
+                // takes ownership on full transfer, otherwise copies Date.
+                unsafe {
+                    let date = g::g_date_new_dmy(11, g::G_DATE_OCTOBER, 2026);
+                    let list = if single {
+                        g::g_slist_append(ptr::null_mut(), date.cast()).cast()
+                    } else {
+                        g::g_list_append(ptr::null_mut(), date.cast()).cast()
+                    };
+                    let arg = GIArgument { v_pointer: list };
+                    let value = to_lua(&lua, &arg, &ty, transfer, None).unwrap();
+                    let record = value
+                        .as_table()
+                        .unwrap()
+                        .get::<mlua::AnyUserData>(1)
+                        .unwrap();
+                    let record = record.borrow::<Record>().unwrap();
+                    if transfer == sys::TRANSFER_EVERYTHING {
+                        assert_eq!(
+                            record.ptr,
+                            date.cast(),
+                            "take ownership of the pointed-to record"
+                        );
+                    } else {
+                        assert_ne!(record.ptr, date.cast(), "copy a borrowed boxed record");
+                        g::g_date_free(date);
+                        if single {
+                            g::g_slist_free(list.cast());
+                        } else {
+                            g::g_list_free(list.cast());
+                        }
+                    }
+                    assert_eq!(g::g_date_get_year(record.ptr.cast()), 2026);
+                }
+            }
+        }
+    }
 
     #[test]
     fn transferred_hash_strings_outlive_the_call() {
