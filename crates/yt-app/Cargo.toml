@@ -4,6 +4,8 @@ description = "A fast native YouTube client for the desktop, moddable with Lua"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [[bin]]
 name = "yt-rs"

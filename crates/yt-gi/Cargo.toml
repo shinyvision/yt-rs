@@ -4,6 +4,8 @@ description = "GObject Introspection for Lua: every introspected library (GTK, G
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 cairo-rs.workspace = true

@@ -4,6 +4,8 @@ description = "#[export]: exports a service's public functions through yt-export
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [lib]
 proc-macro = true

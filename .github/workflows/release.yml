@@ -1,0 +1,168 @@
+name: Release
+
+# A tag (v1.2.3) builds the app for Linux, macOS and Windows, on x86_64 and
+# arm64, and publishes the builds as a GitHub release. Run it by hand to
+# build without releasing.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    name: Linux ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    # The oldest Fedora with GTK 4.18 and libadwaita 1.7. The build runs on
+    # distributions at least as new.
+    container: fedora:42
+    steps:
+      - name: Dependencies
+        run: |
+          dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+          dnf install -y --allowerasing git gcc pkgconf-pkg-config gtk4-devel libadwaita-devel \
+            glib2-devel gobject-introspection-devel luajit-devel openssl-devel dbus-devel mpv-devel
+          curl -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+      - uses: actions/checkout@v4
+      - name: Build
+        run: cargo build --release --locked
+      - name: Package
+        run: |
+          name="yt-rs-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}-linux-${{ matrix.arch }}"
+          mkdir -p "dist/$name"
+          cp target/release/yt-rs README.md LICENSE "dist/$name/"
+          tar -C dist -czf "$name.tar.gz" "$name"
+          echo "PACKAGE=$name.tar.gz" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-${{ matrix.arch }}
+          path: ${{ env.PACKAGE }}
+
+  macos:
+    name: macOS ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: macos-15-intel
+          - arch: arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Dependencies
+        run: |
+          brew install gtk4 libadwaita mpv luajit pkgconf gobject-introspection
+          echo "PKG_CONFIG_PATH=$(brew --prefix libffi)/lib/pkgconfig" >> "$GITHUB_ENV"
+      - name: Build
+        run: cargo build --release --locked
+      - name: Package
+        run: |
+          name="yt-rs-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}-macos-${{ matrix.arch }}"
+          mkdir -p "dist/$name"
+          cp target/release/yt-rs README.md LICENSE "dist/$name/"
+          tar -C dist -czf "$name.tar.gz" "$name"
+          echo "PACKAGE=$name.tar.gz" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-${{ matrix.arch }}
+          path: ${{ env.PACKAGE }}
+
+  windows:
+    name: Windows ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x86_64
+            runner: windows-2025
+            msystem: UCRT64
+          - arch: arm64
+            runner: windows-11-arm
+            msystem: CLANGARM64
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: ${{ matrix.msystem }}
+          update: true
+          install: zip
+          pacboy: >-
+            toolchain:p rust:p clang:p pkgconf:p gtk4:p libadwaita:p mpv:p luajit:p
+            gobject-introspection:p adwaita-icon-theme:p hicolor-icon-theme:p
+      - name: Build
+        run: cargo build --release --locked
+      - name: Package
+        # Everything the app needs from MSYS2, next to it: the DLLs it
+        # links (found with ldd), GTK's image loaders, schemas and icons,
+        # and the typelibs plugins use.
+        run: |
+          name="yt-rs-${{ github.ref_type == 'tag' && github.ref_name || 'dev' }}-windows-${{ matrix.arch }}"
+          dist="dist/$name"
+          prefix="$MINGW_PREFIX"
+          mkdir -p "$dist/bin" "$dist/lib" "$dist/share/glib-2.0"
+          cp target/release/yt-rs.exe "$dist/bin/"
+          cp -r "$prefix/lib/gdk-pixbuf-2.0" "$prefix/lib/girepository-1.0" "$dist/lib/"
+          cp -r "$prefix/share/glib-2.0/schemas" "$dist/share/glib-2.0/"
+          mkdir -p "$dist/share/icons"
+          cp -r "$prefix/share/icons/Adwaita" "$prefix/share/icons/hicolor" "$dist/share/icons/"
+          for file in "$dist/bin/yt-rs.exe" $(find "$dist/lib/gdk-pixbuf-2.0" -name '*.dll'); do
+            ldd "$file" | awk -v p="$prefix/bin/" 'index($3, p) == 1 { print $3 }'
+          done | sort -u | xargs -r cp -t "$dist/bin/"
+          # The typelibs' own libraries (loaded by name when a plugin asks).
+          for dll in "$prefix"/bin/lib{girepository-2.0,gtk-4,adwaita-1}*.dll; do
+            [ -f "$dll" ] && cp -n "$dll" "$dist/bin/"
+          done
+          cp README.md LICENSE "$dist/"
+          (cd dist && zip -qr "../$name.zip" "$name")
+          echo "PACKAGE=$name.zip" >> "$GITHUB_ENV"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: ${{ env.PACKAGE }}
+
+  release:
+    name: Release
+    if: github.ref_type == 'tag'
+    needs: [linux, macos, windows]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<'EOF'
+          Builds for Linux, macOS and Windows, on x86_64 and arm64.
+
+          - Linux: needs GTK 4.18+, libadwaita 1.7+, libmpv and LuaJIT (Fedora 42, Arch, or as new).
+          - macOS: needs `brew install gtk4 libadwaita mpv luajit gobject-introspection`.
+          - Windows: everything is in the zip. Run `bin/yt-rs.exe`.
+          EOF
+          gh release create "${{ github.ref_name }}" packages/* \
+            --repo "${{ github.repository }}" \
+            --title "yt-rs ${{ github.ref_name }}" \
+            --notes-file notes.md

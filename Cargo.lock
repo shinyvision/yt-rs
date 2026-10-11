@@ -3423,7 +3423,7 @@ dependencies = [
 
 [[package]]
 name = "yt-app"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "anyhow",
  "gdk4-wayland",
@@ -3448,7 +3448,7 @@ dependencies = [
 
 [[package]]
 name = "yt-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "base64",
  "bytes",
@@ -3469,7 +3469,7 @@ dependencies = [
 
 [[package]]
 name = "yt-export"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "linkme",
  "serde",
@@ -3481,7 +3481,7 @@ dependencies = [
 
 [[package]]
 name = "yt-export-macros"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3490,7 +3490,7 @@ dependencies = [
 
 [[package]]
 name = "yt-gi"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "cairo-rs",
  "glib",

@@ -4,6 +4,8 @@ description = "YouTube logic without any UI: sign-in, InnerTube, feeds, watch-ti
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
 
 [dependencies]
 base64.workspace = true
