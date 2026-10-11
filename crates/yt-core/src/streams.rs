@@ -50,6 +50,10 @@ pub struct StreamSet {
     pub title: Option<String>,
     pub duration: Option<f64>,
     pub live: bool,
+    /// A live stream that just ended, as YouTube serves it until it has
+    /// made a plain video of it: of known length, but read in segments as
+    /// when it was live (its URLs answer no byte ranges).
+    pub recorded: bool,
     /// How far back a live stream can be watched, in seconds.
     pub dvr: Option<f64>,
     pub video: Stream,
@@ -903,11 +907,18 @@ impl Picked {
             .and_then(|d| str_at(d, "/lengthSeconds"))
             .and_then(|s| s.parse::<f64>().ok())
             .filter(|d| *d > 0.0 && !live);
+        let recorded = !live
+            && self.video.segment_duration.is_some()
+            && details
+                .and_then(|d| d.get("isPostLiveDvr"))
+                .and_then(Value::as_bool)
+                == Some(true);
         let stream = |f: &Format| solved(f, solutions);
         Ok(StreamSet {
             title: details.and_then(|d| str_at(d, "/title")).map(str::to_owned),
             duration,
             live,
+            recorded,
             dvr: self.video.dvr.filter(|_| live),
             video: stream(&self.video)?,
             audio: self.audio.as_ref().map(stream).transpose()?,

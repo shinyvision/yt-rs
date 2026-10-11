@@ -77,7 +77,11 @@ impl LiveWindow {
 struct LiveSession {
     head: SharedHead,
     segment: f64,
+    /// How far back it can be watched; a recording's length.
     dvr: f64,
+    /// A live stream's recording, which plays as a video of its length
+    /// (see `StreamSet::recorded`).
+    recorded: bool,
 }
 
 #[derive(Clone, Debug)]
@@ -289,10 +293,15 @@ impl Player {
             };
         }
         *self.streams.borrow_mut() = Some(streams.clone());
-        *self.live.borrow_mut() = streams.live.then(|| LiveSession {
+        *self.live.borrow_mut() = (streams.live || streams.recorded).then(|| LiveSession {
             head: SharedHead::default(),
             segment: streams.video.segment_duration.unwrap_or(2.0),
-            dvr: streams.dvr.unwrap_or(0.0),
+            dvr: if streams.recorded {
+                streams.duration.unwrap_or(0.0)
+            } else {
+                streams.dvr.unwrap_or(0.0)
+            },
+            recorded: streams.recorded,
         });
         self.captions.borrow_mut().clear();
         protocol::clear_failure();
@@ -317,8 +326,12 @@ impl Player {
         // segment holding `start` (in the stream's time), or near the edge.
         let session = self.live.borrow().clone();
         let first = session.as_ref().and_then(|l| {
-            let head = (*l.head.lock().unwrap())?;
-            (start > 0.0).then(|| head.segment_at(start, l.segment))
+            match *l.head.lock().unwrap() {
+                Some(head) if start > 0.0 || l.recorded => Some(head.segment_at(start, l.segment)),
+                // A recording's segments count from its start.
+                None if l.recorded => Some((start.max(0.0) / l.segment) as u64),
+                _ => None,
+            }
         });
         let url = |stream: &Stream| {
             // A downloaded video's files.
@@ -329,6 +342,7 @@ impl Player {
                 (Some(l), Some(_)) => protocol::Source::Live {
                     start: first,
                     head: l.head.clone(),
+                    recorded: l.recorded,
                 },
                 _ => protocol::Source::Chunked {
                     refresh: self.refresh(stream),
@@ -351,7 +365,7 @@ impl Player {
         if let Some(agent) = video.headers.get("User-Agent") {
             options.push(format!("user-agent={}", quote(agent)));
         }
-        if start > 1.0 && !streams.live {
+        if start > 1.0 && session.is_none() {
             options.push(format!("start={start:.1}"));
         }
         self.mpv
@@ -590,14 +604,28 @@ impl Player {
     }
 
     /// Whether what plays is a live stream (known when it opens; its window
-    /// comes with the first position).
+    /// comes with the first position). A recording isn't.
     pub fn is_live(&self) -> bool {
-        self.live.borrow().is_some()
+        self.live.borrow().as_ref().is_some_and(|l| !l.recorded)
     }
 
+    /// A live stream's window, for the UI: a recording shows as a video.
     fn live_window(&self) -> Option<LiveWindow> {
+        self.window()
+            .filter(|_| !self.live.borrow().as_ref().is_some_and(|l| l.recorded))
+    }
+
+    /// The part that can be watched of what plays in segments: a live
+    /// stream's window, or the whole of a recording.
+    fn window(&self) -> Option<LiveWindow> {
         let live = self.live.borrow();
         let live = live.as_ref()?;
+        if live.recorded {
+            return Some(LiveWindow {
+                start: 0.0,
+                edge: live.dvr,
+            });
+        }
         let head = (*live.head.lock().unwrap())?;
         let edge = head.edge(live.segment);
         Some(LiveWindow {
@@ -609,11 +637,9 @@ impl Player {
     /// A live stream can't be sought in place: it opens again at the
     /// segment holding `position`, or near the edge.
     fn seek_live(&self, position: f64) {
-        let (Some(window), Some(streams), Some(video)) = (
-            self.live_window(),
-            self.streams(),
-            self.playing.borrow().clone(),
-        ) else {
+        let (Some(window), Some(streams), Some(video)) =
+            (self.window(), self.streams(), self.playing.borrow().clone())
+        else {
             return;
         };
         let target = position.clamp(window.start, window.edge);
@@ -621,13 +647,18 @@ impl Player {
             let state = self.state.borrow();
             (state.position, state.paused)
         };
-        let start = if window.at_edge(target) { 0.0 } else { target };
+        // Near a live stream's edge, the edge; a recording has none.
+        let start = if !streams.recorded && window.at_edge(target) {
+            0.0
+        } else {
+            target
+        };
         if self.open(&streams, &video, start, paused).is_ok() {
             self.emit(PlayerEvent::Seeking { from, to: target });
             {
                 let mut state = self.state.borrow_mut();
                 state.position = target;
-                state.live = Some(window);
+                state.live = (!streams.recorded).then_some(window);
             }
             self.emit(PlayerEvent::Position(target));
         }
@@ -757,7 +788,15 @@ impl Player {
                     PlayerEvent::Position(position)
                 }
                 DURATION => {
-                    state.duration = double(&value).unwrap_or(0.0);
+                    // A recording read in segments: its length, not what
+                    // mpv has seen of it.
+                    let recorded = self
+                        .live
+                        .borrow()
+                        .as_ref()
+                        .filter(|l| l.recorded)
+                        .map(|l| l.dvr);
+                    state.duration = recorded.unwrap_or_else(|| double(&value).unwrap_or(0.0));
                     PlayerEvent::Duration(state.duration)
                 }
                 PAUSE => {

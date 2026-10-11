@@ -69,6 +69,8 @@ pub struct LiveReader {
     buffer: Vec<u8>,
     position: usize,
     cancelled: Arc<AtomicBool>,
+    /// A stream that has ended (see [`LiveReader::recorded`]).
+    recorded: bool,
 }
 
 impl LiveReader {
@@ -95,7 +97,16 @@ impl LiveReader {
             buffer: Vec::new(),
             position: 0,
             cancelled: Arc::default(),
+            recorded: false,
         }
+    }
+
+    /// For a stream that has ended (a live stream's recording, still in
+    /// segments): `None` as the start means the first segment, and it ends
+    /// after the last instead of waiting for more.
+    pub fn recorded(mut self) -> Self {
+        self.recorded = true;
+        self
     }
 
     /// Set to stop a read that is waiting, from another thread.
@@ -122,6 +133,7 @@ impl LiveReader {
         let next = match (self.next, self.start) {
             (Some(next), _) => next,
             (None, Some(start)) => start,
+            (None, None) if self.recorded => 0,
             (None, None) => {
                 let (_, head) = self.get(None)?;
                 let head = head.ok_or_else(|| {
@@ -147,9 +159,14 @@ impl LiveReader {
                 self.next = Some(next + 1);
                 return Ok(true);
             }
+            // A recording ends with its last segment.
+            if self.recorded && head.is_some_and(|head| next > head) {
+                return Ok(false);
+            }
             // Fell too far behind (paused for long): catch up.
             if let Some(head) = head
                 && head > next + 1000
+                && !self.recorded
             {
                 self.next = Some(head.saturating_sub(START_BEHIND));
                 return self.fetch_next();

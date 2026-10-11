@@ -166,6 +166,13 @@ fn start(video: Video, quality: Option<String>) {
             Ok(streams) if streams.live => {
                 return finish(&id, Err("Live streams can't be downloaded".into()));
             }
+            // In segments, until YouTube makes a video of it.
+            Ok(streams) if streams.recorded => {
+                return finish(
+                    &id,
+                    Err("This stream just ended: it can be downloaded once YouTube has processed it".into()),
+                );
+            }
             Ok(streams) => streams,
             Err(e) => return finish(&id, Err(format!("Couldn't download: {e}"))),
         };

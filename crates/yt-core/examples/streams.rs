@@ -57,6 +57,16 @@ async fn main() -> yt_core::Result<()> {
                     set.captions.len(),
                     set.storyboard.as_ref().map_or(0, |s| s.fragments.len()),
                 );
+                // How it is read: in segments (live), and what the URL says.
+                let url = &set.video.url;
+                let params: Vec<&str> = ["live=1", "yt_live_broadcast", "sq=", "noclen", "clen="]
+                    .into_iter()
+                    .filter(|p| url.contains(p))
+                    .collect();
+                println!(
+                    "  duration {:?} | dvr {:?} | segments {:?} | URL has {params:?}",
+                    set.duration, set.dvr, set.video.segment_duration
+                );
                 println!(
                     "  YouTube's quality names: {}",
                     if set.video.label.is_some() {

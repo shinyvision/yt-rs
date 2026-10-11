@@ -33,6 +33,8 @@ pub enum Source {
         /// The segment to start at; `None` for near the newest.
         start: Option<u64>,
         head: SharedHead,
+        /// A live stream's recording (see `StreamSet::recorded`).
+        recorded: bool,
     },
 }
 
@@ -114,15 +116,22 @@ unsafe extern "C" fn open(
                 refresh.clone(),
                 runtime,
             )),
-            Source::Live { start, head } => Reader::Live(LiveReader::new(
-                http,
-                stream.url.clone(),
-                user_agent,
-                stream.segment_duration.unwrap_or(2.0),
-                *start,
-                head.clone(),
-                runtime,
-            )),
+            Source::Live {
+                start,
+                head,
+                recorded,
+            } => {
+                let reader = LiveReader::new(
+                    http,
+                    stream.url.clone(),
+                    user_agent,
+                    stream.segment_duration.unwrap_or(2.0),
+                    *start,
+                    head.clone(),
+                    runtime,
+                );
+                Reader::Live(if *recorded { reader.recorded() } else { reader })
+            }
         };
         let cancelled = match &reader {
             Reader::Chunked(r) => r.cancel_flag(),
