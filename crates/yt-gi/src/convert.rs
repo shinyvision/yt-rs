@@ -292,28 +292,49 @@ pub fn from_lua(
                 return Err(format!("expected a table, got {}", value.type_name()));
             };
             let strings = matches!(key.kind, Ty::Utf8 | Ty::Filename);
-            // SAFETY: a new table hashing strings by contents, others by
-            // pointer value.
+            let string_values = matches!(vty.kind, Ty::Utf8 | Ty::Filename);
+            // Strings belong to the table, not the call's scratch space:
+            // an async callee can retain the table after this call returns.
+            // SAFETY: string entries are duplicated below and freed with
+            // g_free when the table's last reference is released.
             let hash = unsafe {
-                if strings {
-                    g::g_hash_table_new(Some(g::g_str_hash), Some(g::g_str_equal))
-                } else {
-                    g::g_hash_table_new(Some(g::g_direct_hash), Some(g::g_direct_equal))
-                }
+                g::g_hash_table_new_full(
+                    Some(if strings {
+                        g::g_str_hash
+                    } else {
+                        g::g_direct_hash
+                    }),
+                    Some(if strings {
+                        g::g_str_equal
+                    } else {
+                        g::g_direct_equal
+                    }),
+                    if strings { Some(g::g_free) } else { None },
+                    if string_values { Some(g::g_free) } else { None },
+                )
             };
+            scratch.push(Temp::Hash(hash));
             for pair in t.pairs::<mlua::Value, mlua::Value>() {
                 let (k, v) = pair.map_err(|e| e.to_string())?;
                 let mut ka = from_lua(lua, &k, key, sys::TRANSFER_NOTHING, false, scratch)?;
                 let mut va = from_lua(lua, &v, vty, sys::TRANSFER_NOTHING, true, scratch)?;
-                // SAFETY: inserts pointers that live as long as the call.
+                // SAFETY: string entries get independent copies; other
+                // entries use the argument's pointer representation.
                 unsafe {
-                    let kp = sys::gi_type_info_hash_pointer_from_argument(key.info.ptr(), &mut ka);
-                    let vp = sys::gi_type_info_hash_pointer_from_argument(vty.info.ptr(), &mut va);
+                    let mut kp =
+                        sys::gi_type_info_hash_pointer_from_argument(key.info.ptr(), &mut ka);
+                    let mut vp =
+                        sys::gi_type_info_hash_pointer_from_argument(vty.info.ptr(), &mut va);
+                    if strings {
+                        kp = g::g_strdup(kp.cast()).cast();
+                    }
+                    if string_values {
+                        vp = g::g_strdup(vp.cast()).cast();
+                    }
                     g::g_hash_table_insert(hash, kp, vp);
                 }
             }
-            scratch.push(Temp::Hash(hash));
-            if full {
+            if transfer != sys::TRANSFER_NOTHING {
                 // SAFETY: the callee gets its own reference.
                 unsafe { g::g_hash_table_ref(hash) };
             }
@@ -978,4 +999,47 @@ pub fn caller_allocated(lua: &Lua, p: *mut c_void, info: &Info) -> mlua::Result<
     Ok(mlua::Value::UserData(lua.create_userdata(
         Record::with_owner(p, info.clone(), Owner::Malloc),
     )?))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ffi::CStr;
+
+    #[test]
+    fn transferred_hash_strings_outlive_the_call() {
+        crate::repo::require("GLib", Some("2.0")).unwrap();
+        let function = crate::repo::find_by_name("GLib", "uri_parse_params").unwrap();
+        // SAFETY: the function's return type is a string-to-string hash.
+        let ty = Type::new(unsafe {
+            Info::from_full(sys::gi_callable_info_get_return_type(function.ptr())).unwrap()
+        });
+        let lua = Lua::new();
+        for transfer in [sys::TRANSFER_EVERYTHING, sys::TRANSFER_CONTAINER] {
+            let table = lua.create_table().unwrap();
+            table.set("profile", "/test/profile").unwrap();
+            let mut scratch = Scratch::default();
+            let arg = from_lua(
+                &lua,
+                &mlua::Value::Table(table),
+                &ty,
+                transfer,
+                false,
+                &mut scratch,
+            )
+            .unwrap();
+            drop(scratch);
+            // Churn the allocator after the call, as an async completion
+            // would. The table retains its own copies of both strings.
+            let _churn: Vec<_> = (0..100).map(|_| vec![b'x'; 16]).collect();
+            // SAFETY: the callee's hash-table reference is still live.
+            unsafe {
+                let hash = arg.v_pointer.cast();
+                let value = g::g_hash_table_lookup(hash, c"profile".as_ptr().cast());
+                assert!(!value.is_null());
+                assert_eq!(CStr::from_ptr(value.cast()).to_bytes(), b"/test/profile");
+                g::g_hash_table_unref(hash);
+            }
+        }
+    }
 }
