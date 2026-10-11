@@ -252,7 +252,7 @@ pub fn subclass(lua: &Lua, parent: &mlua::Value, def: Table) -> mlua::Result<Tab
     if let Some(e) = data.error.borrow_mut().take() {
         return Err(e);
     }
-    let table = namespace::class_table(lua, gtype, None)?;
+    let table = namespace::class_table(lua, gtype)?;
     Ok(table)
 }
 

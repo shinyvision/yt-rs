@@ -299,18 +299,12 @@ pub fn field(info: &Info, name: &str) -> Option<std::rc::Rc<Field>> {
 }
 
 /// Fills a new struct's fields from a Lua table.
-pub fn fill(
-    lua: &Lua,
-    record: &Record,
-    owner: &mlua::Value,
-    fields: &mlua::Table,
-) -> mlua::Result<()> {
+pub fn fill(lua: &Lua, record: &Record, fields: &mlua::Table) -> mlua::Result<()> {
     for pair in fields.pairs::<String, mlua::Value>() {
         let (name, value) = pair?;
         let field = field(&record.info, &name).ok_or_else(|| {
             mlua::Error::runtime(format!("{} has no field {name:?}", record.info.full_name()))
         })?;
-        let _ = owner;
         field.set(lua, record.ptr.cast(), &value)?;
     }
     Ok(())
@@ -369,8 +363,10 @@ impl UserData for Record {
         methods.add_meta_method(MetaMethod::ToString, |_, this, ()| {
             if this.is_error() {
                 // SAFETY: a GError.
-                let message = unsafe { (*(this.ptr as *mut glib::ffi::GError)).message };
-                return Ok(crate::info::static_str(message).to_owned());
+                let message = unsafe {
+                    std::ffi::CStr::from_ptr((*(this.ptr as *mut glib::ffi::GError)).message)
+                };
+                return Ok(message.to_string_lossy().into_owned());
             }
             Ok(this.info.full_name())
         });

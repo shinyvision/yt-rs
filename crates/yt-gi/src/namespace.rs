@@ -122,9 +122,7 @@ fn namespace_member(lua: &Lua, namespace: &str, key: &str) -> mlua::Result<mlua:
     };
     Ok(match info.kind() {
         Kind::Function => mlua::Value::Function(call::function(lua, &info)?),
-        Kind::Object | Kind::Interface => {
-            mlua::Value::Table(class_table(lua, info.gtype(), Some(info))?)
-        }
+        Kind::Object | Kind::Interface => mlua::Value::Table(class_table(lua, info.gtype())?),
         Kind::Struct | Kind::Union => mlua::Value::Table(record_class(lua, info)?),
         Kind::Enum | Kind::Flags => mlua::Value::Table(enum_table(lua, &info)?),
         Kind::Constant => constant(lua, &info)?,
@@ -187,15 +185,12 @@ fn enum_table(lua: &Lua, info: &Info) -> mlua::Result<Table> {
 }
 
 /// The class table of `gtype` (made on first use).
-pub fn class_table(lua: &Lua, gtype: glib::Type, info: Option<Info>) -> mlua::Result<Table> {
+pub fn class_table(lua: &Lua, gtype: glib::Type) -> mlua::Result<Table> {
     let key = class_key(gtype);
     let existing = get_table(lua, &crate::state(lua).classes, &key)?;
     if let Some(t) = existing {
         return Ok(t);
     }
-    let info = info
-        .or_else(|| repo::find_by_gtype(gtype))
-        .filter(|i| matches!(i.kind(), Kind::Object | Kind::Interface));
     let table = lua.create_table()?;
     table.raw_set("_gtype", gtype.into_glib() as f64)?;
     table.raw_set("_name", key.clone())?;
@@ -269,7 +264,6 @@ end
                 .raw_get::<Table>("__cache")?,
         ))?;
     table.metatable().expect("meta").raw_set("__index", index)?;
-    let _ = info;
     let stored = lua.create_registry_value(table.clone())?;
     crate::state(lua).classes.borrow_mut().insert(key, stored);
     Ok(table)
@@ -281,7 +275,7 @@ fn class_member(lua: &Lua, gtype: glib::Type, key: &str) -> mlua::Result<mlua::V
     }
     if key == "_parent" {
         return match gtype.parent() {
-            Some(p) => Ok(mlua::Value::Table(class_table(lua, p, None)?)),
+            Some(p) => Ok(mlua::Value::Table(class_table(lua, p)?)),
             None => Ok(mlua::Value::Nil),
         };
     }
@@ -440,7 +434,7 @@ fn record_class(lua: &Lua, info: Info) -> mlua::Result<Table> {
                 mlua::Value::Nil => {}
                 mlua::Value::Table(t) => {
                     let r = ud.borrow::<Record>()?;
-                    record::fill(lua, &r, &owner, t)?;
+                    record::fill(lua, &r, t)?;
                 }
                 mlua::Value::String(_) => {
                     let parse = members::record(lua, &make, "parse")?.ok_or_else(|| {

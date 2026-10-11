@@ -232,7 +232,6 @@ impl Callable {
                     let (a, len) = convert::array_from_lua(
                         lua,
                         &value,
-                        &arg.ty,
                         array,
                         arg.transfer,
                         arg.nullable,

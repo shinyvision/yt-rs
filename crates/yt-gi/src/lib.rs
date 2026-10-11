@@ -103,7 +103,7 @@ pub fn install(lua: &Lua) -> mlua::Result<Table> {
         "type",
         lua.create_function(|lua, ty: mlua::Value| {
             let gtype = gtype_from_lua(&ty)?;
-            namespace::class_table(lua, gtype, None)
+            namespace::class_table(lua, gtype)
         })?,
     )?;
     gi.set(
@@ -157,7 +157,7 @@ pub fn require(lua: &Lua, namespace: &str, version: &str) -> mlua::Result<Table>
 /// The class table of a type, for adding methods to it from Rust:
 /// `class(lua, gtk::Widget::static_type())?.set("find", f)`.
 pub fn class(lua: &Lua, gtype: glib::Type) -> mlua::Result<Table> {
-    namespace::class_table(lua, gtype, None)
+    namespace::class_table(lua, gtype)
 }
 
 /// A GType from Lua: a number, a type name, a class table, or an instance.

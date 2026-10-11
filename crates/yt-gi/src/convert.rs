@@ -203,8 +203,7 @@ pub fn from_lua(
             }
         }
         Ty::Array(array) => {
-            return array_from_lua(lua, value, ty, array, transfer, nullable, scratch)
-                .map(|(a, _)| a);
+            return array_from_lua(lua, value, array, transfer, nullable, scratch).map(|(a, _)| a);
         }
         Ty::Object(info) => {
             arg.v_pointer = match value {
@@ -443,7 +442,7 @@ fn record_from_lua(
             match value {
                 mlua::Value::Table(t) => {
                     let r = ud.borrow::<Record>().map_err(|e| e.to_string())?;
-                    crate::record::fill(lua, &r, &owner, t).map_err(|e| e.to_string())?;
+                    crate::record::fill(lua, &r, t).map_err(|e| e.to_string())?;
                 }
                 _ => {
                     let parse = crate::members::record(lua, info, "parse")
@@ -482,7 +481,6 @@ fn record_from_lua(
 pub fn array_from_lua(
     lua: &Lua,
     value: &mlua::Value,
-    ty: &Type,
     array: &Array,
     transfer: GITransfer,
     nullable: bool,
@@ -495,10 +493,7 @@ pub fn array_from_lua(
         mlua::Value::Nil if nullable || array.length_arg.is_some() => return Ok((arg, 0)),
         mlua::Value::String(s) if bytes_item => {
             let bytes = s.as_bytes();
-            return Ok((
-                bytes_array(&bytes, array, ty, transfer, scratch),
-                bytes.len(),
-            ));
+            return Ok((bytes_array(&bytes, array, transfer, scratch), bytes.len()));
         }
         mlua::Value::Table(t) => t
             .sequence_values::<mlua::Value>()
@@ -567,14 +562,12 @@ pub fn array_from_lua(
             }
         }
     }
-    let _ = ty;
     Ok((arg, n))
 }
 
 fn bytes_array(
     bytes: &[u8],
     array: &Array,
-    _ty: &Type,
     transfer: GITransfer,
     scratch: &mut Scratch,
 ) -> GIArgument {
