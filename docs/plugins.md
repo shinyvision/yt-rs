@@ -306,6 +306,10 @@ keeps it). Lower `order` runs first.
 app.filter("feed.page", function(data) ... return data end, order)
 ```
 
+`app.apply_filter(name, value)` runs a value through the named chain and
+returns its result. Plugins can define their own data pipelines this way;
+an unregistered filter returns the value unchanged.
+
 | Filter | Value |
 |---|---|
 | `feed.page` | `{ browse_id, page }`: every feed page before it is shown |
@@ -578,6 +582,12 @@ pointer pass through the rest to the video. Every other slot is a box.
 [SponsorBlock](../examples/plugins/sponsorblock) is a complete plugin using
 most of this: segments on the seek bar, widgets over the video, settings,
 storage, its own commands, keys and dialog, and a web API.
+
+[Notifications](../examples/plugins/notifications) adds YouTube's real bell
+through `topbar.end`, with replaceable components, commands, events and a
+`notifications.page` filter. Its asynchronous Python helper detects the
+default browser and owns its web session; no browser-cookie integration is
+built into Rust. The plugin's README lists its extension points.
 
 ### Pages and the sidebar
 

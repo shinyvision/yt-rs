@@ -127,6 +127,14 @@ fn install_registries(lua: &Lua, t: &Table) -> mlua::Result<()> {
         })?,
     )?;
 
+    t.set(
+        "apply_filter",
+        lua.create_function(|lua, (name, value): (String, mlua::Value)| {
+            let result = app().ext.filters.apply(&name, lua_to_json(lua, value)?);
+            json_to_lua(lua, &result)
+        })?,
+    )?;
+
     // Commands.
     t.set(
         "command",

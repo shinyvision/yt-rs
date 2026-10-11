@@ -407,6 +407,13 @@ check("every service function is there", function()
   yes(n > 200, "only " .. n)
 end)
 
+check("plugins run their own filter chains", function()
+  app.filter("capabilities.pipeline", function(v) v.count = v.count * 2; return v end, 10)
+  app.filter("capabilities.pipeline", function(v) v.count = v.count + 3; return v end, 0)
+  eq(app.apply_filter("capabilities.pipeline", { count = 1 }).count, 8, "ordered filters")
+  eq(app.apply_filter("capabilities.missing", { count = 1 }).count, 1, "unknown chain passes through")
+end)
+
 -- Runner ------------------------------------------------------------------
 
 local passed, failed = 0, 0

@@ -68,6 +68,23 @@ cp -r examples/plugins/sponsorblock tests/e2e/sponsorblock-test "$E/plugins/"
 
 The server's log then shows the counted skips, the vote and the submission.
 
+## Notifications
+
+Install `examples/plugins/notifications` as `plugins/notifications` and
+`tests/e2e/notifications` as `plugins/notifications-test` in a throwaway
+profile, with no token file. Run in a separate headless Sway compositor as
+for other GUI tests, with `YT_RS_DRY_RUN=1` and `G_DEBUG=fatal-criticals`.
+The test replaces only the helper path with a subprocess fixture; real Gio
+process I/O, the UI, commands, filter and events are exercised. It never
+reads browser cookies or changes a YouTube account. It checks the sign-in
+notice, count badge, pagination, deduplication, click recording, native video
+and browser comment navigation, empty/error states, sign-out cancellation,
+recovery, and context actions. Screenshots use `E2E_SHOTS` as usual.
+
+`python3 -m unittest discover -s tests/plugins -v` checks platform detection,
+cookie isolation, keyring failures, web authentication, parsing and dry-run
+behaviour without real credentials (requires yt-dlp for the mocked reader).
+
 ## Downloads
 
 `downloads` runs twice on one profile: `E2E_PHASE=online` (downloads, the
