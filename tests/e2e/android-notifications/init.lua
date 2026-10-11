@@ -1,8 +1,8 @@
--- Install next to android-notifications in a throwaway profile with no token.
+-- Install next to notifications in a throwaway profile with no token.
 -- Fixtures cover account exchange and inbox access. Optional live mode only
 -- opens the public Google sign-in page; it never enters account details.
-local P = require("android-notifications.protocol")
-local Backend = require("android-notifications.backend")
+local P = require("notifications.protocol")
+local Backend = require("notifications.android")
 local passed = 0
 local function check(label, condition)
   assert(condition, label)
@@ -13,7 +13,7 @@ local function fixture_tests()
   check("form values cannot inject fields", P.form({ Token = "a+b&c=\n%", Email = "a@b" }) == "Email=a%40b&Token=a%2Bb%26c%3D%0A%25")
   check("response parser preserves equals and final line", P.fields("Auth=a=b==\r\nEmail=a@b").Auth == "a=b==")
   check("auth errors do not expose response contents", P.auth_error({ Error = "secret-value", Url = "secret" }, 403) == "Google rejected the Android authentication request.")
-  check("DroidGuard is an explicit failure", P.auth_error({ Error = "MissingDroidguard" }, 200):find("DroidGuard", 1, true))
+  check("DroidGuard is an explicit failure", P.auth_error({ Error = "MissingDroidguard" }, 200):find("device verification", 1, true))
   local clock, saved, requests, pending = 1700000000, nil, {}, {}
   local storage = {
     read = function(done) done(saved) end,
@@ -63,11 +63,13 @@ local function fixture_tests()
   check("restart obtains fresh access without login window", requests[9].url == P.auth_url)
   response(200, "Auth=after-restart\nExpires=3600\n")
   response(200, inbox)
-  backend.fetch("WEB", nil, false, function(page, err) check("HTTP 200 without inbox is not success", not page and err:find("not yet verified", 1, true)) end)
+  backend.fetch("WEB", nil, false, function(page, err) check("HTTP 200 without inbox is not success", not page and err:find("unrecognized", 1, true)) end)
   response(200, { responseContext = {} })
   backend.fetch("ANDROID", nil, false, function(page, err) check("signed-out response rejected", not page and err:find("signed-out", 1, true)) end)
   response(200, { responseContext = { mainAppWebResponseContext = { loggedOut = true } } })
+  backend.restore(function(found) assert(found) end)
   backend.fetch("ANDROID", nil, false, function() error("stale callback ran") end)
+  response(200, "Auth=restored-access\nExpires=3600\n")
   backend.forget(function(ok) check("forget removes keyring entry", ok and saved == nil) end)
   response(200, inbox)
   check("cancelled request cannot restore signed-out UI", true)
@@ -92,21 +94,107 @@ local function fixture_tests()
   check("Android continuation is retained", android_page.continuation == "android-next")
   local metadata = P.nodes(android, "inboxNotificationModel")[1].inboxNotification.metadata
   metadata.header.content = "@fixture"
-  metadata.shortMessageFormatted.content = 'replied: "A reply."'
+  metadata.shortMessageFormatted.content = 'Replied: "A reply."'
   check("Android reply joins the name and action correctly", P.inbox(android).items[1].message == '@fixture replied: "A reply."')
   local bad_store = { write = function(_, done) done(false, "keyring locked") end }
   backend = Backend.new(http, bad_store, app.json, function() return clock end)
   backend.sign_in({ token = "temporary" }, function(ok, err) check("keyring failure is not successful login", not ok and err == "keyring locked") end)
   response(200, "Token=persistent\nEmail=fixture@example.invalid\n")
+
+  local counts = { actions = {
+    { updateBrowseTabNewContentAction = { tabIdentifier = "FEconnections_inbox", unseenItemCount = "99" } },
+    { updateBrowseTabNewContentAction = { tabIdentifier = "FEnotifications_inbox", unseenItemCount = "7" } },
+  } }
+  check("badge selects the notifications tab count", P.count(counts) == 7)
+  check("missing count is not fabricated as zero", P.count({}) == nil)
+  check("count requests only home metadata", P.url("count"):find("fields=onResponseReceivedActions", 1, true) ~= nil)
+  check("unknown credential destination is rejected", not pcall(P.url, "https://example.org"))
+  local action = P.action({ commandExecutorCommand = { commands = {
+    { elementsCommand = {} }, { recordNotificationInteractionsEndpoint = { serializedInteractionsRequest = "fixture-hide" } },
+  } } })
+  check("Android menu action unwraps command executor", action and action.endpoint == "notification/record_interactions" and action.body.serializedInteractionsRequest == "fixture-hide")
+  check("unrecognized menu actions are ignored", P.action({ urlEndpoint = { url = "https://example.org" } }) == nil)
+  check("unrecognized feed is not an empty inbox", not P.inbox({ contents = { sectionListRenderer = { contents = {} } } }).recognized)
+  check("explicit empty notification feed is recognized", P.inbox({
+    header = { feedTabbedHeaderRenderer = { title = { runs = { { text = "Notifications" } } } } },
+    contents = { sectionListRenderer = { contents = {} } },
+  }).recognized)
+
+  saved = app.json.encode({ master = "persistent", email = "fixture@example.invalid" })
+  backend = Backend.new(http, storage, app.json, function() return clock end)
+  backend.restore(function(found) assert(found) end)
+  local recovered
+  backend.fetch("ANDROID", nil, false, function(page) recovered = page ~= nil end)
+  response(200, "Auth=expired-access\nExpires=3600\n")
+  response(401, {})
+  check("HTTP 401 renews the access token", requests[#requests].url == P.auth_url)
+  response(200, "Auth=replacement-access\nExpires=3600\n")
+  response(200, inbox)
+  check("request succeeds after renewal", recovered)
+  local expired
+  backend.fetch("ANDROID", nil, false, function(page, err, code) expired = not page and code == "sign_in_required" end)
+  response(401, {})
+  response(200, "Auth=still-rejected-access\nExpires=3600\n")
+  response(401, {})
+  check("repeated rejection returns to sign-in without a loop", expired and not backend.connected() and #pending == 0)
+
+  local save_callback, delayed_value, forgot
+  local delayed_store = {
+    write = function(value, done) delayed_value, save_callback = value, done end,
+    clear = function(done) delayed_value = nil; done(true) end,
+  }
+  backend = Backend.new(http, delayed_store, app.json, function() return clock end)
+  backend.sign_in({ token = "temporary" }, function() error("cancelled sign-in completed") end)
+  response(200, "Token=persistent\nEmail=fixture@example.invalid\n")
+  backend.forget(function(ok) forgot = ok end)
+  check("sign-out waits for an in-flight keyring save", not forgot)
+  save_callback(true)
+  check("late keyring save cannot restore a signed-out account", forgot and not delayed_value and not backend.connected())
+end
+
+local function adapter_tests()
+  local names = { "notifications.android", "notifications.transport", "notifications.keyring" }
+  local originals = {}
+  for _, name in ipairs(names) do originals[name] = package.loaded[name] end
+  local calls, connected = 0, true
+  local fake = {
+    connected = function() return connected end,
+    restore = function(done) done(true) end,
+    cancel = function() end,
+    fetch = function() error("dry-run inbox request escaped") end,
+    call = function(client, endpoint, body, force, done)
+      assert(client == "ANDROID" and endpoint == "count" and body.browseId == "FEwhat_to_watch")
+      calls = calls + 1
+      done({ actions = { { updateBrowseTabNewContentAction = { tabIdentifier = "FEnotifications_inbox", unseenItemCount = "5" } } } })
+    end,
+  }
+  package.loaded[names[1]] = { new = function() return fake end }
+  package.loaded[names[2]] = { new = function() end }
+  package.loaded[names[3]] = { new = function() end }
+  local adapter = assert(loadfile(app.api.paths.config_dir() .. "/plugins/notifications/backend.lua"))()
+  adapter.restore(function() end)
+  for _, name in ipairs(names) do package.loaded[name] = originals[name] end
+  for _, operation in ipairs({ "menu", "more", "interact" }) do
+    adapter.request({ operation = operation }, function(result)
+      check("dry-run blocks " .. operation, result.status == "dry_run" and calls == 0)
+    end)
+  end
+  adapter.request({ operation = "count" }, function(result)
+    check("dry-run permits only the native count metadata request", result.status == "ok" and result.count == 5 and calls == 1)
+  end)
+  connected = false
+  adapter.request({ operation = "count" }, function(result)
+    check("disconnected bell requests sign-in without HTTP", result.status == "sign_in_required" and calls == 1)
+  end)
 end
 
 local function handoff_test(done)
-  local Login = require("android-notifications.login")
+  local Login = require("notifications.login")
   local Soup = gi.require("Soup", "3.0")
   local original_url = P.login_url
   P.login_url = "about:blank" -- Fixture credentials never reach the network.
   local view, close
-  view, close = Login.new(app.api.paths.config_dir() .. "/plugins/android-notifications", function(handoff)
+  view, close = Login.new(app.api.paths.config_dir() .. "/plugins/notifications", function(handoff)
     check("path-scoped Android handoff is received", handoff.token == "fixture-handoff")
     close() -- Closing twice must be harmless.
     app.timer(300, function()
@@ -130,10 +218,10 @@ app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 app.on("app.ready", function()
   fixture_tests()
-  app.timer(200, function() app.navigate("android-notifications") end)
+  adapter_tests()
   app.timer(1000, function()
-    check("prototype page loads", app.find("android-notifications-status") ~= nil)
-    local keyring = require("android-notifications.keyring").new(app.api.paths.config_dir() .. "/fixture")
+    check("notification bell loads", app.find("notifications-button") ~= nil)
+    local keyring = require("notifications.keyring").new(app.api.paths.config_dir() .. "/fixture")
     keyring.write("fixture-secret", function(ok, err)
       assert(ok, err)
       keyring.read(function(value, err)
@@ -143,7 +231,7 @@ app.on("app.ready", function()
           keyring.read(function(value, err)
             check("real system keyring removal", value == nil and not err)
             if os.getenv("E2E_LIVE_LOGIN") == "1" then
-              local http = require("android-notifications.transport").new()
+              local http = require("notifications.transport").new()
               local transported = false
               check("transport rejects other credential destinations", not pcall(http, "https://example.com/auth", "text/plain", "fixture", {}, function() end))
               http("https://www.youtube.com/youtubei/v1/browse?prettyPrint=false", "application/json",
@@ -153,7 +241,7 @@ app.on("app.ready", function()
                   check("anonymous HTTP response crosses GI intact", type(response.body) == "string" and type(app.json.decode(response.body)) == "table")
                   transported = true
                 end)
-              app.run("android-notifications.sign_in")
+              app.run("notifications.sign_in")
               app.timer(12000, function()
                 local view = app.find("android-google-login")
                 check("login uses an ephemeral session", view and view:get_network_session().is_ephemeral)

@@ -1,2 +1,0 @@
-yt-dlp>=2026.8.19
-SecretStorage>=3.3; sys_platform == "linux"

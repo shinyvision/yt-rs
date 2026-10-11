@@ -3,11 +3,11 @@ local Soup = gi.require("Soup", "3.0")
 local GLib = gi.require("GLib", "2.0")
 local Gio = gi.require("Gio", "2.0")
 local M = {}
+local P = require("notifications.protocol")
 function M.new()
   local session = Soup.Session { timeout = 30, max_conns = 2 }
   return function(url, content_type, body, headers, done)
-    assert(url == "https://android.clients.google.com/auth" or
-      url == "https://www.youtube.com/youtubei/v1/browse?prettyPrint=false", "Unexpected credential destination")
+    assert(P.allowed_url(url), "Unexpected credential destination")
     local cancel = Gio.Cancellable.new()
     local message = Soup.Message.new("POST", url)
     message:set_flags(Soup.MessageFlags.NO_REDIRECT)

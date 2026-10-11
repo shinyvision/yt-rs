@@ -1,128 +1,140 @@
 # YouTube notifications
 
-The real youtube.com inbox in yt-rs's top bar: likes, uploads, replies, mentions
-and posts returned by YouTube, with an unseen badge, avatars, thumbnails,
-read indicators, more pages and YouTube's own notification actions.
+The real YouTube inbox in yt-rs's top-bar bell: likes, replies, uploads,
+mentions and posts, with avatars, thumbnails, read indicators, pagination
+and YouTube's notification actions. Video notifications open inside yt-rs.
 
-The app's TV sign-in cannot access this inbox. This plugin uses the YouTube
-session in your **default web browser**. Browser cookies and web authentication
-stay in the plugin's Python helper; the Rust app receives notification data.
+Click the bell and **Sign in** to connect your YouTube account in an embedded
+Google sign-in window. This sign-in is separate from yt-rs's existing TV
+sign-in; use the same account for both. After sign-in, the bell immediately
+loads the inbox. Future launches restore the account from your system
+keyring and renew access automatically. Your browser can remain closed.
 
 ## Install
 
-Copy this directory into your yt-rs plugins directory (shown in Settings).
-On Linux, from the repository root:
+The plugin currently supports the Linux app and needs **WebKitGTK 6.0**,
+**libsoup 3**, and **libsecret**, with their GObject introspection typelibs
+and a working Secret Service keyring. On Arch Linux the packages are
+`webkitgtk-6.0`, `libsoup3`, and `libsecret`. Python, yt-dlp, browser extensions
+and browser-cookie access are not used.
+
+Copy this directory into the plugins directory shown in yt-rs Settings:
 
 ```sh
 mkdir -p ~/.config/yt-rs/plugins
 cp -r examples/plugins/notifications ~/.config/yt-rs/plugins/
-python3 -m venv ~/.config/yt-rs/plugins/notifications/.venv
-~/.config/yt-rs/plugins/notifications/.venv/bin/python -m pip install -r ~/.config/yt-rs/plugins/notifications/requirements.txt
 ```
 
-Restart yt-rs. Sign in to the app to show the bell, and sign in to YouTube
-in your default browser. If that browser has no YouTube sign-in, the bell
-shows a notice with **Open YouTube** and **Try again**.
+Restart yt-rs and click the bell. Existing installations of the old browser
+helper can delete this plugin's `browser.py`, `requirements.txt` and `.venv`;
+the plugin no longer loads them. Old `python` and `profile` plugin settings
+are ignored. Use a build containing the GI hash-table and record ownership
+fixes introduced with Android notifications.
 
-The helper also detects the default browser on macOS and Windows. Use the
-platform's yt-rs plugins directory and create `.venv` inside this plugin;
-on Windows its interpreter is `.venv\Scripts\python.exe`. The plugin finds
-either layout automatically, then falls back to system Python. The app
-itself currently targets Linux; the other platforms' browser detection has
-unit coverage but has not been tested on those operating systems.
+The gear opens notification account settings, including **Sign out of
+notifications** and a link to YouTube's notification preferences. Signing
+out of yt-rs also disconnects notifications. A revoked or expired sign-in
+returns to the prompt in the bell. Cancelling the Google form closes its
+private session and returns to the prompt without leaving a loading state.
 
-If system Python already provides the requirements, a virtual environment
-is optional. To use another interpreter or browser profile, put these
-optional settings in `plugin-data/notifications.json` under the app's config
-directory:
+## Inbox and badge
 
-```json
-{"python": "/path/to/python", "profile": "/path/to/browser/profile"}
-```
+Requests use the Android YouTube account protocol. The inbox browses
+`FEnotifications_inbox` and reads `inboxNotificationModel` entries inside
+`elementRenderer`. It preserves quoted comments and combines the separate
+headings and bodies, matching the web inbox's English reply/like wording.
+The older `notificationRenderer` format is also supported. Unknown responses
+produce an error rather than a fabricated empty inbox.
 
-Leave `profile` unset for yt-dlp's most recently used profile of the default
-browser. A profile override still uses the detected browser's cookie reader.
-There is no hardcoded preferred browser or fallback to another browser.
+Android rejects the web client's `notification/get_unseen_count` endpoint.
+Its home response instead supplies `updateBrowseTabNewContentAction`, with
+`tabIdentifier=FEnotifications_inbox` and `unseenItemCount`. The badge checks
+this metadata at startup, every three minutes while the window is active,
+and on returning after that interval. A `fields=onResponseReceivedActions`
+filter keeps this request small. It does not browse the notification inbox
+or mark notifications seen. Opening the bell fetches the inbox; YouTube may
+then update its seen state. No browser-name status or subtitle is shown.
 
-## Browser detection and access
+The panel retains the web layout: 480×642 (clamped to smaller windows), the
+outlined bell and gear, six-line messages, 48-pixel avatars, 86×48 thumbnails,
+and Roboto loaded only into the panel's Pango font map. Scrolling to the
+bottom loads the next page. The bundled font is under the
+[SIL Open Font License](fonts/OFL.txt).
 
-- Linux: the default HTTPS handler from Gio, with `xdg-mime` and
-  `xdg-settings` fallbacks.
-- macOS: Launch Services' default HTTPS handler.
-- Windows: the user's HTTPS association and its registered executable.
+Clicking records YouTube's supplied interaction and opens the destination
+through the app's link router. Android's comment-inbox commands use their
+YouTube video thumbnail to identify the video. Comment notifications open
+the video, but do not yet scroll to that comment thread. Supported explicit
+YouTube URLs retain the app's existing routing; community posts can open
+in the browser. Menu actions are sent only when selected. Unrecognized
+actions are omitted. The account-settings link also opens in the browser.
 
-The cookie reader supports Chrome, Chromium, Firefox, Edge, Brave, Vivaldi,
-Opera, Whale and Safari, where yt-dlp supports that browser on the host OS.
-Other browsers get an unsupported-browser notice. The default is checked
-again for each request, so changing it does not require restarting yt-rs.
+## Credentials and lifecycle
 
-Browser encryption may prevent access. Locked keyrings, locked browser
-databases, Safari permissions, and Windows app-bound encryption produce an
-access notice rather than an empty inbox. There is no attempt to bypass
-OS protections. On minimal Linux desktops such as Sway or Hyprland, the
-helper can detect an already running Secret Service or KWallet when yt-dlp
-cannot infer the keyring from the desktop name. Secret Service access needs
-the `SecretStorage` Python dependency in `requirements.txt`.
+Google handles password entry and challenges in an ephemeral, app-owned
+WebKit session. Its one-time `oauth_token` handoff is exchanged for an
+Android account credential. The session is cleared when the handoff arrives
+or the form closes; no browser profile is read. The Android bridge exposes
+only implemented callbacks, so Google does not wait for unsupported native
+capabilities. Accounts requiring Android device attestation or passkeys may
+not complete this sign-in flow.
 
-## Behaviour
+The persistent account credential lives in the system keyring, keyed by the
+yt-rs profile path. It can authorize Google services beyond YouTube, so it
+is never written to plugin JSON, logs, command-line arguments or fixture
+files. Short-lived YouTube access tokens remain in memory. A locked or
+unavailable keyring is an error; there is no plaintext fallback. Local
+sign-out removes the saved credential; Google Account settings control
+remote session revocation.
 
-The inbox belongs to the browser's selected YouTube account, which can
-differ from the account signed into yt-rs. While loading, a centered spinner
-shows “Checking your default browser” and then “Fetching notifications from
-<browser>”. The loaded panel has no browser subtitle. The helper fetches
-YouTube's current web-client configuration and account context, then browses
-`FEnotifications_inbox`, the same feed as the website's bell. The older
-`notification/get_notification_menu` inbox can return a different feed.
+Networking is asynchronous, allows only fixed Google/YouTube endpoints,
+and refuses redirects. Token expiry triggers renewal; an HTTP 401 triggers
+one renewal and retry before returning to sign-in. Generation checks reject
+late callbacks, and sign-out waits for an in-flight keyring save before
+clearing it. `YT_RS_DRY_RUN=1` permits the count metadata read but blocks
+inbox reads and interactions.
 
-The panel follows YouTube's 480×642 layout (clamped to smaller windows),
-with its outlined bell, header, row spacing, six-line messages, 48-pixel
-avatars and 86×48 thumbnails. Scrolling to the bottom loads the next page.
-Roboto is bundled under the [SIL Open Font License](fonts/OFL.txt), from
-[Google Fonts](https://github.com/google/fonts/tree/main/ofl/roboto), and
-loaded into the panel's own Pango font map (Pango 1.56+). The icon paths and
-layout measurements follow youtube.com's notification panel.
-
-The unseen count is checked at startup and every three minutes while the
-window is active, with a check on return after that interval. Opening the
-bell fetches the menu and marks notifications seen, as on youtube.com.
-Clicking records the interaction and uses the app's link router. Video
-notifications, including comment likes and replies, open the video in yt-rs.
-Comment links don't yet scroll to the particular thread. Destinations the
-app doesn't support, such as community posts, open in the browser.
-The gear opens YouTube's notification settings. YouTube's context actions
-are sent only when selected. Sign-out cancels pending work and clears the
-panel; failures have an explicit retry action.
-
-Requests run asynchronously in a bounded child process, one at a time.
-Only unexpired YouTube cookies enter its HTTP cookie jar. Credentials are
-never returned to Lua, saved in plugin storage, or logged. yt-dlp makes a
-temporary database copy while reading it and removes it afterwards. The
-helper refuses HTTP redirects so authorization cannot follow another host.
-`YT_RS_DRY_RUN=1` allows count reads, skips interactions and refuses menu
-reads, since opening the real menu can change the account's seen state.
+Windows/macOS still need embedded-login and keyring adapters. This is an
+unofficial protocol and may need updates when Google changes it.
 
 ## Extension points
 
-These are registered by the plugin, through the same registries as the app:
-
 | Kind | Name | Data |
 |---|---|---|
-| Component | `notifications_button` | The top-bar bell and popover |
+| Component | `notifications_button` | Bell and popover |
 | Component | `notification` | One parsed notification |
 | Command | `notifications.open` | Open the panel |
-| Command | `notifications.refresh` | Refresh the visible panel or the count |
-| Command | `notifications.more` | Fetch the next page |
+| Command | `notifications.sign_in` | Open Google sign-in |
+| Command | `notifications.sign_out` | Clear the notification account |
+| Command | `notifications.settings` | Notification account settings |
+| Command | `notifications.refresh` | Retry/refresh the inbox or badge |
+| Command | `notifications.more` | Load the next page |
 | Command | `notifications.activate` | `{ item }` |
-| Command | `notifications.action` | `{ action }`: a server-provided notification action |
-| Filter | `notifications.page` | `{ items, continuation }`, before each page is displayed |
-| Event | `notifications.loaded` | `{ items, continuation, first }`, all displayed items |
+| Command | `notifications.action` | `{ action }`, a supplied menu action |
+| Filter | `notifications.page` | `{ items, continuation }` |
+| Event | `notifications.loaded` | `{ items, continuation, first }` |
 | Event | `notifications.unseen` | `{ count }` |
 | Event | `notifications.read` | `{ id }` |
-| Event | `notifications.failed` | `{ status, message }`, sanitized and safe to display |
-| Event | `notifications.progress` | `{ message }`, browser detection or fetching progress |
+| Event | `notifications.failed` | `{ status, message }`, sanitized |
+| Event | `notifications.progress` | `{ message }` |
 
-Tests: `python3 -m unittest discover -s tests/plugins -v` and the
-`tests/e2e/notifications` plugin; see the [test guide](../../../tests/e2e/README.md).
-The protocol follows the live web responses, cross-checked against
-[YouTube.js's notifications parser](https://github.com/LuanRT/YouTube.js/blob/main/src/parser/classes/Notification.ts)
-and [yt-dlp's browser cookie reader](https://github.com/yt-dlp/yt-dlp/blob/master/yt_dlp/cookies.py).
+## Verification and references
+
+Live testing on 2026-10-11 loaded 21 real notifications in the actual bell,
+with 21 avatars, thumbnails, menus and native video destinations. A fresh
+process restored the account and renewed access without a login window;
+forced renewal worked too. The filtered count request returned HTTP 200
+with a 561-byte response. No continuation was present in that account's
+response; pagination and destructive menu actions are covered by fixtures.
+
+The [test guide](../../../tests/e2e/README.md) covers the UI and account
+suites. `bash tests/manual/android-notifications.sh` opens the real app and
+bell in an isolated profile. The separate account checker exercises restart
+and renewal and logs only sanitized metadata and counts.
+
+Protocol references (not runtime dependencies):
+
+- [microG Android setup sign-in](https://github.com/microg/GmsCore/blob/master/play-services-core/src/main/java/org/microg/gms/auth/login/LoginActivity.java)
+- [microG account token requests](https://github.com/microg/GmsCore/blob/master/play-services-base/core/src/main/java/org/microg/gms/auth/AuthRequest.java)
+- [Desktop Google Play sign-in bridge](https://github.com/minecraft-linux/playdl-signin-ui-qt)
+- [YouTube.js notification parser](https://github.com/LuanRT/YouTube.js/blob/main/src/parser/classes/Notification.ts)

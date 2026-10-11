@@ -1,5 +1,5 @@
 -- Install beside examples/plugins/notifications, under notifications-test.
--- All requests use a subprocess fixture; no browser/account data is read.
+-- All account and network operations use Lua fixtures.
 local _, DIR = ...
 local Gtk = gi.require("Gtk", "4.0")
 local Gdk = gi.require("Gdk", "4.0")
@@ -8,16 +8,8 @@ ui.image = function(url, width)
   if url and url:find("fixture://", 1, true) == 1 then return Gtk.Picture {} end
   return original_image(url, width)
 end
-local backend = require("notifications.backend")
-local original_request = backend.request
-local mode, signed = "missing", true
-local requests, loaded, unseen, read, opened = {}, nil, nil, nil, nil
-backend.request = function(_, settings, request, done, progress)
-  request.fixture_mode = mode
-  table.insert(requests, request.operation)
-  return original_request(DIR, settings, request, done, progress)
-end
-app.hook("social.signed_in", function() return signed end)
+local fixture = require("notifications-test.fixture")
+local requests, loaded, unseen, read, opened = fixture.requests, nil, nil, nil, nil
 app.api.mpv.set_property("ao", "null")
 app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
@@ -46,24 +38,27 @@ local steps = {
     local icons = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
     check("YouTube icons available", icons:has_icon("notifications-bell-symbolic") and
       icons:has_icon("notifications-settings-symbolic") and icons:has_icon("notifications-more-symbolic"))
-    check("startup polls count only", #requests == 1 and requests[1] == "count")
+    check("signed-out startup sends no notification requests", #requests == 0)
     check("sign-in notice badge", app.find(".notification-badge").label == "!")
     app.run("notifications.open")
   end },
   { 500, function()
     check("sign-in notice inside bell", app.find("notifications-notice") ~= nil)
     app.find("notifications-sign-in"):emit("clicked")
-    check("opens YouTube in default browser", opened == "https://www.youtube.com/")
+    check("sign-in stays in the app", opened == nil and app.find("notifications-login") ~= nil)
     shot("01-sign-in")
+    app.find("notifications-login"):close()
   end },
-  { 100, function()
-    mode = "ok"; app.find("notifications-retry"):emit("clicked")
+  { 500, function()
+    check("cancelling sign-in cleans up and returns to prompt", fixture.closed > 0 and app.find("notifications-sign-in") ~= nil)
+    app.find("notifications-sign-in"):emit("clicked")
+    fixture.complete()
+  end },
+  { 600, function()
+    check("sign-in automatically opens inbox", loaded and #loaded.items == 2)
+    app.run("notifications.refresh")
     check("centered loading view", app.find("notifications-loading"):get_mapped())
-    check("checking browser message", app.find("notifications-loading-message").label == "Checking your default browser")
-    shot("loading-browser")
-  end },
-  { 150, function()
-    check("fetching browser message", app.find("notifications-loading-message").label == "Fetching notifications from Firefox")
+    check("YouTube loading message", app.find("notifications-loading-message").label == "Fetching notifications…")
     local spinner = app.find("notifications-spinner")
     check("visible centered spinner", spinner:get_mapped() and spinner:get_width() == 32 and spinner.halign == "center")
     shot("loading-notifications")
@@ -117,25 +112,25 @@ local steps = {
   { 500, function() app.run("notifications.refresh") end },
   { 500, function()
     check("badge caps at 9+", app.find(".notification-badge").label == "9+")
-    mode = "empty"; app.run("notifications.open")
+    fixture.mode = "empty"; app.run("notifications.open")
   end },
   { 500, function()
     check("empty inbox", loaded and #loaded.items == 0)
     shot("03-empty")
   end },
-  { 100, function() mode = "error"; app.run("notifications.refresh") end },
+  { 100, function() fixture.mode = "error"; app.run("notifications.refresh") end },
   { 500, function()
     check("network error offers retry", app.find("notifications-retry") ~= nil)
     shot("04-error")
-    mode = "slow"; app.run("notifications.refresh")
-    signed = false; app.emit("auth.signed_out")
+    fixture.mode = "slow"; app.run("notifications.refresh")
+    app.emit("auth.signed_out")
   end },
   { 1500, function()
-    check("sign-out hides bell and cancels request", not app.find("notifications-button").visible and not pop().visible)
-    mode = "ok"; signed = true; app.emit("auth.signed_in")
+    check("sign-out clears inbox despite a late response", app.find("notifications-button").visible and not fixture.connected and app.find("notification-upload") == nil)
+    app.run("notifications.sign_in"); fixture.complete()
   end },
   { 500, function()
-    check("sign-in resumes count", app.find("notifications-button").visible and unseen == 12)
+    check("sign-in restores the inbox", fixture.connected and loaded and #loaded.items == 2)
     app.run("notifications.open")
   end },
   { 500, function()
@@ -148,7 +143,7 @@ local steps = {
   end },
   { 600, function()
     check("context action re-reads inbox", requests[#requests] == "menu" and requests[#requests - 1] == "interact")
-    mode = "geometry"; app.run("notifications.refresh")
+    fixture.mode = "geometry"; app.run("notifications.refresh")
   end },
   { 500, function()
     local row = app.find("notification-upload")
@@ -165,6 +160,32 @@ local steps = {
   end },
   { 500, function()
     check("scrolling to bottom fetches continuation", requests[#requests] == "more" and loaded and #loaded.items == 9)
+    fixture.mode = "expired"; app.run("notifications.refresh")
+  end },
+  { 500, function()
+    check("expired sign-in clears rows and offers sign-in", app.find("notifications-sign-in") ~= nil and app.find("notification-upload") == nil)
+    app.run("notifications.sign_in"); fixture.complete()
+  end },
+  { 600, function()
+    app.run("notifications.settings")
+    check("gear offers account settings", app.find("notifications-settings") ~= nil and app.find("notifications-account-action").label == "Sign out of notifications")
+    app.find("notifications-account-action"):emit("clicked")
+  end },
+  { 500, function()
+    app.run("notifications.open")
+    check("account settings disconnect the bell", not fixture.connected and app.find("notifications-sign-in") ~= nil)
+    fixture.locked = true
+    app.run("notifications.sign_out")
+  end },
+  { 100, function()
+    check("failed credential removal offers retry", app.find("notifications-retry") ~= nil)
+    fixture.locked = false
+    fixture.restore_checkpoint, fixture.forget_checkpoint = fixture.restores, fixture.forgets
+    app.find("notifications-retry"):emit("clicked")
+  end },
+  { 100, function()
+    check("sign-out retry removes the credential without reconnecting", fixture.restores == fixture.restore_checkpoint and
+      fixture.forgets == fixture.forget_checkpoint + 1 and app.find("notifications-retry") == nil and not fixture.connected)
     app.log("[notifications]", string.format("SUMMARY %d passed, %d failed", passed, failed))
     app.quit()
   end },

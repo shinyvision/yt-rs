@@ -74,39 +74,35 @@ Install `examples/plugins/notifications` as `plugins/notifications` and
 `tests/e2e/notifications` as `plugins/notifications-test` in a throwaway
 profile, with no token file. Run in a separate headless Sway compositor as
 for other GUI tests, with `YT_RS_DRY_RUN=1` and `G_DEBUG=fatal-criticals`.
-Requests use a subprocess fixture; real Gio process I/O, the UI, link router,
-commands, filter and events are exercised. Playback and browser launch are
-intercepted. It never reads browser cookies or changes a YouTube account.
-It checks the sign-in
-notice, count badge, centered loading progress, panel geometry, pagination,
-deduplication, click recording, native video and comment video navigation,
-timestamps, browser fallback, empty/error states, sign-out cancellation,
-recovery, and context actions. Screenshots use `E2E_SHOTS` as usual.
+Account and network operations use Lua fixtures. The real UI, embedded
+sign-in dialog, link router, commands, filters and events are exercised.
+Playback and external URLs are intercepted. The 45 checks cover sign-in and
+cancellation, count badges, loading, exact panel geometry, pagination,
+deduplication, native video navigation, empty/error states, sign-out during
+an in-flight request, reconnection, and context actions. Screenshots use
+`E2E_SHOTS` as usual.
 
-`python3 -m unittest discover -s tests/plugins -v` checks platform detection,
-cookie isolation, keyring failures, web authentication, parsing and dry-run
-behaviour without real credentials (requires yt-dlp for the mocked reader).
+## Notification account and protocol
 
-## Android notification authentication experiment
-
-Install `examples/plugins/android-notifications` as `plugins/android-notifications`
-and `tests/e2e/android-notifications` as `plugins/android-notifications-test`
+Install `examples/plugins/notifications` as `plugins/notifications` and
+`tests/e2e/android-notifications` as `plugins/notifications-auth-test`
 in a throwaway profile with no TV token. Run under an isolated headless
 compositor with `YT_RS_DRY_RUN=1`, `G_DEBUG=fatal-criticals`, and
-`YT_RS_LOG=warn,plugin=info`. This needs libsecret and libsoup 3. Fixture tests
-cover exchange, renewal, restart, exact messages, pagination and cancellation.
-A real system-keyring test stores a dummy value under that profile's own
-schema attributes, reads it back, and deletes it.
+`YT_RS_LOG=warn,plugin=info`. This needs libsecret and libsoup 3. Fixtures
+exercise exchange, renewal, restart, one retry after HTTP 401, sign-out
+racing a keyring write, count tab selection, message/model parsing,
+pagination, actions, and cancellation. The real keyring test stores a dummy
+value under the test profile's own attributes and deletes it afterward.
 
 With `E2E_LIVE_LOGIN=1`, WebKitGTK 6.0 loads the public Google Android setup
-page in an ephemeral session. The test checks the form and injected bridge,
-and makes one anonymous YouTube request through the real HTTP transport. An
-offline session verifies a path-scoped test handoff and cookie cleanup. It
-never enters credentials, reads the browser profile, or sends a signed-in
-inbox request. This mode currently reports 40 checks passed. Screenshots use
-`E2E_SHOTS`. For the separate interactive account test, run
+page in the actual app's sign-in dialog. The test checks the form and bridge,
+and makes one anonymous YouTube request through the real HTTP transport.
+An offline WebKit session verifies a path-scoped test handoff and cleanup.
+It never enters real credentials, reads a browser profile, or sends a
+signed-in inbox request. This mode reports 58 checks passed. Screenshots use
+`E2E_SHOTS`. For an interactive account test, run
 `bash tests/manual/android-notifications.sh`; see the
-[prototype guide](../../examples/plugins/android-notifications/README.md).
+[plugin guide](../../examples/plugins/notifications/README.md).
 
 ## Downloads
 

@@ -1,97 +1,74 @@
--- Browser access is a child process: keyring/database work and HTTP never
--- block GTK. Only sanitized JSON progress and results cross this boundary.
-local Gio = gi.require("Gio", "2.0")
-local GLib = gi.require("GLib", "2.0")
+-- Notification operations over the plugin's Android account session.
+local P = require("notifications.protocol")
 local M = {}
-
-function M.request(dir, settings, request, done, progress)
-  local browser = Gio.AppInfo.get_default_for_uri_scheme("https")
-  if browser then
-    request.desktop = (browser:get_id() or "") .. " " .. (browser:get_executable() or "")
-  end
-  request.profile = settings.profile
-  local python = settings.python
-  if not python then
-    for _, relative in ipairs({ "/.venv/bin/python", "/.venv/Scripts/python.exe" }) do
-      local path = dir .. relative
-      if Gio.File.new_for_path(path):query_exists(nil) then python = path; break end
-    end
-  end
-  python = python or (package.config:sub(1, 1) == "\\" and "python" or "python3")
-  local flags = Gio.SubprocessFlags
-  local ok, process = pcall(Gio.Subprocess.new,
-    { python, "-I", dir .. "/browser.py" },
-    flags.STDIN_PIPE + flags.STDOUT_PIPE + flags.STDERR_SILENCE)
-  if not ok then
-    done({ status = "dependency_missing", message = "Install Python and yt-dlp to use browser notifications." })
-    return function() end
-  end
-  local settled, timer = false, nil
-  local function finish(result)
-    if settled then return end
-    settled = true
-    if timer then timer:cancel() end
-    done(result)
-  end
-  timer = app.timer(55000, function()
-    timer = nil
-    process:force_exit()
-    finish({ status = "timeout", message = "Your browser or YouTube took too long to respond. Try again." })
+local service
+local function session()
+  if service then return service end
+  local ok, result = pcall(function()
+    return require("notifications.android").new(require("notifications.transport").new(),
+      require("notifications.keyring").new(app.api.paths.config_dir()), app.json, os.time)
   end)
-  local function failed()
-    if settled then return end
-    process:force_exit()
-    finish({ status = "service_error", message = "Couldn't load notifications. Try again." })
-  end
-  local stdout = Gio.DataInputStream.new(process:get_stdout_pipe())
-  local response
-  local function read_line()
-    stdout:read_line_async(0, nil, function(stream, result)
-      local ok, line = pcall(stream.read_line_finish_utf8, stream, result)
-      if settled then return end
-      if not ok then failed(); return end
-      if line == nil then
-        process:wait_check_async(nil, function(p, result)
-          local ok, success = pcall(p.wait_check_finish, p, result)
-          if settled then return end
-          if ok and success and response then finish(response) else failed() end
-        end)
-        return
-      end
-      local decoded, event = pcall(app.json.decode, line)
-      if not decoded or type(event) ~= "table" or type(event.status) ~= "string" then failed(); return end
-      if event.status == "progress" then
-        if progress then progress(event) end
-      else
-        response = event
-      end
-      read_line()
-    end)
-  end
-  read_line()
-  local stdin, payload, offset = process:get_stdin_pipe(), app.json.encode(request), 1
-  local function write()
-    -- Gio owns the GBytes during this async call; a temporary byte buffer
-    -- passed to write_all_async would have to outlive the GI invocation.
-    stdin:write_bytes_async(GLib.Bytes.new(payload:sub(offset)), 0, nil, function(stream, result)
-      local ok, count = pcall(stream.write_bytes_finish, stream, result)
-      if settled then return end
-      if not ok or count == 0 then failed(); return end
-      offset = offset + count
-      if offset <= #payload then write(); return end
-      stream:close_async(0, nil, function(stream, result)
-        local ok = pcall(stream.close_finish, stream, result)
-        if not ok then failed() end
-      end)
-    end)
-  end
-  write()
-  return function()
-    if settled then return end
-    settled = true
-    timer:cancel()
-    process:force_exit()
-  end
+  if not ok then return nil, "Notifications need libsecret and libsoup 3 installed." end
+  service = result
+  return service
 end
-
+function M.restore(done)
+  local account, err = session()
+  if not account then done(false, err, "dependency_missing"); return end
+  account.restore(done)
+end
+function M.connected() return service and service.connected() or false end
+function M.account() return service and service.account() end
+function M.cancel() if service then service.cancel() end end
+function M.sign_in(handoff, done)
+  local account, err = session()
+  if not account then done(false, err, "dependency_missing"); return end
+  account.sign_in(handoff, done)
+end
+function M.forget(done)
+  local account, err = session()
+  if not account then done(false, err); return end
+  account.forget(done)
+end
+function M.request(request, done, progress)
+  local account, err = session()
+  if not account then done({ status = "dependency_missing", message = err }); return function() end end
+  local operation = request.operation
+  assert(operation == "count" or operation == "menu" or operation == "more" or operation == "interact", "Invalid notification operation")
+  if not account.connected() then done({ status = "sign_in_required", message = "Sign in once to see your YouTube notifications here." }); return function() end end
+  if os.getenv("YT_RS_DRY_RUN") == "1" and operation ~= "count" then
+    done({ status = "dry_run", message = "Notification inbox and account changes are disabled in dry-run mode." }); return function() end
+  end
+  local function finish(data, failure, code)
+    done(data or { status = code or "service_error", message = failure })
+  end
+  if progress then progress({ message = operation == "count" and "Checking notifications…" or "Fetching notifications…" }) end
+  if operation == "menu" or operation == "more" then
+    local token
+    if operation == "more" then
+      assert(type(request.action) == "table" and request.action.endpoint == "browse" and
+        type((request.action.body or {}).continuation) == "string", "Invalid notification continuation")
+      token = request.action.body.continuation
+    end
+    account.fetch("ANDROID", token, false, function(page, failure, code)
+      if not page then finish(nil, failure, code); return end
+      finish({ status = "ok", items = page.items,
+        continuation = page.continuation and { endpoint = "browse", body = { continuation = page.continuation } } })
+    end)
+  elseif operation == "count" then
+    account.call("ANDROID", "count", { browseId = "FEwhat_to_watch" }, false, function(data, failure, code)
+      if not data then finish(nil, failure, code); return end
+      local count = P.count(data)
+      if not count then finish(nil, "YouTube didn't return a notification count. Try again."); return end
+      finish({ status = "ok", count = math.max(0, math.floor(count)) })
+    end)
+  else
+    local action = request.action or {}
+    assert(action.endpoint == "notification/record_interactions" or action.endpoint == "notification/modify_channel_preference", "Invalid notification action")
+    account.call("ANDROID", action.endpoint, action.body, false, function(data, failure, code)
+      if data then finish({ status = "ok" }) else finish(nil, failure, code) end
+    end)
+  end
+  return account.cancel
+end
 return M

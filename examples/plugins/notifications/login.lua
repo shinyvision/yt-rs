@@ -1,5 +1,5 @@
 local WebKit = gi.require("WebKit", "6.0")
-local P = require("android-notifications.protocol")
+local P = require("notifications.protocol")
 local M = {}
 
 function M.new(dir, done, status)

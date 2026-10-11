@@ -71,10 +71,10 @@ of it.
   and submitting segments, with lookups that don't say which video plays.
 - **Settings** for playback and the account, plugins' own settings, and the
   keyboard shortcuts (`?`).
-- **Notifications plugin:** the real YouTube inbox, using the sign-in in
-  your default browser, with unread badges, replies and uploads. Missing
-  browser sign-in appears inside the bell. See
-  [installation and supported browsers](examples/plugins/notifications).
+- **Notifications plugin:** the real YouTube inbox, with unread badges,
+  replies, likes and uploads. Sign in once from the bell; the system keyring
+  keeps the account connected across restarts. No browser profile or Python
+  runtime is needed. See [installation](examples/plugins/notifications).
 
 ## Requirements
 

@@ -1,11 +1,11 @@
--- Run as init.lua in a separate test profile containing android-notifications.
+-- Run as init.lua in a separate test profile containing the notifications modules (without init.lua).
 -- ANDROID_PROBE_PROFILE selects the existing prototype's keyring entry.
 -- Never prints credentials, notification text, URLs, or raw server responses.
 local profile = assert(os.getenv("ANDROID_PROBE_PROFILE"), "Set ANDROID_PROBE_PROFILE")
 assert(os.getenv("YT_RS_DRY_RUN") ~= "1", "Live inbox checks are disabled in dry-run mode")
-local transport = require("android-notifications.transport").new()
-local keyring = require("android-notifications.keyring").new(profile)
-local P = require("android-notifications.protocol")
+local transport = require("notifications.transport").new()
+local keyring = require("notifications.keyring").new(profile)
+local P = require("notifications.protocol")
 local function report(...)
   app.log("[android-account-check]", ...)
 end
@@ -38,7 +38,7 @@ local function http(url, kind, body, headers, done)
     done(response, err)
   end)
 end
-local backend = require("android-notifications.backend").new(http, keyring, app.json, os.time)
+local backend = require("notifications.android").new(http, keyring, app.json, os.time)
 app.on("app.ready", function()
   app.api.mpv.set_property("ao", "null")
   app.api.mpv.set_property("mute", "yes")

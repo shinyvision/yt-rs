@@ -1,4 +1,4 @@
--- Linux proof of concept. An unavailable/locked keyring is an error, never a
+-- An unavailable/locked keyring is an error, never a
 -- reason to fall back to a plaintext plugin-data file.
 local Secret = gi.require("Secret", "1")
 local M = {}
@@ -14,7 +14,7 @@ function M.new(profile)
       end)
     end,
     write = function(value, done)
-      Secret.password_store(schema, attributes, nil, "yt-rs Android notifications", value, nil, function(_, result)
+      Secret.password_store(schema, attributes, nil, "yt-rs YouTube notifications", value, nil, function(_, result)
         local ok, stored = pcall(Secret.password_store_finish, result)
         if ok and stored then done(true) else done(false, "Couldn't save the account in the system keyring.") end
       end)
