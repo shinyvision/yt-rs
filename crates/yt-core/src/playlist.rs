@@ -130,6 +130,7 @@ fn thumbnail(thumbnails: Option<&Value>) -> Option<String> {
 }
 
 /// Reads a playlist's page (a `VL<id>` browse).
+#[yt_export::export("playlist")]
 pub fn parse_page(resp: &Value, playlist_id: &str) -> PlaylistPage {
     let mut page = PlaylistPage {
         playlist: Playlist {
@@ -179,12 +180,14 @@ pub fn parse_page(resp: &Value, playlist_id: &str) -> PlaylistPage {
 }
 
 /// More of a playlist's videos, from a page's `continuation`.
+#[yt_export::export("playlist")]
 pub fn parse_more(resp: &Value) -> FeedPage {
     feed::parse(resp)
 }
 
 /// The user's playlists to save a video to
 /// (`playlist/get_add_to_playlist`).
+#[yt_export::export("playlist")]
 pub fn parse_save_options(resp: &Value) -> Vec<SaveOption> {
     let mut options = Vec::new();
     collect(resp, "playlistAddToOptionRenderer", &mut |o| {

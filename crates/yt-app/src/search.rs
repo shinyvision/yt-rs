@@ -26,7 +26,9 @@ pub struct SearchHistory {
     file: PathBuf,
 }
 
+#[yt_export::export("search_history")]
 impl SearchHistory {
+    #[export(skip = "makes the service")]
     pub fn load() -> Rc<Self> {
         let file = yt_core::paths::config_dir().join("search_history.json");
         let queries = std::fs::read(&file)
@@ -91,6 +93,7 @@ impl SearchHistory {
     }
 }
 
+#[yt_export::export(skip = "registers the built-in commands")]
 pub fn register(this: &Rc<App>) {
     let c = &this.ext.commands;
     // { query, filters?, chip?, chips? }: `chip` is a chip's token, `chips`
@@ -177,6 +180,7 @@ pub fn register(this: &Rc<App>) {
 }
 
 /// The first page of results for a query.
+#[yt_export::export("search", local)]
 pub async fn fetch(
     query: &str,
     filters: &SearchFilters,
@@ -190,6 +194,7 @@ pub async fn fetch(
 }
 
 /// The page after the one `next` came with.
+#[yt_export::export("search", local)]
 pub async fn fetch_more(next: &SearchContinuation) -> Result<SearchPage, String> {
     let next = next.clone();
     let youtube = app().youtube.clone();
@@ -201,6 +206,7 @@ pub async fn fetch_more(next: &SearchContinuation) -> Result<SearchPage, String>
 /// Runs a page of results through the `search.page` filter, so plugins can
 /// change it, and announces it as `search.loaded`. `first` tells the first
 /// page from the ones loaded while scrolling.
+#[yt_export::export(skip = "fills a page in place, for the search.page filter")]
 pub fn publish(query: &str, first: bool, page: &mut SearchPage) {
     let app = app();
     let context = json!({ "query": query, "first": first });

@@ -28,6 +28,7 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
     let app_table = lua.create_table()?;
     install_registries(lua, &app_table)?;
     install_services(lua, &app_table)?;
+    super::hooks::install(lua, &app_table)?;
     lua.globals().set("app", app_table)?;
     lua.globals().set("ui", ui_table(lua)?)?;
     lua.load(include_str!("prelude.lua"))

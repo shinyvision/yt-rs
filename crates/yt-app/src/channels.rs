@@ -33,7 +33,9 @@ pub struct ChannelDirectory {
     running: Cell<usize>,
 }
 
+#[yt_export::export("channels")]
 impl ChannelDirectory {
+    #[export(skip = "makes the service")]
     pub fn load() -> Rc<Self> {
         let file = yt_core::paths::cache_dir().join("channels.json");
         let saved: Vec<ChannelRef> = std::fs::read(&file)

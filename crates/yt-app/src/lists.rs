@@ -20,7 +20,7 @@ use crate::{playback, runtime};
 /// Loads more of the playlist when this few videos are left.
 const LOAD_MORE_WITHIN: usize = 3;
 
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, serde::Deserialize)]
 pub struct List {
     /// The playlist's ID; `None` for the queue.
     pub playlist_id: Option<String>,
@@ -63,16 +63,19 @@ thread_local! {
     static STARTING: RefCell<Option<String>> = const { RefCell::new(None) };
 }
 
+#[yt_export::export("list")]
 pub fn current() -> Option<List> {
     LIST.with(|l| l.borrow().clone())
 }
 
 /// Whether a list is playing.
+#[yt_export::export("list")]
 pub fn playing() -> bool {
     LIST.with(|l| l.borrow().is_some())
 }
 
 /// The list's next video, if there is one.
+#[yt_export::export("list")]
 pub fn next_video() -> Option<Video> {
     LIST.with(|l| {
         let list = l.borrow();
@@ -93,6 +96,7 @@ enum Show {
 }
 
 /// Plays the list's next video, where the player is; an error at its end.
+#[yt_export::export("list")]
 pub fn next() -> Result<(), String> {
     let next = LIST.with(|l| {
         let list = l.borrow();
@@ -107,6 +111,7 @@ pub fn next() -> Result<(), String> {
 
 /// Plays the list's previous video (the first again, at the start), where
 /// the player is.
+#[yt_export::export("list")]
 pub fn previous() -> Result<(), String> {
     let position = LIST
         .with(|l| l.borrow().as_ref().map(|list| list.position))
@@ -115,6 +120,7 @@ pub fn previous() -> Result<(), String> {
 }
 
 /// Plays the video at `position` in the list's order, on the watch page.
+#[yt_export::export("list")]
 pub fn play_at(position: usize) -> Result<(), String> {
     start(position, Show::Watch)
 }
@@ -139,6 +145,7 @@ fn start(position: usize, show: Show) -> Result<(), String> {
 }
 
 /// Called as any video starts: leaves the list unless it is the list's.
+#[yt_export::export("list")]
 pub fn started(video_id: &str) {
     let ours = STARTING.with(|s| s.borrow_mut().take()).as_deref() == Some(video_id);
     if ours || !playing() {
@@ -155,12 +162,14 @@ pub fn started(video_id: &str) {
     }
 }
 
+#[yt_export::export("list")]
 pub fn clear() {
     if LIST.with(|l| l.borrow_mut().take()).is_some() {
         changed();
     }
 }
 
+#[yt_export::export("list")]
 pub fn set_looping(looping: bool) {
     LIST.with(|l| {
         if let Some(list) = l.borrow_mut().as_mut() {
@@ -172,6 +181,7 @@ pub fn set_looping(looping: bool) {
 
 /// Shuffles what is left of the list (the current video stays where it
 /// is), or puts it back in order.
+#[yt_export::export("list")]
 pub fn set_shuffled(shuffled: bool) {
     LIST.with(|l| {
         let mut list = l.borrow_mut();
@@ -196,6 +206,7 @@ pub fn set_shuffled(shuffled: bool) {
 
 /// Plays a playlist: from the video at `index` (in the playlist's order),
 /// or from the start, or shuffled.
+#[yt_export::export("list")]
 pub fn play_playlist(playlist_id: &str, index: Option<usize>, shuffled: bool) {
     let id = playlist_id.to_owned();
     runtime::spawn_local(async move {
@@ -234,6 +245,7 @@ pub fn play_playlist(playlist_id: &str, index: Option<usize>, shuffled: bool) {
 
 /// Adds a video to the queue: the queue starts with the video playing (if
 /// one is, outside a queue), and if nothing plays, the video plays.
+#[yt_export::export("list")]
 pub fn add_to_queue(video: Video) {
     let in_queue = LIST.with(|l| {
         let mut list = l.borrow_mut();
@@ -279,6 +291,7 @@ pub fn add_to_queue(video: Video) {
 }
 
 /// Takes the video at `position` (in the order) out of the queue.
+#[yt_export::export("list")]
 pub fn remove(position: usize) {
     LIST.with(|l| {
         let mut list = l.borrow_mut();

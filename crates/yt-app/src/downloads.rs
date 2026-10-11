@@ -38,6 +38,7 @@ fn with_index<T>(f: impl FnOnce(&mut Index) -> T) -> T {
     INDEX.with(|i| f(i.borrow_mut().get_or_insert_with(Index::load)))
 }
 
+#[yt_export::export(skip = "registers the built-in commands")]
 pub fn register(this: &std::rc::Rc<App>) {
     let c = &this.ext.commands;
     c.register("download.start", |args| {
@@ -81,19 +82,23 @@ pub fn register(this: &std::rc::Rc<App>) {
     });
 }
 
+#[yt_export::export("downloads")]
 pub fn list() -> Vec<Download> {
     with_index(|i| i.downloads.clone())
 }
 
+#[yt_export::export("downloads")]
 pub fn get(video_id: &str) -> Option<Download> {
     with_index(|i| i.get(video_id).cloned())
 }
 
+#[yt_export::export("downloads")]
 pub fn is_running(video_id: &str) -> bool {
     RUNNING.with(|r| r.borrow().contains_key(video_id))
 }
 
 /// A downloaded video's streams: its files.
+#[yt_export::export("downloads")]
 pub fn stream_set(video_id: &str) -> Option<StreamSet> {
     let download = get(video_id).filter(|d| d.complete)?;
     let path = |p: std::path::PathBuf| p.to_string_lossy().into_owned();

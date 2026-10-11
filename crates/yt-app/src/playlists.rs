@@ -21,6 +21,7 @@ use crate::commands::str_arg;
 use crate::social::needs_account;
 use crate::social::{app_youtube, outcome, run};
 
+#[yt_export::export(skip = "registers the built-in commands")]
 pub fn register(this: &Rc<App>) {
     let c = &this.ext.commands;
     c.register("playlist.open", |args| {

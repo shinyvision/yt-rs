@@ -11,6 +11,7 @@ fn dirs() -> Option<directories::ProjectDirs> {
 }
 
 /// Settings, the saved sign-in and plugins (`~/.config/yt-rs`).
+#[yt_export::export("paths")]
 pub fn config_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("YT_RS_CONFIG_DIR") {
         return dir.into();
@@ -21,6 +22,7 @@ pub fn config_dir() -> PathBuf {
 }
 
 /// Disposable data such as thumbnails (`~/.cache/yt-rs`).
+#[yt_export::export("paths")]
 pub fn cache_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("YT_RS_CACHE_DIR") {
         return dir.into();
@@ -33,6 +35,7 @@ pub fn cache_dir() -> PathBuf {
 /// What the user keeps, such as downloaded videos (`~/.local/share/yt-rs`).
 /// A profile of its own (`YT_RS_CONFIG_DIR`) keeps its own, in its `data`
 /// directory, unless `YT_RS_DATA_DIR` says where.
+#[yt_export::export("paths")]
 pub fn data_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("YT_RS_DATA_DIR") {
         return dir.into();
@@ -45,18 +48,22 @@ pub fn data_dir() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(".yt-rs-data"))
 }
 
+#[yt_export::export("paths")]
 pub fn downloads_dir() -> PathBuf {
     data_dir().join("downloads")
 }
 
+#[yt_export::export("paths")]
 pub fn token_file() -> PathBuf {
     config_dir().join("token.json")
 }
 
+#[yt_export::export("paths")]
 pub fn plugins_dir() -> PathBuf {
     config_dir().join("plugins")
 }
 
+#[yt_export::export("paths")]
 pub fn init_lua() -> PathBuf {
     config_dir().join("init.lua")
 }

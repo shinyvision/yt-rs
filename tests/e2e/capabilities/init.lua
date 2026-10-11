@@ -286,6 +286,127 @@ check("clear errors for wrong arguments", function()
   yes(ok or tostring(err):find("argument"), "too many arguments are reported: " .. tostring(err))
 end)
 
+-- The app itself: every service function, callable and hookable -------
+
+check("the app's functions are listed, with what they take", function()
+  local found
+  for _, f in ipairs(app.functions()) do
+    if f.name == "youtube.browse" then found = f end
+  end
+  yes(found, "youtube.browse is listed")
+  eq(found.params[1].name, "browse_id", "parameter name")
+  eq(found.async, true, "async")
+end)
+
+check("call any app function", function(done)
+  app.api.youtube.suggestions("hello", function(list, err)
+    if err then return done(err) end
+    if type(list) == "table" and #list > 0 then done() else done("no suggestions") end
+  end)
+  return "async"
+end)
+
+check("hook an app function: change its arguments and result", function(done)
+  local id = app.hook("youtube.suggestions", function(args, next)
+    args.query = args.query .. " world"
+    local list = next(args)
+    table.insert(list, 1, { text = "from a plugin" })
+    return list
+  end)
+  app.api.youtube.suggestions("hello", function(list, err)
+    app.unhook(id)
+    if err then return done(err) end
+    if list[1].text ~= "from a plugin" then return done("first: " .. tostring(list[1].text)) end
+    done()
+  end)
+  return "async"
+end)
+
+check("hooks see the app's own calls", function(done)
+  local hooked = 0
+  local id = app.hook("youtube.browse", function(args, next)
+    hooked = hooked + 1
+    local page = next(args)
+    page.shelves = page.shelves or {}
+    table.insert(page.shelves, 1, { title = "From a plugin", videos = {} })
+    return page
+  end)
+  local seen
+  seen = app.on("feed.loaded", function(e)
+    app.off(seen)
+    app.unhook(id)
+    local first = e.page.shelves and e.page.shelves[1]
+    if hooked > 0 and first and first.title == "From a plugin" then
+      done()
+    else
+      done(string.format("hooked %d times; first shelf %s", hooked, tostring(first and first.title)))
+    end
+  end)
+  app.run("feed.refresh")
+  return "async"
+end)
+
+check("a hook can replace a function entirely", function(done)
+  local id = app.hook("youtube.suggestions", function(args) return { { text = "only this" } } end)
+  app.api.youtube.suggestions("anything", function(list, err)
+    app.unhook(id)
+    if err then return done(err) end
+    if #list == 1 and list[1].text == "only this" then done() else done("got " .. #list) end
+  end)
+  return "async"
+end)
+
+check("a hook's error reaches the caller", function(done)
+  local id = app.hook("youtube.suggestions", function() error("blocked by a plugin") end)
+  app.api.youtube.suggestions("x", function(list, err)
+    app.unhook(id)
+    if err and err:find("blocked by a plugin") then done() else done("err: " .. tostring(err)) end
+  end)
+  return "async"
+end)
+
+check("hook a main-thread function", function()
+  local before = app.api.settings.get().autoplay
+  local id = app.hook("settings.get", function(args, next)
+    local settings = next(args)
+    settings.autoplay = not settings.autoplay
+    return settings
+  end)
+  local ok, settings = pcall(app.api.settings.get)
+  app.unhook(id)
+  yes(ok, "settings.get: " .. tostring(settings))
+  eq(settings.autoplay, not before, "hooked result")
+  eq(app.api.settings.get().autoplay, before, "unhooked again")
+end)
+
+check("change which streams play", function(done)
+  local id = app.hook("streams.resolve", function(args, next)
+    local set = next(args)
+    -- The smallest quality instead of the best.
+    local smallest = set.video
+    for _, q in ipairs(set.qualities or {}) do
+      if q.height and smallest.height and q.height < smallest.height then smallest = q end
+    end
+    set.video = smallest
+    return set
+  end)
+  app.api.streams.resolve("jNQXAC9IVRw", function(set, err)
+    app.unhook(id)
+    if err then return done(err) end
+    local heights = {}
+    for _, q in ipairs(set.qualities or {}) do table.insert(heights, q.height or 0) end
+    table.sort(heights)
+    if set.video.height == heights[1] then done() else done("height " .. tostring(set.video.height)) end
+  end)
+  return "async"
+end)
+
+check("every service function is there", function()
+  local n = #app.functions()
+  log("exported functions: " .. n)
+  yes(n > 200, "only " .. n)
+end)
+
 -- Runner ------------------------------------------------------------------
 
 local passed, failed = 0, 0

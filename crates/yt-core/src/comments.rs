@@ -97,6 +97,7 @@ pub struct CommentThread {
 }
 
 /// Reads a page of comments (`next` with a comments token).
+#[yt_export::export("comments")]
 pub fn parse_page(resp: &Value, video_id: &str) -> CommentsPage {
     let section = section(resp);
     CommentsPage {
@@ -110,6 +111,7 @@ pub fn parse_page(resp: &Value, video_id: &str) -> CommentsPage {
 
 /// Reads a thread (`next` with a comment's `thread` token, or the `next`
 /// token of a previous replies page).
+#[yt_export::export("comments")]
 pub fn parse_thread(resp: &Value, video_id: &str) -> CommentThread {
     let section = section(resp);
     let mut thread = CommentThread::default();
@@ -129,6 +131,7 @@ pub fn parse_thread(resp: &Value, video_id: &str) -> CommentThread {
 ///
 /// The response also holds placeholder renderers (a reply's comes before
 /// the reply itself), so this takes the one with the most of a comment.
+#[yt_export::export("comments")]
 pub fn parse_created(resp: &Value, video_id: &str) -> Result<Comment> {
     check_result(resp)?;
     let filled = |c: &Value| {
@@ -157,6 +160,7 @@ pub fn parse_created(resp: &Value, video_id: &str) -> Result<Comment> {
 }
 
 /// Fails if an action's response reports a failure (they come with status 200).
+#[yt_export::export("comments")]
 pub fn check_result(resp: &Value) -> Result<()> {
     let mut failure = None;
     collect(resp, "actionResult", &mut |r| {
@@ -179,6 +183,7 @@ pub fn check_result(resp: &Value) -> Result<()> {
 }
 
 /// `params` for posting a top-level comment on a video.
+#[yt_export::export("comments")]
 pub fn create_params(video_id: &str) -> String {
     Message::new()
         .string(2, video_id)
@@ -188,6 +193,7 @@ pub fn create_params(video_id: &str) -> String {
 }
 
 /// `params` for replying to a top-level comment.
+#[yt_export::export("comments")]
 pub fn reply_params(video_id: &str, parent_id: &str) -> String {
     Message::new()
         .string(2, video_id)
@@ -198,6 +204,7 @@ pub fn reply_params(video_id: &str, parent_id: &str) -> String {
 }
 
 /// The action token that deletes one of the user's own comments or replies.
+#[yt_export::export("comments")]
 pub fn delete_action(video_id: &str, comment_id: &str) -> String {
     Message::new()
         .varint(1, 6)

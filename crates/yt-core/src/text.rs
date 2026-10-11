@@ -53,6 +53,7 @@ pub enum Link {
 
 /// What a YouTube link points at: a video (and a moment in it), a
 /// playlist, a channel or a search. `None` for other links.
+#[yt_export::export("text")]
 pub fn parse_url(url: &str) -> Option<Link> {
     let parsed = url::Url::parse(url.trim()).ok()?;
     let host = parsed
@@ -380,6 +381,7 @@ fn linkify(text: &str, bold: bool, italic: bool, video_id: Option<&str>, out: &m
 }
 
 /// "1:02:03" or "2:03" in seconds.
+#[yt_export::export("text")]
 pub fn parse_timestamp(text: &str) -> Option<f64> {
     text.split(':').try_fold(0.0, |total, part| {
         Some(total * 60.0 + part.parse::<f64>().ok()?)

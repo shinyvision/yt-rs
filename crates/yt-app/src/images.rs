@@ -46,7 +46,9 @@ pub struct Images {
     loading: RefCell<HashMap<String, Vec<Waiter>>>,
 }
 
+#[yt_export::export("images")]
 impl Images {
+    #[export(skip = "makes the service")]
     pub fn new(http: reqwest::Client, dir: PathBuf) -> Rc<Self> {
         let _ = std::fs::create_dir_all(&dir);
         let prune_dir = dir.clone();
@@ -66,6 +68,7 @@ impl Images {
     /// (0 for full size). If the picture is given another URL before this
     /// one finishes loading, the late result is dropped, so reused list
     /// items never flash the wrong image.
+    #[export(skip = "fills a widget (plugins use ui.image)")]
     pub fn load_into(self: &Rc<Self>, picture: &gtk::Picture, url: Option<&str>, width: i32) {
         let key = url.map(|u| cache_key(u, width));
         // SAFETY: this key only ever holds an Option<String>.
@@ -111,6 +114,7 @@ impl Images {
 
     /// Loads an image and passes the texture (or `None` on failure) to
     /// `done` on the main thread.
+    #[export(skip = "takes a closure")]
     pub fn texture_then(self: &Rc<Self>, url: &str, width: i32, done: Waiter) {
         let key = cache_key(url, width);
         if let Some(texture) = self.cached(&key) {

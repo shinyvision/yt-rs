@@ -30,6 +30,9 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error("{0}")]
     Streams(String),
+    /// From a plugin hooking a call.
+    #[error("{0}")]
+    Plugin(String),
     /// YouTube won't play the video (now): `reason` is its own wording.
     #[error("{reason}")]
     Unplayable {
@@ -56,6 +59,12 @@ pub enum Unplayable {
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
+
+impl yt_export::HookError for Error {
+    fn hook_error(message: String) -> Self {
+        Error::Plugin(message)
+    }
+}
 
 /// An error reported by Google's OAuth endpoints, such as
 /// `authorization_pending` or `invalid_grant`.

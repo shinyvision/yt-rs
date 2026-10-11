@@ -29,7 +29,9 @@ pub struct WatchTracker {
     enabled: std::cell::Cell<bool>,
 }
 
+#[yt_export::export("tracker", local)]
 impl WatchTracker {
+    #[export(skip = "makes the service")]
     pub fn new(youtube: Arc<InnerTube>, _http: reqwest::Client) -> Rc<Self> {
         Rc::new(Self {
             youtube,
@@ -84,6 +86,7 @@ impl WatchTracker {
     }
 
     /// Follows the player's events.
+    #[export(skip = "connects to the player")]
     pub fn attach(self: &Rc<Self>, player: &Player) {
         let this = Rc::downgrade(self);
         player.connect(move |event, state| {

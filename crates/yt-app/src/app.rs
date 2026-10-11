@@ -38,11 +38,13 @@ thread_local! {
 
 /// The running app. Panics if called before [`App::start`] or off the main
 /// thread.
+#[yt_export::export(skip = "the app itself (its functions are exported)")]
 pub fn app() -> Rc<App> {
     APP.with(|a| a.get().expect("the app has not started").clone())
 }
 
 /// The running app, or `None` before it starts or while it is torn down.
+#[yt_export::export(skip = "the app itself (its functions are exported)")]
 pub fn try_app() -> Option<Rc<App>> {
     APP.try_with(|a| a.get().cloned()).ok().flatten()
 }
@@ -81,7 +83,26 @@ struct NavState {
     built: Vec<(String, glib::WeakRef<gtk::Widget>)>,
 }
 
+/// Where the exported services' instances are, for calls from plugins
+/// (see `yt-export`).
+fn provide_services() {
+    yt_export::provide_rc::<App>(try_app);
+    yt_export::provide_arc::<InnerTube>(|| try_app().map(|a| a.youtube.clone()));
+    yt_export::provide_arc::<Resolver>(|| try_app().map(|a| a.streams.clone()));
+    yt_export::provide_arc::<Session>(|| try_app().map(|a| a.session.clone()));
+    yt_export::provide_arc::<OAuth>(|| try_app().map(|a| Arc::new(a.session.oauth().clone())));
+    yt_export::provide_rc::<Player>(|| try_app().map(|a| a.player.clone()));
+    yt_export::provide_arc::<crate::player::mpv::Mpv>(|| try_app().map(|a| a.player.mpv().clone()));
+    yt_export::provide_rc::<WatchTracker>(|| try_app().map(|a| a.tracker.clone()));
+    yt_export::provide_rc::<ChannelDirectory>(|| try_app().map(|a| a.channels.clone()));
+    yt_export::provide_rc::<SettingsStore>(|| try_app().map(|a| a.settings.clone()));
+    yt_export::provide_rc::<SearchHistory>(|| try_app().map(|a| a.search_history.clone()));
+    yt_export::provide_rc::<Images>(|| try_app().map(|a| a.images.clone()));
+}
+
+#[yt_export::export("app")]
 impl App {
+    #[export(skip = "starts the app")]
     pub fn start(gtk_app: &adw::Application) -> anyhow::Result<()> {
         let t = std::time::Instant::now();
         let step = |name: &str| tracing::debug!(target: "startup", "{name}: {:?}", t.elapsed());
@@ -137,6 +158,7 @@ impl App {
         });
         APP.with(|a| a.set(app.clone()))
             .map_err(|_| anyhow::anyhow!("the app was started twice"))?;
+        provide_services();
 
         step("app");
         adw::StyleManager::default().set_color_scheme(adw::ColorScheme::ForceDark);
@@ -223,16 +245,19 @@ impl App {
         self.channels.refresh();
     }
 
+    #[export(skip = "a widget (plugins have app.window())")]
     pub fn window(&self) -> Option<adw::ApplicationWindow> {
         self.window.get().cloned()
     }
 
+    #[export(skip = "a reference into the app (plugins are listed by app.plugins)")]
     pub fn plugins(&self) -> Option<&PluginHost> {
         self.plugins.get()
     }
 
     /// The container pages are shown in. A replacement `shell` component
     /// must put this somewhere in its layout.
+    #[export(skip = "a widget (plugins have app.page_host())")]
     pub fn page_host(&self) -> gtk::Stack {
         self.page_host.clone()
     }
@@ -499,6 +524,7 @@ impl App {
 
 /// Runs when the app quits: sends the last watch-time report, waiting for
 /// it briefly since the main loop has stopped.
+#[yt_export::export(skip = "the app's last step at exit (plugins quit with app.quit)")]
 pub fn shutdown() {
     let started = APP.with(|a| a.get().cloned());
     if let Some(app) = started {

@@ -80,6 +80,7 @@ impl CommentsEntry {
     }
 }
 
+#[yt_export::export("watch")]
 pub fn parse(resp: &Value, video_id: &str) -> WatchPage {
     let mut page = WatchPage {
         video_id: video_id.to_owned(),

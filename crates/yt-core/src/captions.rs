@@ -66,6 +66,7 @@ impl Line {
 }
 
 /// Downloads a caption track and returns it as SRT.
+#[yt_export::export(skip = "takes the HTTP client (youtube and app.http fetch)")]
 pub async fn fetch(http: &reqwest::Client, url: &str) -> Result<String> {
     let body = http
         .get(url)
@@ -80,6 +81,7 @@ pub async fn fetch(http: &reqwest::Client, url: &str) -> Result<String> {
 /// Converts a json3 caption track to SRT, one cue per moment the text on
 /// screen changes. Events without text (YouTube's window and style setup,
 /// line breaks of their own) are left out.
+#[yt_export::export("captions")]
 pub fn json3_to_srt(json: &str) -> serde_json::Result<String> {
     let track: Track = serde_json::from_str(json)?;
     let mut lines: Vec<Line> = track

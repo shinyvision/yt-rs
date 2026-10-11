@@ -66,6 +66,7 @@ struct Job {
     reply: oneshot::Sender<Result<Solutions>>,
 }
 
+#[yt_export::export(skip = "the stream resolver's own (plugins hook streams.*)")]
 impl Solver {
     /// Keeps preprocessed players in `dir`. The JS engine starts with the
     /// first job.

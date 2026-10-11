@@ -73,12 +73,15 @@ pub struct OAuth {
     revoke_url: String,
 }
 
+#[yt_export::export("oauth")]
 impl OAuth {
+    #[export(skip = "makes the service")]
     pub fn new(http: reqwest::Client) -> Self {
         Self::with_endpoints(http, OAUTH_URL, REVOKE_URL)
     }
 
     /// Uses other endpoints, for tests.
+    #[export(skip = "makes the service")]
     pub fn with_endpoints(http: reqwest::Client, base: &str, revoke_url: &str) -> Self {
         Self {
             http,
@@ -220,8 +223,10 @@ pub struct Session {
     token: Mutex<Option<Token>>,
 }
 
+#[yt_export::export("session")]
 impl Session {
     /// Loads the sign-in saved at `path`, if there is one.
+    #[export(skip = "makes the service")]
     pub fn load(oauth: OAuth, path: PathBuf) -> Self {
         let token = read_token(&path).ok();
         Self {
@@ -231,6 +236,7 @@ impl Session {
         }
     }
 
+    #[export(skip = "a reference into the service (OAuth is exported itself)")]
     pub fn oauth(&self) -> &OAuth {
         &self.oauth
     }
@@ -283,7 +289,7 @@ impl Session {
     }
 }
 
-pub fn read_token(path: &Path) -> Result<Token> {
+pub(crate) fn read_token(path: &Path) -> Result<Token> {
     let token: Token = serde_json::from_slice(&std::fs::read(path)?)?;
     if token.refresh_token.is_empty() {
         return Err(Error::NotSignedIn);
@@ -292,7 +298,7 @@ pub fn read_token(path: &Path) -> Result<Token> {
 }
 
 /// Writes the token atomically, readable only by the current user.
-pub fn write_token(path: &Path, token: &Token) -> Result<()> {
+pub(crate) fn write_token(path: &Path, token: &Token) -> Result<()> {
     use std::io::Write;
     use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
 

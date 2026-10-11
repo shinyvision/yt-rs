@@ -8,6 +8,7 @@
 //! Everything goes through the app's commands, so the controls do what the
 //! player's buttons do.
 
+#[yt_export::export(skip = "sets the app up")]
 pub fn init() {
     #[cfg(target_os = "linux")]
     mpris::start();

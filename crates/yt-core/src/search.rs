@@ -317,7 +317,7 @@ pub struct Suggestion {
 
 /// What the TV client returned: the main results, and the shelves after
 /// them.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct TvResults {
     pub items: Vec<SearchItem>,
     pub shelves: Vec<SearchShelf>,
@@ -327,6 +327,7 @@ pub struct TvResults {
 
 /// Reads a TV search response or continuation: shelves of lockups, the
 /// first ("Search results for ...") holding the main results.
+#[yt_export::export("search_results")]
 pub fn parse_tv(resp: &Value) -> TvResults {
     let mut results = TvResults {
         estimated_results: resp
@@ -466,7 +467,7 @@ fn absolute(url: &str) -> String {
 // The web client's results
 
 /// What the anonymous web client adds, by video ID.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct WebResults {
     pub videos: HashMap<String, SearchVideo>,
     /// Every result in order: videos and channels (used when the TV client
@@ -479,6 +480,7 @@ pub struct WebResults {
     pub next: Option<String>,
 }
 
+#[yt_export::export("search_results")]
 pub fn parse_web(resp: &Value) -> WebResults {
     let mut results = WebResults::default();
     let mut seen_video = false;
@@ -704,6 +706,7 @@ const SHELF_EVERY: usize = 6;
 /// results come first, with the web client's details for each video; the
 /// web client's top channel leads, as on youtube.com. Without TV results,
 /// the web client's are shown as they are.
+#[yt_export::export("search_results")]
 pub fn merge(tv: Option<TvResults>, web: Option<WebResults>) -> SearchPage {
     let web = web.unwrap_or_default();
     let Some(tv) = tv else {
@@ -806,6 +809,7 @@ pub fn merge(tv: Option<TvResults>, web: Option<WebResults>) -> SearchPage {
 
 /// Reads the suggestion endpoint's reply,
 /// `window.google.ac.h(["query", [["suggestion", 0, [...], {...}], ...]])`.
+#[yt_export::export("search_results")]
 pub fn parse_suggestions(body: &str) -> Vec<Suggestion> {
     let json = body
         .find('(')

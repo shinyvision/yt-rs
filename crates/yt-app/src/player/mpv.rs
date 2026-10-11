@@ -135,6 +135,12 @@ pub(crate) mod ffi {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MpvError(pub String);
 
+impl yt_export::HookError for MpvError {
+    fn hook_error(message: String) -> Self {
+        MpvError(message)
+    }
+}
+
 impl std::fmt::Display for MpvError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(&self.0)
@@ -227,9 +233,11 @@ pub struct Mpv {
 unsafe impl Send for Mpv {}
 unsafe impl Sync for Mpv {}
 
+#[yt_export::export("mpv")]
 impl Mpv {
     /// Creates an uninitialized instance; set options, then call
     /// [`Mpv::initialize`].
+    #[export(skip = "makes the service")]
     pub fn create() -> Result<Self, MpvError> {
         // mpv parses numbers with "." and refuses to start under a locale
         // that formats them differently. GTK applies the user's locale at
@@ -253,6 +261,7 @@ impl Mpv {
         })
     }
 
+    #[export(skip = "a C pointer (LuaJIT's FFI can take mpv's own API from the player)")]
     pub fn raw(&self) -> *mut ffi::mpv_handle {
         self.handle.as_ptr()
     }
@@ -267,6 +276,7 @@ impl Mpv {
 
     /// Lets mpv open `protocol://...` URLs through `open`, which fills in
     /// the stream's read functions.
+    #[export(skip = "takes C callbacks")]
     pub fn add_stream_protocol(
         &self,
         protocol: &str,
@@ -354,6 +364,7 @@ impl Mpv {
         Some(s)
     }
 
+    #[export(skip = "the player observes properties; it has the events")]
     pub fn observe(&self, id: u64, name: &str, format: Format) -> Result<(), MpvError> {
         let n = cstring(name);
         check(
@@ -371,6 +382,7 @@ impl Mpv {
     }
 
     /// Calls `callback` (on an mpv thread) whenever events are waiting.
+    #[export(skip = "takes a closure")]
     pub fn set_wakeup_callback(&self, callback: impl Fn() + Send + Sync + 'static) {
         unsafe extern "C" fn trampoline(data: *mut c_void) {
             // SAFETY: `data` points at the boxed callback, which lives until
@@ -387,6 +399,7 @@ impl Mpv {
 
     /// Returns the next event, or `None` if there is none within `timeout`
     /// seconds (0 to only check).
+    #[export(skip = "the player's event loop owns the events")]
     pub fn wait_event(&self, timeout: f64) -> Option<Event> {
         // SAFETY: the event stays valid until the next mpv_wait_event call,
         // and everything is copied out of it before returning.
@@ -462,6 +475,7 @@ impl Drop for Mpv {
 
 /// Quotes a value for mpv's option lists, which split on commas. URLs from
 /// YouTube contain commas.
+#[yt_export::export("mpv")]
 pub fn quote(value: &str) -> String {
     format!("%{}%{value}", value.len())
 }

@@ -1,0 +1,17 @@
+[package]
+name = "yt-export"
+description = "The app's services as one API: callable and hookable by plugins, mechanically"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+linkme.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+yt-export-macros.workspace = true
+
+[dev-dependencies]
+syn = { version = "2", features = ["full"] }
+tokio = { workspace = true, features = ["rt"] }

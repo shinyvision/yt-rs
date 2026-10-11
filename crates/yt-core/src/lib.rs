@@ -30,6 +30,7 @@ pub use error::{Error, Result};
 
 /// The HTTP client every part of the app shares, so connections to YouTube
 /// are reused.
+#[yt_export::export(skip = "makes an HTTP client (plugins have app.http and libsoup)")]
 pub fn http_client() -> reqwest::Client {
     reqwest::Client::builder()
         // youtube.com/tv sends more than the 16 KiB of HTTP/2 headers that

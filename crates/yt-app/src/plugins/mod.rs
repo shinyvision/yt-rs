@@ -15,6 +15,7 @@
 
 mod api;
 mod convert;
+mod hooks;
 mod widgets;
 
 use std::cell::Cell;

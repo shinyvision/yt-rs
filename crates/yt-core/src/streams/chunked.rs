@@ -60,6 +60,7 @@ struct Body {
     end: u64,
 }
 
+#[yt_export::export(skip = "a stream reader the player's stream protocol owns")]
 impl ChunkedReader {
     pub fn new(
         http: reqwest::Client,
@@ -268,6 +269,7 @@ fn refused(status: StatusCode) -> io::Error {
 }
 
 /// The length googlevideo URLs carry (`clen`).
+#[yt_export::export(skip = "blocking (for download threads)")]
 pub fn content_length(url: &str) -> Option<u64> {
     url::Url::parse(url)
         .ok()?

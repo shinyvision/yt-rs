@@ -1,6 +1,12 @@
 [workspace]
 resolver = "3"
-members = ["crates/yt-core", "crates/yt-gi", "crates/yt-app"]
+members = [
+    "crates/yt-core",
+    "crates/yt-export",
+    "crates/yt-export-macros",
+    "crates/yt-gi",
+    "crates/yt-app",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -9,6 +15,8 @@ rust-version = "1.90"
 
 [workspace.dependencies]
 yt-core = { path = "crates/yt-core" }
+yt-export = { path = "crates/yt-export" }
+yt-export-macros = { path = "crates/yt-export-macros" }
 yt-gi = { path = "crates/yt-gi" }
 
 anyhow = "1"
@@ -22,6 +30,7 @@ adw = { package = "libadwaita", version = "0.9", features = ["v1_7"] }
 gdk-wayland = { package = "gdk4-wayland", version = "0.11" }
 libc = "0.2"
 libloading = "0.9"
+linkme = "0.3"
 mlua = { version = "0.12", features = ["luajit", "serialize"] }
 pkg-config = "0.3"
 rand = "0.10"
@@ -29,7 +38,7 @@ regex = "1"
 # QuickJS, for the stream URL challenges (see yt-core's solver).
 rquickjs = "0.14"
 reqwest = { version = "0.13", default-features = false, features = ["native-tls", "http2", "json", "form", "gzip", "brotli", "system-proxy"] }
-serde = { version = "1", features = ["derive"] }
+serde = { version = "1", features = ["derive", "rc"] }
 serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.11"
 thiserror = "2"

@@ -554,7 +554,7 @@ fn show_stats(view: &PlayerView) {
         view.stats_grid.remove(&child);
     }
     for (row, (name, value)) in app().player.stats().into_iter().enumerate() {
-        let name = gtk::Label::new(Some(name));
+        let name = gtk::Label::new(Some(&name));
         name.set_xalign(1.0);
         name.add_css_class("stats-name");
         let value = gtk::Label::new(Some(&value));

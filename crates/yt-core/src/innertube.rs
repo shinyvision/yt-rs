@@ -37,6 +37,23 @@ pub const TV: TvClient = TvClient {
     user_agent: TV_USER_AGENT,
 };
 
+/// A client crosses to plugins as its version.
+impl Serialize for TvClient {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> std::result::Result<S::Ok, S::Error> {
+        s.serialize_str(self.version)
+    }
+}
+
+impl<'de> Deserialize<'de> for TvClient {
+    fn deserialize<D: serde::Deserializer<'de>>(d: D) -> std::result::Result<Self, D::Error> {
+        let version = String::deserialize(d)?;
+        [TV, TV_DOWNGRADED]
+            .into_iter()
+            .find(|c| c.version == version)
+            .ok_or_else(|| serde::de::Error::custom(format!("no TV client {version}")))
+    }
+}
+
 /// An older TV app. Since October 2026 YouTube wants a PO token with the
 /// current TV app's `player` requests; this version (with an old Cobalt user
 /// agent, as SmartTube uses) still gets watch-time reporting URLs and the
@@ -57,7 +74,8 @@ const WEB_USER_AGENT: &str = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
 const SUGGEST_URL: &str = "https://suggestqueries-clients6.youtube.com/complete/search";
 
 /// A rating for [`InnerTube::rate_video`].
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
 pub enum Rating {
     Like,
     Dislike,
@@ -145,17 +163,21 @@ fn unix_now() -> u64 {
         .map_or(0, |d| d.as_secs())
 }
 
+#[yt_export::export("youtube")]
 impl InnerTube {
+    #[export(skip = "makes the service")]
     pub fn new(http: reqwest::Client, session: Arc<Session>) -> Self {
         Self::with_base(http, session, BASE_URL)
     }
 
     /// The HTTP client it sends requests with.
+    #[export(skip = "a reference into the service")]
     pub fn http(&self) -> &reqwest::Client {
         &self.http
     }
 
     /// Uses another host, for tests.
+    #[export(skip = "makes the service")]
     pub fn with_base(http: reqwest::Client, session: Arc<Session>, base: &str) -> Self {
         let player_script = std::fs::read(player_script_file())
             .ok()
@@ -169,6 +191,7 @@ impl InnerTube {
         }
     }
 
+    #[export(skip = "a reference into the service")]
     pub fn session(&self) -> &Arc<Session> {
         &self.session
     }
@@ -393,6 +416,7 @@ fn merge_search(tv: Option<Result<Value>>, web: Option<Result<Value>>) -> Result
     }
 }
 
+#[yt_export::export("youtube")]
 impl InnerTube {
     /// With `on`, requests that would change the account (rating,
     /// subscribing, playlists, comments, feedback) aren't sent: they

@@ -28,6 +28,7 @@ const CPN_ALPHABET: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrst
 
 /// A new client playback nonce: 16 random characters that tie together the
 /// reports of one playback.
+#[yt_export::export("tracking")]
 pub fn new_cpn() -> String {
     (0..16)
         .map(|_| CPN_ALPHABET[(rand::random::<u8>() & 63) as usize] as char)
@@ -91,6 +92,7 @@ impl Tracking {
 }
 
 /// The resume position the player response asks to start at, if any.
+#[yt_export::export("tracking")]
 pub fn start_seconds(resp: &Value) -> Option<f64> {
     let v = resp.pointer("/playerConfig/playbackStartConfig/startSeconds")?;
     v.as_f64()
@@ -99,6 +101,7 @@ pub fn start_seconds(resp: &Value) -> Option<f64> {
 }
 
 /// Why a player response has no reporting URLs, from its playability status.
+#[yt_export::export("tracking")]
 pub fn unplayable_reason(resp: &Value) -> Option<String> {
     let status = resp.pointer("/playabilityStatus/status")?.as_str()?;
     if status == "OK" {
@@ -157,6 +160,9 @@ pub struct WatchSession {
     finished: bool,
 }
 
+#[yt_export::export(
+    skip = "a video's watch-time session, which the tracker drives (plugins use tracker.*)"
+)]
 impl WatchSession {
     pub fn new(tracking: Tracking, cpn: String) -> Self {
         Self {

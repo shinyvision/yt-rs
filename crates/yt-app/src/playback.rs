@@ -58,6 +58,7 @@ struct Sleep {
 /// Follows the player to recover from refused streams, to turn captions on
 /// and to play the next video; and the pages, to start the video the watch
 /// page shows.
+#[yt_export::export(skip = "sets the app up")]
 pub fn init() {
     let app = app();
     let settings = app.settings.get();
@@ -151,6 +152,7 @@ fn recover(state: &PlayerState, what: &str) {
 /// Plays a video, from `start` seconds if given, otherwise from where the
 /// user left off: opens the watch page for it, which starts it. It starts
 /// over even if it is the video already shown.
+#[yt_export::export("playback")]
 pub fn play(video: Video, start: Option<f64>) {
     SHOWN.with(|s| s.borrow_mut().take());
     START.with(|s| *s.borrow_mut() = start.map(|t| (video.id.clone(), t)));
@@ -159,6 +161,7 @@ pub fn play(video: Video, start: Option<f64>) {
 
 /// Plays a video where the player is: on the watch page if that is shown,
 /// otherwise in the mini player, without leaving the page.
+#[yt_export::export("playback")]
 pub fn play_here(video: Video) {
     if app().current_page().as_deref() == Some("watch") {
         play(video, None);
@@ -330,6 +333,7 @@ async fn load(video_id: &str, streams: &StreamSet, start: f64, generation: u64) 
     }
 }
 
+#[yt_export::export("playback")]
 pub fn stop() {
     cancel_up_next();
     GENERATION.with(|g| g.set(g.get() + 1));
@@ -339,6 +343,7 @@ pub fn stop() {
 }
 
 /// The video playing (or loaded), as the watch page was opened for it.
+#[yt_export::export("playback")]
 pub fn current() -> Option<Video> {
     CURRENT
         .with(|c| c.borrow().clone())
@@ -347,6 +352,7 @@ pub fn current() -> Option<Video> {
 
 /// Back to the watch page of the video playing in the mini player,
 /// without starting it over.
+#[yt_export::export("playback")]
 pub fn expand() -> Result<(), String> {
     let video = current().ok_or("no video is playing")?;
     app().navigate("watch", json!({ "video": video }), true);
@@ -355,6 +361,7 @@ pub fn expand() -> Result<(), String> {
 
 /// The video after the one shown: the next in the list playing (a
 /// playlist, the queue), or else YouTube's first suggestion.
+#[yt_export::export("playback")]
 pub fn up_next() -> Option<Video> {
     if crate::lists::playing() {
         return crate::lists::next_video();
@@ -363,6 +370,7 @@ pub fn up_next() -> Option<Video> {
 }
 
 /// Plays the next video, where the player is.
+#[yt_export::export("playback")]
 pub fn next() -> Result<(), String> {
     if crate::lists::playing() {
         return crate::lists::next();
@@ -373,6 +381,7 @@ pub fn next() -> Result<(), String> {
 }
 
 /// Stops the countdown to the next video.
+#[yt_export::export("playback")]
 pub fn cancel_up_next() {
     if let Some(timer) = COUNTDOWN.with(|c| c.borrow_mut().take()) {
         timer.remove();
@@ -422,6 +431,7 @@ fn ended(state: &PlayerState) {
 
 /// Shows captions in `lang` (loading them first), or hides them; and
 /// remembers the choice for the next videos.
+#[yt_export::export("playback")]
 pub fn set_captions(lang: Option<String>) -> Result<(), String> {
     app().settings.update(|s| s.captions = lang.clone());
     show_captions(lang.as_deref())
@@ -463,6 +473,7 @@ fn show_captions(lang: Option<&str>) -> Result<(), String> {
 
 /// The track for a language: an exact match, then the language without a
 /// region, then another region; uploaded captions before automatic ones.
+#[yt_export::export(skip = "borrows from its argument")]
 pub fn best_caption<'a>(
     captions: &'a [yt_core::streams::Caption],
     lang: &str,
@@ -491,11 +502,13 @@ fn restore_captions(state: &PlayerState) {
 
 /// Pauses after `minutes`, or at the end of the video with `end_of_video`;
 /// `None` turns the timer off. Announced as `player.sleep_timer`.
+#[yt_export::export("playback")]
 pub fn set_sleep_timer(minutes: Option<f64>) {
     set_sleep(minutes, minutes.is_some());
 }
 
 /// Pauses at the end of the video.
+#[yt_export::export("playback")]
 pub fn sleep_at_end() {
     set_sleep(None, true);
 }
@@ -535,6 +548,7 @@ fn set_sleep(minutes: Option<f64>, on: bool) {
 }
 
 /// The sleep timer: off, at the end of the video, or the minutes left.
+#[yt_export::export("playback")]
 pub fn sleep_timer() -> SleepTimer {
     SLEEP.with(|s| match s.borrow().as_ref() {
         None => SleepTimer::Off,
@@ -545,6 +559,8 @@ pub fn sleep_timer() -> SleepTimer {
     })
 }
 
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum SleepTimer {
     Off,
     EndOfVideo,
@@ -578,6 +594,7 @@ fn fallback_resume(video: &Video) -> Option<f64> {
 }
 
 /// Parses "1:02:03" or "12:34" into seconds.
+#[yt_export::export("playback")]
 pub fn parse_duration(text: &str) -> Option<f64> {
     text.split(':').try_fold(0.0, |total, part| {
         Some(total * 60.0 + part.trim().parse::<f64>().ok()?)

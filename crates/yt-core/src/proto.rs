@@ -12,6 +12,7 @@ use base64::engine::general_purpose::URL_SAFE;
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Message(Vec<u8>);
 
+#[yt_export::export(skip = "a protobuf builder; tokens are opaque strings to plugins")]
 impl Message {
     pub fn new() -> Self {
         Self::default()

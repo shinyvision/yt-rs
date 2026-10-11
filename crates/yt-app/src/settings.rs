@@ -64,7 +64,9 @@ pub struct SettingsStore {
     saving: Cell<Option<glib::SourceId>>,
 }
 
+#[yt_export::export("settings")]
 impl SettingsStore {
+    #[export(skip = "makes the service")]
     pub fn load() -> Rc<Self> {
         let file = yt_core::paths::config_dir().join("settings.json");
         let value = std::fs::read(&file)
@@ -83,6 +85,7 @@ impl SettingsStore {
     }
 
     /// Changes the settings and saves them soon after.
+    #[export(skip = "takes a closure (plugins call set)")]
     pub fn update(self: &Rc<Self>, change: impl FnOnce(&mut Settings)) {
         let before = self.get();
         change(&mut self.value.borrow_mut());
@@ -100,6 +103,11 @@ impl SettingsStore {
                     this.save();
                 }
             })));
+    }
+
+    /// Replaces the settings (saved soon after).
+    pub fn set(self: &Rc<Self>, settings: Settings) {
+        self.update(|s| *s = settings);
     }
 
     /// Saves now if a save is pending, e.g. when the app quits.

@@ -17,7 +17,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use gtk::glib;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use yt_core::streams::chunked::Refresh;
 use yt_core::streams::live::SharedHead;
 use yt_core::streams::{Resolver, Stream, StreamSet};
@@ -25,7 +25,7 @@ use yt_core::streams::{Resolver, Stream, StreamSet};
 use mpv::{EndReason, Event, Format, Mpv, MpvError, PropertyValue, quote};
 
 /// What the player is doing, kept current from mpv's property changes.
-#[derive(Clone, Debug, Default, Serialize)]
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct PlayerState {
     /// The YouTube video ID that is loaded, if any.
     pub video_id: Option<String>,
@@ -56,7 +56,7 @@ pub struct PlayerState {
 
 /// The part of a live stream that can be watched: from `start` (as far
 /// back as YouTube keeps) to the live `edge`, in the stream's time.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct LiveWindow {
     pub start: f64,
     pub edge: f64,
@@ -167,8 +167,10 @@ const MUTE: u64 = 7;
 const EOF_REACHED: u64 = 8;
 const SPEED: u64 = 9;
 
+#[yt_export::export("player")]
 impl Player {
     /// `http` fetches the streams; `resolver` gets new URLs for them.
+    #[export(skip = "makes the service")]
     pub fn new(http: reqwest::Client, resolver: Arc<Resolver>) -> Result<Rc<Self>, MpvError> {
         let mpv = Mpv::create()?;
         for (name, value) in [
@@ -263,6 +265,7 @@ impl Player {
         Ok(player)
     }
 
+    #[export(skip = "a reference into the service (mpv is exported itself)")]
     pub fn mpv(&self) -> &Arc<Mpv> {
         &self.mpv
     }
@@ -271,6 +274,7 @@ impl Player {
         self.state.borrow().clone()
     }
 
+    #[export(skip = "takes a closure (plugins get the player's events)")]
     pub fn connect(&self, listener: impl Fn(&PlayerEvent, &PlayerState) + 'static) {
         self.listeners.borrow_mut().push(Rc::new(listener));
     }
@@ -514,7 +518,7 @@ impl Player {
     }
 
     /// Details for "stats for nerds", as mpv reports them.
-    pub fn stats(&self) -> Vec<(&'static str, String)> {
+    pub fn stats(&self) -> Vec<(String, String)> {
         let get = |name: &str| self.mpv.get_string(name).unwrap_or_default();
         let number = |name: &str| get(name).parse::<f64>().unwrap_or(0.0);
         let state = self.state();
@@ -570,6 +574,9 @@ impl Player {
             ),
             ("Speed", format!("{}×", state.speed)),
         ]
+        .into_iter()
+        .map(|(name, value)| (name.to_owned(), value))
+        .collect()
     }
 
     pub fn stop(&self) {

@@ -39,6 +39,7 @@ thread_local! {
 
 /// Whether a user is signed in: what needs an account shows, or a way to
 /// sign in instead.
+#[yt_export::export("social")]
 pub fn signed_in() -> bool {
     SIGNED_IN.with(std::cell::Cell::get)
 }
@@ -46,6 +47,7 @@ pub fn signed_in() -> bool {
 /// A command that needs an account. Signed out, it offers to sign in
 /// instead (`why`, with "Sign in", as youtube.com asks) and answers
 /// `{ signed_in = false }`.
+#[yt_export::export(skip = "wraps a command")]
 pub fn needs_account(
     why: &'static str,
     command: impl Fn(Value) -> Result<Value, String> + 'static,
@@ -60,6 +62,7 @@ pub fn needs_account(
 }
 
 /// A toast saying why to sign in, with "Sign in".
+#[yt_export::export("social")]
 pub fn offer_sign_in(why: &str) {
     app().toast_with(&json!({
         "message": why,
@@ -67,6 +70,7 @@ pub fn offer_sign_in(why: &str) {
     }));
 }
 
+#[yt_export::export(skip = "registers the built-in commands")]
 pub fn register(this: &Rc<App>) {
     let c = &this.ext.commands;
     c.register("account.info", |_| {
@@ -292,6 +296,7 @@ pub fn register(this: &Rc<App>) {
 }
 
 /// Loads the signed-in account (for the top bar and "is this my comment").
+#[yt_export::export("social")]
 pub fn load_account() {
     runtime::spawn_local(async {
         let youtube = app().youtube.clone();
@@ -309,24 +314,28 @@ pub fn load_account() {
     });
 }
 
+#[yt_export::export("social")]
 pub fn account() -> Option<Account> {
     ACCOUNT.with(|a| a.borrow().clone())
 }
 
 /// Whether a comment author is the signed-in user (the TV client doesn't say,
 /// so this compares handles).
+#[yt_export::export("social")]
 pub fn is_mine(author_handle: Option<&str>) -> bool {
     let mine = account().and_then(|a| a.handle);
     matches!((mine, author_handle), (Some(m), Some(h)) if m.eq_ignore_ascii_case(h))
 }
 
 /// Whether a comment on a video is by the video's own channel.
+#[yt_export::export("social")]
 pub fn is_by_creator(video_id: &str, author_handle: Option<&str>) -> bool {
     OWNERS.with(|o| matches!((o.borrow().get(video_id), author_handle), (Some(owner), Some(author)) if owner.eq_ignore_ascii_case(author)))
 }
 
 /// A video's watch details, run through the `watch.page` filter, then
 /// announced as `watch.loaded`.
+#[yt_export::export("social", local)]
 pub async fn load_watch(video_id: &str) -> Result<WatchPage, String> {
     let id = video_id.to_owned();
     let page = app_youtube(move |y| async move { y.watch(&id).await }).await?;
@@ -356,6 +365,7 @@ pub async fn load_watch(video_id: &str) -> Result<WatchPage, String> {
 }
 
 /// A page of comments, run through `comments.page`, announced as `comments.loaded`.
+#[yt_export::export("social", local)]
 pub async fn load_comments(video_id: &str, token: &str) -> Result<CommentsPage, String> {
     let (id, token) = (video_id.to_owned(), token.to_owned());
     let page = app_youtube(move |y| async move { y.comments(&token, &id).await }).await?;
@@ -371,6 +381,7 @@ pub async fn load_comments(video_id: &str, token: &str) -> Result<CommentsPage, 
 }
 
 /// A page of a comment's replies; also caches the comment's vote tokens.
+#[yt_export::export("social", local)]
 pub async fn load_thread(video_id: &str, token: &str) -> Result<CommentThread, String> {
     let (id, token) = (video_id.to_owned(), token.to_owned());
     let thread = app_youtube(move |y| async move { y.comment_thread(&token, &id).await }).await?;
@@ -386,7 +397,7 @@ pub async fn load_thread(video_id: &str, token: &str) -> Result<CommentThread, S
 /// How a channel to open is known: by ID, `@handle`, display name or one
 /// of its videos. The TV feed only gives a video's channel name, so a name
 /// the channel directory doesn't know is found through the video.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ChannelKey {
     pub id: Option<String>,
     pub handle: Option<String>,
@@ -430,6 +441,7 @@ impl ChannelKey {
 
 /// A channel's page, run through `channel.page`, announced as
 /// `channel.loaded`.
+#[yt_export::export("social", local)]
 pub async fn load_channel(key: ChannelKey) -> Result<ChannelPage, String> {
     let id = match key.id.clone().or_else(|| key.known().and_then(|c| c.id)) {
         Some(id) => id,

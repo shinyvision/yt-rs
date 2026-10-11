@@ -86,6 +86,7 @@ pub const WEB_TOKEN: &str = "web:";
 /// A page of a web client grid (a channel's videos in another order, or
 /// more of them): the videos as one untitled shelf, with a token (marked
 /// as the web client's) for more.
+#[yt_export::export("feed")]
 pub fn parse_web_grid(resp: &Value) -> FeedPage {
     let mut shelf = Shelf::default();
     for action in resp
@@ -122,6 +123,7 @@ pub fn parse_web_grid(resp: &Value) -> FeedPage {
     }
 }
 
+#[yt_export::export("feed")]
 pub fn parse(resp: &Value) -> FeedPage {
     let mut parser = Parser::default();
     parser.walk(resp, "");

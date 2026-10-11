@@ -121,6 +121,7 @@ pub(crate) fn order_token(tab: &Value, order: VideoOrder) -> Option<String> {
     token
 }
 
+#[yt_export::export("channel")]
 pub fn parse_page(resp: &Value, browse_id: &str) -> ChannelPage {
     let header = find(resp, "channelHeaderRenderer");
     let mut page = ChannelPage {
@@ -184,6 +185,7 @@ pub fn parse_page(resp: &Value, browse_id: &str) -> ChannelPage {
 }
 
 /// Reads a subscribe button (`subscribeButtonRenderer`).
+#[yt_export::export("channel")]
 pub fn parse_subscription(button: &Value) -> Option<Subscription> {
     let params = |endpoint: &str| {
         find(button, endpoint).and_then(|e| e.get("params")?.as_str().map(str::to_owned))
@@ -200,6 +202,7 @@ pub fn parse_subscription(button: &Value) -> Option<Subscription> {
 }
 
 /// Reads the list of subscribed channels (`browse FEchannels`).
+#[yt_export::export("channel")]
 pub fn parse_subscriptions(resp: &Value) -> (Vec<ChannelRef>, Option<String>) {
     let mut channels = Vec::new();
     collect(resp, "tileRenderer", &mut |tile| {

@@ -52,6 +52,7 @@ pub struct Confirm {
 
 /// For a tile whose menu comes on request (a context menu panel): the
 /// params to ask for it with.
+#[yt_export::export("actions")]
 pub fn menu_params(tile: &Value) -> Option<String> {
     let panel = tile.pointer("/onLongPressCommand/showEngagementPanelEndpoint")?;
     (str_at(panel, "/identifier/tag") == Some("PAcontext_menu"))
@@ -62,6 +63,7 @@ pub fn menu_params(tile: &Value) -> Option<String> {
 /// The `params` asking for any video's menu (`get_panel`), for the videos
 /// that come without one (the TV client's "Up next"): built as the Home
 /// tiles' own are, naming the video and the feed it is in.
+#[yt_export::export("actions")]
 pub fn menu_params_for(video_id: &str) -> String {
     use crate::proto::Message;
     let feed = Message::new().varint(1, 2).string(2, "FEwhat_to_watch");
@@ -74,6 +76,7 @@ pub fn menu_params_for(video_id: &str) -> String {
 
 /// The actions in a menu sent on request (`get_panel`): a list of items,
 /// each with what a tap does.
+#[yt_export::export("actions")]
 pub fn from_panel(resp: &Value) -> Vec<VideoAction> {
     let mut actions = Vec::new();
     crate::channel::collect(resp, "listItemViewModel", &mut |item| {
@@ -119,6 +122,7 @@ fn deep_kind(tap: &Value) -> Option<ActionKind> {
 
 /// The actions in a tile's menu (`onLongPressCommand`), less the ones the
 /// app has its own way to do (play, go to the channel).
+#[yt_export::export("actions")]
 pub fn from_tile(tile: &Value) -> Vec<VideoAction> {
     let items = tile.pointer("/onLongPressCommand/showMenuCommand/menu/menuRenderer/items");
     array(items)

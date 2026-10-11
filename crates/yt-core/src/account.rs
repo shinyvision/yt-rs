@@ -16,6 +16,7 @@ pub struct Account {
 }
 
 /// Reads the selected account from `account/accounts_list`.
+#[yt_export::export("account")]
 pub fn parse(resp: &Value) -> Option<Account> {
     let mut accounts = Vec::new();
     collect(resp, "accountItem", &mut |a| accounts.push(a));

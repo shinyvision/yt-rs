@@ -60,6 +60,7 @@ impl ChatView {
 
 /// The token for a live stream's chat, from now on: built as youtube.com's
 /// own, which names the channel and the video.
+#[yt_export::export("live_chat")]
 pub fn token(channel_id: &str, video_id: &str, view: ChatView) -> String {
     let ids = Message::new().string(1, channel_id).string(2, video_id);
     let video = Message::new()
@@ -204,6 +205,7 @@ pub struct ChatPage {
     pub viewer: Option<String>,
 }
 
+#[yt_export::export("live_chat")]
 pub fn parse(resp: &Value) -> ChatPage {
     let Some(chat) = resp.pointer("/continuationContents/liveChatContinuation") else {
         return ChatPage::default();

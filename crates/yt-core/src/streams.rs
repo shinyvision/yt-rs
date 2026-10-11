@@ -45,7 +45,7 @@ const SERVED_GRACE: Duration = Duration::from_secs(3);
 
 /// The streams to play for one video: a video stream and, unless they come
 /// combined, a separate audio stream.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct StreamSet {
     pub title: Option<String>,
     pub duration: Option<f64>,
@@ -65,8 +65,32 @@ pub struct StreamSet {
     pub storyboard: Option<Storyboard>,
     /// YouTube refuses the streams until about then, the time a pre-roll
     /// ad takes to become skippable (see [`preroll`] and
-    /// [`Resolver::until_served`]).
+    /// [`Resolver::until_served`]). As data: seconds from now.
+    #[serde(default, with = "from_now")]
     pub available_at: Option<Instant>,
+}
+
+/// An instant as seconds from now, for crossing as data.
+mod from_now {
+    use std::time::{Duration, Instant};
+
+    use serde::{Deserialize, Deserializer, Serializer};
+
+    pub(super) fn serialize<S: Serializer>(at: &Option<Instant>, s: S) -> Result<S::Ok, S::Error> {
+        match at {
+            Some(at) => {
+                s.serialize_some(&at.saturating_duration_since(Instant::now()).as_secs_f64())
+            }
+            None => s.serialize_none(),
+        }
+    }
+
+    pub(super) fn deserialize<'de, D: Deserializer<'de>>(
+        d: D,
+    ) -> Result<Option<Instant>, D::Error> {
+        let seconds = Option::<f64>::deserialize(d)?;
+        Ok(seconds.map(|s| Instant::now() + Duration::from_secs_f64(s.max(0.0))))
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
@@ -96,6 +120,7 @@ pub struct Stream {
 /// Gets a new URL for a video's stream of format `itag`, for a reader whose
 /// URL YouTube refused (expired, or held back again): the video looked up
 /// again, once YouTube serves it.
+#[yt_export::export(skip = "returns a closure")]
 pub fn refresher(resolver: Arc<Resolver>, video_id: String, itag: u32) -> chunked::Refresh {
     Arc::new(move || {
         let (resolver, video_id) = (resolver.clone(), video_id.clone());
@@ -322,8 +347,10 @@ pub struct Resolver {
     runtime: tokio::runtime::Handle,
 }
 
+#[yt_export::export("streams")]
 impl Resolver {
     /// Starts the lookup workers on `runtime`.
+    #[export(skip = "makes the service")]
     pub fn new(
         youtube: Arc<InnerTube>,
         options: ResolverOptions,
@@ -590,6 +617,7 @@ impl Lookup {
 
 /// How long the pre-roll ads would play, if the response has any: until
 /// their skip button (or their end), YouTube refuses the video's streams.
+#[yt_export::export("streams")]
 pub fn preroll(resp: &Value) -> Option<Duration> {
     let mut total = 0.0;
     for placement in array(resp.get("adPlacements")) {

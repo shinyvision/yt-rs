@@ -73,6 +73,7 @@ pub struct LiveReader {
     recorded: bool,
 }
 
+#[yt_export::export(skip = "a stream reader the player's stream protocol owns")]
 impl LiveReader {
     /// Reads the live stream at `url`, whose segments are `segment` seconds,
     /// from segment `start` (or near the newest), keeping `head` current.

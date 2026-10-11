@@ -93,6 +93,7 @@ impl Download {
 }
 
 /// Where a video's download is kept. Only plain IDs make a directory name.
+#[yt_export::export("downloads")]
 pub fn dir_for(video_id: &str) -> PathBuf {
     let safe: String = video_id
         .chars()
@@ -108,6 +109,7 @@ pub struct Index {
     pub downloads: Vec<Download>,
 }
 
+#[yt_export::export(skip = "the downloads index the app keeps (plugins use downloads.*)")]
 impl Index {
     pub fn load() -> Self {
         let file = crate::paths::downloads_dir().join("downloads.json");
@@ -156,6 +158,7 @@ impl Index {
 /// download), calling `progress(saved, total)` as it goes; it stops early
 /// if that returns false (cancelled). Returns the bytes in the file.
 /// Blocking: run it on a thread of its own.
+#[yt_export::export(skip = "takes a stream reader and a progress closure (blocking)")]
 pub fn fetch(
     mut reader: ChunkedReader,
     path: &Path,
