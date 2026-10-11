@@ -244,7 +244,10 @@ fn act(video_id: &str, action: VideoAction) {
                 async move { app_youtube(move |y| async move { y.feedback(&token).await }).await },
                 move |result| {
                     if result.is_ok() {
-                        app().toast(if label.to_lowercase().contains("channel") {
+                        let label = label.to_lowercase();
+                        app().toast(if label.contains("history") {
+                            "Removed from watch history"
+                        } else if label.contains("channel") {
                             "You won't see this channel in your recommendations"
                         } else {
                             "Video removed. You'll see fewer like it."

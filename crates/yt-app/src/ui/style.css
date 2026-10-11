@@ -686,3 +686,10 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .download-title { font-size: 16px; font-weight: 500; }
 .download-progress, .download-progress trough, .download-progress progress { min-height: 4px; border-radius: 2px; }
 .download-progress progress { background: var(--yt-accent); }
+
+/* A list of videos, one a row (History). */
+.video-list { padding: 8px 24px 32px 24px; }
+.video-list > child { padding: 0 0 16px 0; }
+.video-card.list .title { font-size: 18px; font-weight: 400; }
+.video-card.list .meta { font-size: 12px; }
+.feed-title { margin: 24px 24px 8px 24px; }

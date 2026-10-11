@@ -75,14 +75,24 @@ pub fn build(props: &Value) -> gtk::Widget {
     // On a channel's page, its cards leave the channel out.
     let extra =
         json!({ "on_channel": props.get("on_channel").and_then(Value::as_bool) == Some(true) });
+    // `layout = "list"`: one video a row, as youtube.com's History.
+    let list = props.get("layout").and_then(Value::as_str) == Some("list");
+    let build = if list {
+        json!({ "layout": "list" })
+    } else {
+        Value::Null
+    };
     let grid = gtk::GridView::new(
         Some(gtk::NoSelection::new(Some(model.clone()))),
-        Some(card_factory(Value::Null, extra)),
+        Some(card_factory(build, extra)),
     );
     grid.set_widget_name("video-grid");
     grid.add_css_class("video-grid");
     grid.set_min_columns(1);
-    grid.set_max_columns(6);
+    grid.set_max_columns(if list { 1 } else { 6 });
+    if list {
+        grid.add_css_class("video-list");
+    }
     grid.set_can_focus(false);
     let scroller = gtk::ScrolledWindow::builder()
         .child(&grid)
@@ -108,6 +118,21 @@ pub fn build(props: &Value) -> gtk::Widget {
     let chips = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
     root.add_css_class("feed-page");
+    // `title`: a heading over the videos ("Watch history"), lined up with
+    // a list's rows.
+    if let Some(title) = props.get("title").and_then(Value::as_str) {
+        let heading = gtk::Label::new(Some(title));
+        heading.add_css_class("page-title");
+        heading.add_css_class("feed-title");
+        heading.set_xalign(0.0);
+        root.append(
+            &adw::Clamp::builder()
+                .child(&heading)
+                .maximum_size(1096)
+                .tightening_threshold(1096)
+                .build(),
+        );
+    }
     root.append(&chips);
     root.append(
         &app()

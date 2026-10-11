@@ -171,7 +171,7 @@ pub fn register(app: &App) {
     pages.register(feed_page(
         "history",
         "History",
-        json!({ "browse_id": "FEhistory", "untitled": "History", "refresh_on_show": true }),
+        json!({ "browse_id": "FEhistory", "untitled": "History", "refresh_on_show": true, "layout": "list", "title": "Watch history" }),
     ));
     pages.register(Page {
         name: "watch".into(),

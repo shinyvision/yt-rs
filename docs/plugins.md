@@ -401,10 +401,10 @@ app.components()
 | `topbar` | |
 | `mini_player` | the video in the bottom-right corner while another page shows; the player itself moves into it |
 | `toast` | `{ message, action?, seconds? }`: a toast's content |
-| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page?, on_channel? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it; `on_channel` leaves the channel out of the cards (on its own page) |
+| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page?, on_channel? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it; `on_channel` leaves the channel out of the cards (on its own page); `layout = "list"` shows one video a row (History); `title` puts a heading over it |
 | `shelves` | `{ page, browse_id, on_channel? }`: a page's shelves as rows that scroll sideways (a channel's home) |
 | `chip_bar` | `{ chips, selected, browse_id?, event? }`: clicking a chip emits `event` (`feed.chip_selected` by default) with `{ browse_id, index }` |
-| `video_card` | a video, plus `layout?` (`"compact"`: a row, as in "Up next"; `"shelf"`: narrower, for a shelf's row) and `on_channel?` (without the channel's name and picture) |
+| `video_card` | a video, plus `layout?` (`"compact"`: a row, as in "Up next"; `"shelf"`: narrower, for a shelf's row; `"list"`: a wide row, as in History) and `on_channel?` (without the channel's name and picture) |
 | `watch` | `{ video }`: the watch page. Showing it for a video starts that video, so going back to a video plays it again |
 | `player`, `player_controls` | |
 | `signin` | |

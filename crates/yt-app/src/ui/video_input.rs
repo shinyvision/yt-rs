@@ -218,6 +218,12 @@ fn youtube_items(video: &Value) -> Vec<Value> {
                     return None;
                 }
                 ActionKind::EditPlaylist { .. } | ActionKind::Unlike => "yt-delete-symbolic",
+                // "Remove from watch history".
+                ActionKind::Feedback { .. }
+                    if action.label.to_lowercase().starts_with("remove") =>
+                {
+                    "yt-delete-symbolic"
+                }
                 ActionKind::Feedback { .. } if action.label.to_lowercase().contains("channel") => {
                     "yt-dont-recommend-symbolic"
                 }

@@ -22,8 +22,10 @@ use crate::app::app;
 const THUMBNAIL_WIDTH: i32 = 480;
 /// A compact card's thumbnail width.
 const COMPACT_WIDTH: i32 = 168;
-/// A card's width in a shelf's row.
+/// A card's width in a shelf's row, and a list row's picture.
 const SHELF_WIDTH: i32 = 246;
+/// How wide a list row gets (youtube.com's History).
+const LIST_WIDTH: i32 = 1096;
 
 struct Card {
     picture: gtk::Picture,
@@ -34,6 +36,8 @@ struct Card {
     channel: gtk::Label,
     meta: gtk::Label,
     video: RefCell<Value>,
+    /// "compact", "shelf", "list", or "" for the grid's.
+    layout: String,
 }
 
 pub fn build(props: &Value) -> gtk::Widget {
@@ -110,6 +114,15 @@ pub fn build(props: &Value) -> gtk::Widget {
         thumb.set_valign(gtk::Align::Start);
         avatar.set_visible(false);
         title.set_lines(2);
+    } else if props.get("layout").and_then(Value::as_str) == Some("list") {
+        root.set_orientation(gtk::Orientation::Horizontal);
+        root.set_spacing(16);
+        root.add_css_class("list");
+        thumb.set_size_request(SHELF_WIDTH, -1);
+        thumb.set_natural_width(SHELF_WIDTH);
+        thumb.set_valign(gtk::Align::Start);
+        avatar.set_visible(false);
+        title.set_lines(2);
     } else if props.get("layout").and_then(Value::as_str) == Some("shelf") {
         root.add_css_class("shelf");
         root.set_size_request(SHELF_WIDTH, -1);
@@ -127,6 +140,11 @@ pub fn build(props: &Value) -> gtk::Widget {
         channel,
         meta,
         video: RefCell::new(Value::Null),
+        layout: props
+            .get("layout")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_owned(),
     });
     connect_input(&root, &card, &menu);
     // A row measures each card's width for the row's height, and asked
@@ -137,6 +155,13 @@ pub fn build(props: &Value) -> gtk::Widget {
             .child(&root)
             .maximum_size(SHELF_WIDTH)
             .tightening_threshold(SHELF_WIDTH)
+            .build()
+            .upcast()
+    } else if root.has_css_class("list") {
+        adw::Clamp::builder()
+            .child(&root)
+            .maximum_size(LIST_WIDTH)
+            .tightening_threshold(LIST_WIDTH)
             .build()
             .upcast()
     } else {
@@ -164,7 +189,7 @@ fn fill(root: &impl IsA<gtk::Widget>, card: &Card, video: &Value) {
     let on_channel = video.get("on_channel").and_then(Value::as_bool) == Some(true);
     card.channel.set_visible(!on_channel);
     card.avatar
-        .set_visible(!on_channel && !root.has_css_class("compact"));
+        .set_visible(!on_channel && !matches!(card.layout.as_str(), "compact" | "list"));
     if !on_channel {
         show_avatar(card, text("channel"));
     }
@@ -191,7 +216,7 @@ fn fill(root: &impl IsA<gtk::Widget>, card: &Card, video: &Value) {
         &card.picture,
         thumbnail,
         // Compact cards decode at twice their width, for sharpness.
-        if root.has_css_class("compact") {
+        if card.layout == "compact" {
             COMPACT_WIDTH * 2
         } else {
             THUMBNAIL_WIDTH
