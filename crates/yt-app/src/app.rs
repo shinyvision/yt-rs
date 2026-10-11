@@ -102,6 +102,7 @@ impl App {
             runtime::handle(),
         ));
         let images = Images::new(http.clone(), yt_core::paths::cache_dir().join("images"));
+        crate::ui::feed::prefetch_home(youtube.clone());
         step("services");
         let player = Player::new(http.clone(), streams.clone())
             .map_err(|e| anyhow::anyhow!("could not start mpv: {e}"))?;
@@ -186,6 +187,9 @@ impl App {
     }
 
     fn build_window(self: &Rc<Self>) {
+        let t = std::time::Instant::now();
+        let step =
+            |name: &str| tracing::debug!(target: "startup", "  window, {name}: {:?}", t.elapsed());
         let window = adw::ApplicationWindow::builder()
             .application(&self.gtk)
             .title("yt-rs")
@@ -194,8 +198,10 @@ impl App {
             .build();
         window.add_css_class("yt-window");
         window.set_widget_name("main-window");
+        step("made");
         self.toasts
             .set_child(&self.ext.components.build("shell", &Value::Null));
+        step("shell built");
         window.set_content(Some(self.toasts.widget()));
         window.add_controller(crate::commands::key_controller());
         window.add_controller(crate::commands::mouse_controller());
@@ -207,6 +213,7 @@ impl App {
         });
         let _ = self.window.set(window.clone());
         window.present();
+        step("presented");
     }
 
     /// What the app shows for the signed-in user: their account (name and

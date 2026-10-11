@@ -20,6 +20,20 @@ use super::{attach, attached, follow};
 use crate::app::app;
 use crate::runtime;
 
+thread_local! {
+    /// Home, asked for as the app starts (see [`prefetch_home`]).
+    static EARLY_HOME: RefCell<Option<tokio::task::JoinHandle<yt_core::Result<FeedPage>>>> =
+        const { RefCell::new(None) };
+}
+
+/// Asks for Home now, while the window is still being made, so the first
+/// Home shows its videos that much sooner.
+pub fn prefetch_home(youtube: std::sync::Arc<yt_core::innertube::InnerTube>) {
+    let early =
+        runtime::handle().spawn(async move { youtube.browse(yt_core::innertube::HOME).await });
+    EARLY_HOME.with(|e| *e.borrow_mut() = Some(early));
+}
+
 /// Load more when this close (in pixels) to the bottom.
 const PRELOAD_DISTANCE: f64 = 1200.0;
 
@@ -303,9 +317,17 @@ fn reload(feed: &Rc<Feed>) {
     runtime::spawn_local(async move {
         let youtube = app().youtube.clone();
         let id = browse_id.clone();
-        let result = match preloaded {
-            Some(page) => Ok(page),
-            None => {
+        let early = (id == yt_core::innertube::HOME && params.is_none())
+            .then(|| EARLY_HOME.with(|e| e.borrow_mut().take()))
+            .flatten();
+        let result = match (preloaded, early) {
+            (Some(page), _) => Ok(page),
+            // Home, asked for as the app started.
+            (None, Some(early)) => match runtime::background(early).await {
+                Ok(result) => result,
+                Err(_) => runtime::background(async move { youtube.browse(&id).await }).await,
+            },
+            (None, None) => {
                 runtime::background(async move {
                     match (order, params) {
                         (Some(order), _) => youtube.channel_videos(&id, order).await,

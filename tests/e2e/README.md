@@ -103,3 +103,9 @@ heap, buffers, caches), with a breakdown by mapping at the start, after the
 first round and after the last. Private dirty memory that keeps growing
 round after round is a leak; caches stop growing at their limits. Run it
 signed out (`SIGNED_OUT=1`): it searches "hello" every round.
+
+## Startup
+
+`startup` logs when the window is ready and when Home has its first videos,
+counted from when plugins load (the app's own steps, from the start, log
+with `YT_RS_LOG=startup=debug`).
