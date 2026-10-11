@@ -309,7 +309,7 @@ app.commands()                     -- all names
 | `link.open` | `{ link }`: what clicking a link in a description or comment does |
 | `app.open_url` | `{ url }`: opens the system browser |
 | `app.copy_text` | `{ text, toast? }`: copies text, then shows `toast` if given |
-| `search.open` | `{ query, filters?, chip? }`: shows the results. `filters = { type?, duration?, upload_date?, features?, sort?, exact? }`: `type` is `video`, `short`, `channel`, `playlist` or `movie`; `duration` `short` (under 3 minutes), `medium` (3–20) or `long`; `upload_date` `today`, `week`, `month` or `year`; `features` a list of `live`, `4k`, `hd`, `subtitles`, `creative_commons`, `360`, `vr180`, `3d`, `hdr`, `location`, `purchased`; `sort` `relevance` or `popularity`; `exact` searches without spelling correction. `chip` is a chip's token |
+| `search.open` | `{ query, filters?, chip? }`: shows the results. `filters = { type?, duration?, upload_date?, features?, sort?, exact? }`: `type` is `video`, `short`, `channel` or `playlist`; `duration` `short` (under 3 minutes), `medium` (3–20) or `long`; `upload_date` `today`, `week`, `month` or `year`; `features` a list of `live`, `4k`, `hd`, `subtitles`, `creative_commons`, `360`, `vr180`, `3d`, `hdr` or `location`; `sort` `relevance` or `popularity`; `exact` searches without spelling correction. `chip` is a chip's token |
 | `search.focus` | puts the cursor in the search box (`/` does this) |
 | `search.suggest` | `{ query }`: asks for suggestions, which arrive as `search.suggestions` |
 | `search.more` | loads more results on the search page |
@@ -368,9 +368,10 @@ app.components()
 | `topbar` | |
 | `mini_player` | the video in the bottom-right corner while another page shows; the player itself moves into it |
 | `toast` | `{ message, action?, seconds? }`: a toast's content |
-| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it |
+| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page?, on_channel? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it; `on_channel` leaves the channel out of the cards (on its own page) |
+| `shelves` | `{ page, browse_id, on_channel? }`: a page's shelves as rows that scroll sideways (a channel's home) |
 | `chip_bar` | `{ chips, selected, browse_id?, event? }`: clicking a chip emits `event` (`feed.chip_selected` by default) with `{ browse_id, index }` |
-| `video_card` | a video |
+| `video_card` | a video, plus `layout?` (`"compact"`: a row, as in "Up next"; `"shelf"`: narrower, for a shelf's row) and `on_channel?` (without the channel's name and picture) |
 | `watch` | `{ video }`: the watch page. Showing it for a video starts that video, so going back to a video plays it again |
 | `player`, `player_controls` | |
 | `signin` | |

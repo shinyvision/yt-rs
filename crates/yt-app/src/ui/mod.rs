@@ -22,12 +22,14 @@ pub mod player_settings;
 pub mod player_view;
 pub mod preview;
 pub mod richtext;
+pub mod scroll_arrows;
 pub mod search;
 pub mod search_box;
 pub mod search_filters;
 pub mod search_results;
 pub mod seekbar;
 pub mod shell;
+pub mod shelves;
 pub mod sidebar;
 pub mod signin;
 pub mod split;
@@ -57,6 +59,10 @@ pub fn register(app: &App) {
     c.define(
         "feed",
         Component::new(feed::build).with_update(feed::update),
+    );
+    c.define(
+        "shelves",
+        Component::new(shelves::build).with_update(shelves::update),
     );
     c.define("chip_bar", Component::new(feed::build_chip_bar));
     c.define(

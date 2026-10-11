@@ -29,7 +29,6 @@ const SECTIONS: &[Section] = &[
             ("Shorts", "short"),
             ("Channels", "channel"),
             ("Playlists", "playlist"),
-            ("Movies", "movie"),
         ],
     },
     Section {
@@ -65,7 +64,6 @@ const SECTIONS: &[Section] = &[
             ("3D", "3d"),
             ("HDR", "hdr"),
             ("Location", "location"),
-            ("Purchased", "purchased"),
         ],
     },
     Section {

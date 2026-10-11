@@ -53,7 +53,6 @@ pub enum Kind {
     Short,
     Channel,
     Playlist,
-    Movie,
 }
 
 /// Under 3 minutes, 3 to 20 minutes, over 20 minutes.
@@ -81,7 +80,6 @@ pub enum Feature {
     ThreeD,
     Hdr,
     Location,
-    Purchased,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -116,7 +114,6 @@ impl SearchFilters {
                 Kind::Video => 1,
                 Kind::Channel => 2,
                 Kind::Playlist => 3,
-                Kind::Movie => 4,
                 Kind::Short => 9,
             };
             filters = filters.varint(2, value);
@@ -157,7 +154,6 @@ fn feature_field(feature: Feature) -> u32 {
         Feature::CreativeCommons => 6,
         Feature::ThreeD => 7,
         Feature::Live => 8,
-        Feature::Purchased => 9,
         Feature::FourK => 14,
         Feature::Spherical => 15,
         Feature::Location => 23,

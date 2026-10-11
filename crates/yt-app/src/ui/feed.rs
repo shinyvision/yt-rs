@@ -72,9 +72,12 @@ struct Feed {
 
 pub fn build(props: &Value) -> gtk::Widget {
     let model = gio::ListStore::new::<glib::BoxedAnyObject>();
+    // On a channel's page, its cards leave the channel out.
+    let extra =
+        json!({ "on_channel": props.get("on_channel").and_then(Value::as_bool) == Some(true) });
     let grid = gtk::GridView::new(
         Some(gtk::NoSelection::new(Some(model.clone()))),
-        Some(card_factory()),
+        Some(card_factory(Value::Null, extra)),
     );
     grid.set_widget_name("video-grid");
     grid.add_css_class("video-grid");
@@ -389,7 +392,7 @@ fn current(weak: &Weak<Feed>, generation: u64) -> Option<Rc<Feed>> {
 
 /// Runs a page through the `feed.page` filter, so plugins can change it,
 /// and announces it as `feed.loaded`.
-fn filtered(mut page: FeedPage, browse_id: &str) -> FeedPage {
+pub(super) fn filtered(mut page: FeedPage, browse_id: &str) -> FeedPage {
     let app = app();
     let context = json!({ "browse_id": browse_id });
     if let Err(e) = app
@@ -591,81 +594,25 @@ pub fn build_chip_bar(props: &Value) -> gtk::Widget {
     let bar = gtk::Overlay::new();
     bar.set_child(Some(&scroller));
     bar.set_widget_name("chip-bar");
-    let adjustment = scroller.hadjustment();
-    let arrows: Vec<(gtk::Box, f64)> = [
-        ("yt-chevron-left-symbolic", "start", gtk::Align::Start, -1.0),
-        ("yt-chevron-right-symbolic", "end", gtk::Align::End, 1.0),
-    ]
-    .into_iter()
-    .map(|(icon, side, align, direction)| {
-        let button = gtk::Button::from_icon_name(icon);
-        button.add_css_class("chip-arrow");
-        button.set_valign(gtk::Align::Center);
-        let (scroller, adjustment) = (scroller.downgrade(), adjustment.clone());
-        button.connect_clicked(move |_| {
-            let Some(scroller) = scroller.upgrade() else {
-                return;
-            };
-            let from = adjustment.value();
-            let to = (from + direction * adjustment.page_size() * 0.8).clamp(
-                adjustment.lower(),
-                adjustment.upper() - adjustment.page_size(),
-            );
-            let target = adjustment.clone();
-            let animation = adw::TimedAnimation::new(
-                &scroller,
-                from,
-                to,
-                250,
-                adw::CallbackAnimationTarget::new(move |v| target.set_value(v)),
-            );
-            animation.set_easing(adw::Easing::EaseOutCubic);
-            adw::prelude::AnimationExt::play(&animation);
-        });
-        let fade = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        fade.add_css_class("chip-fade");
-        fade.add_css_class(side);
-        fade.set_halign(align);
-        fade.append(&button);
-        fade.set_visible(false);
-        bar.add_overlay(&fade);
-        (fade, direction)
-    })
-    .collect();
-    let show_arrows = move |adjustment: &gtk::Adjustment| {
-        let (value, end) = (
-            adjustment.value(),
-            adjustment.upper() - adjustment.page_size(),
-        );
-        for (fade, direction) in &arrows {
-            fade.set_visible(if *direction < 0.0 {
-                value > 1.0
-            } else {
-                value < end - 1.0
-            });
-        }
-    };
-    let show = show_arrows.clone();
-    adjustment.connect_changed(move |a| show(a));
-    adjustment.connect_value_changed(move |a| show_arrows(a));
+    super::scroll_arrows::add(&bar, &scroller);
     bar.upcast()
 }
 
-/// Makes the grid's cards through the `video_card` component, refilling
-/// cards as they are reused.
-fn card_factory() -> gtk::SignalListItemFactory {
+/// Makes a list's cards through the `video_card` component (built with
+/// `build`), refilling cards as they are reused with each video and
+/// `extra`'s fields.
+pub fn card_factory(build: Value, extra: Value) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
+    let setup = build.clone();
+    factory.connect_setup(move |_, item| {
         let item = item
             .downcast_ref::<gtk::ListItem>()
             .expect("a GridView item");
-        item.set_child(Some(
-            &app().ext.components.build("video_card", &Value::Null),
-        ));
+        item.set_child(Some(&app().ext.components.build("video_card", &setup)));
         item.set_activatable(false);
         item.set_focusable(false);
     });
-    factory.connect_bind(|_, item| {
+    factory.connect_bind(move |_, item| {
         let item = item
             .downcast_ref::<gtk::ListItem>()
             .expect("a GridView item");
@@ -675,6 +622,9 @@ fn card_factory() -> gtk::SignalListItemFactory {
         let video = object.borrow::<Video>();
         let app = app();
         let mut props = serde_json::to_value(&*video).unwrap_or_default();
+        if let (Some(props), Some(extra)) = (props.as_object_mut(), extra.as_object()) {
+            props.extend(extra.clone());
+        }
         if !app.ext.filters.is_empty("video.card") {
             props = app.ext.filters.apply("video.card", props);
         }
@@ -683,6 +633,10 @@ fn card_factory() -> gtk::SignalListItemFactory {
             .as_ref()
             .is_some_and(|c| app.ext.components.update("video_card", c, &props));
         if !updated {
+            let mut props = props;
+            if let (Some(props), Some(build)) = (props.as_object_mut(), build.as_object()) {
+                props.extend(build.clone());
+            }
             item.set_child(Some(&app.ext.components.build("video_card", &props)));
         }
     });

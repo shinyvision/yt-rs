@@ -1,7 +1,9 @@
 //! The `video_card` component: thumbnail with duration and watched progress,
 //! then avatar, title, channel and stats, and a menu. The avatar and the
 //! channel name open the channel. With `layout = "compact"` (the watch
-//! page's "Up next") it is a row: a small thumbnail, then the text.
+//! page's "Up next") it is a row: a small thumbnail, then the text; with
+//! `layout = "shelf"` (a row of a channel's home) a narrower card. With
+//! `on_channel` (on the channel's own page) it leaves the channel out.
 //!
 //! Cards are reused as the grid scrolls, so [`update`] refills an existing
 //! card. Hovering a card for a moment looks its streams up in the
@@ -20,6 +22,8 @@ use crate::app::app;
 const THUMBNAIL_WIDTH: i32 = 480;
 /// A compact card's thumbnail width.
 const COMPACT_WIDTH: i32 = 168;
+/// A card's width in a shelf's row.
+const SHELF_WIDTH: i32 = 246;
 
 struct Card {
     picture: gtk::Picture,
@@ -106,6 +110,10 @@ pub fn build(props: &Value) -> gtk::Widget {
         thumb.set_valign(gtk::Align::Start);
         avatar.set_visible(false);
         title.set_lines(2);
+    } else if props.get("layout").and_then(Value::as_str) == Some("shelf") {
+        root.add_css_class("shelf");
+        root.set_size_request(SHELF_WIDTH, -1);
+        thumb.set_natural_width(SHELF_WIDTH);
     } else {
         root.set_size_request(320, -1);
     }
@@ -120,10 +128,23 @@ pub fn build(props: &Value) -> gtk::Widget {
         meta,
         video: RefCell::new(Value::Null),
     });
-    attach(&root, card.clone());
     connect_input(&root, &card, &menu);
-    fill(&root, &card, props);
-    root.upcast()
+    // A row measures each card's width for the row's height, and asked
+    // that, wrapping text wants its whole length on one line: the clamp
+    // holds a shelf's card to its width.
+    let widget: gtk::Widget = if root.has_css_class("shelf") {
+        adw::Clamp::builder()
+            .child(&root)
+            .maximum_size(SHELF_WIDTH)
+            .tightening_threshold(SHELF_WIDTH)
+            .build()
+            .upcast()
+    } else {
+        root.upcast()
+    };
+    attach(&widget, card.clone());
+    fill(&widget, &card, props);
+    widget
 }
 
 pub fn update(widget: &gtk::Widget, props: &Value) {
@@ -139,7 +160,14 @@ fn fill(root: &impl IsA<gtk::Widget>, card: &Card, video: &Value) {
     card.title
         .set_tooltip_text(Some(text("title")).filter(|t| !t.is_empty()));
     card.channel.set_label(text("channel"));
-    show_avatar(card, text("channel"));
+    // The channel's own page needn't say whose videos they are.
+    let on_channel = video.get("on_channel").and_then(Value::as_bool) == Some(true);
+    card.channel.set_visible(!on_channel);
+    card.avatar
+        .set_visible(!on_channel && !root.has_css_class("compact"));
+    if !on_channel {
+        show_avatar(card, text("channel"));
+    }
     let meta: Vec<&str> = [text("views"), text("published")]
         .into_iter()
         .filter(|s| !s.is_empty())

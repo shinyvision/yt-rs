@@ -36,6 +36,8 @@ struct ChannelView {
     subscribe: gtk::Box,
     tabs: gtk::Box,
     feed: gtk::Box,
+    /// The component showing the tab: `shelves` for Home, else `feed`.
+    tab_component: Cell<&'static str>,
 }
 
 /// Props: any of `{ channel_id, handle, name, video_id }`; see
@@ -142,6 +144,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         subscribe,
         tabs,
         feed,
+        tab_component: Cell::new(""),
     });
     attach(&content, view.clone());
     let weak = Rc::downgrade(&view);
@@ -292,23 +295,32 @@ fn fill(view: &Rc<ChannelView>, page: ChannelPage) {
     show_tab(view, &channel_id, &tabs[0]);
 }
 
-/// Shows a tab in the feed: Home's featured shelves, or a tab's grid.
+/// Shows a tab: Home's featured shelves as rows (`shelves`), or a tab's
+/// grid (`feed`).
 fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
-    let mut props = json!({ "browse_id": channel_id, "params": tab.params, "untitled": tab.title });
+    let mut props = json!({
+        "browse_id": channel_id,
+        "params": tab.params,
+        "untitled": tab.title,
+        "on_channel": true,
+    });
+    let home = tab.params.is_empty();
     // Home came with the channel page; the other tabs load when chosen.
-    if tab.params.is_empty()
-        && let Some(page) = view.page.borrow().as_ref()
-    {
+    if home && let Some(page) = view.page.borrow().as_ref() {
         props["page"] = serde_json::to_value(&page.home).unwrap_or_default();
     }
+    let component = if home { "shelves" } else { "feed" };
     let components = &app().ext.components;
     match view.feed.first_child() {
-        Some(feed) if components.update("feed", &feed, &props) => {}
+        Some(feed)
+            if view.tab_component.get() == component
+                && components.update(component, &feed, &props) => {}
         existing => {
             if let Some(old) = existing {
                 view.feed.remove(&old);
             }
-            let feed = components.build("feed", &props);
+            view.tab_component.set(component);
+            let feed = components.build(component, &props);
             feed.set_vexpand(true);
             view.feed.append(&feed);
             connect_folding(view, &feed);
@@ -324,10 +336,11 @@ fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
 /// which moves its scroll position, so following the position would fold
 /// and unfold in a loop.
 fn connect_folding(view: &Rc<ChannelView>, feed: &gtk::Widget) {
-    let Some(scroller) = super::find_widget(feed, "video-grid")
-        .and_then(|g| g.parent())
-        .and_downcast::<gtk::ScrolledWindow>()
-    else {
+    let scroller = match super::find_widget(feed, "shelves") {
+        Some(shelves) => Some(shelves),
+        None => super::find_widget(feed, "video-grid").and_then(|g| g.parent()),
+    };
+    let Some(scroller) = scroller.and_downcast::<gtk::ScrolledWindow>() else {
         return;
     };
     let scroll = gtk::EventControllerScroll::new(gtk::EventControllerScrollFlags::VERTICAL);

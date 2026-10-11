@@ -111,11 +111,11 @@ window.yt-window {
   font-size: 14px;
 }
 .chip:hover { background: #3f3f3f; }
-/* Where a row of chips goes on past the bar's edge. */
-.chip-fade.start { background: linear-gradient(to right, var(--yt-bg) 55%, transparent); padding: 0 32px 0 16px; }
-.chip-fade.end { background: linear-gradient(to left, var(--yt-bg) 55%, transparent); padding: 0 16px 0 32px; }
-.chip-arrow { min-width: 40px; min-height: 40px; padding: 0; border-radius: 20px; background: none; color: var(--yt-text); }
-.chip-arrow:hover { background: var(--yt-raised); }
+/* Where a row (chips, a shelf) goes on past its edge. */
+.scroll-fade.start { background: linear-gradient(to right, var(--yt-bg) 55%, transparent); padding: 0 32px 0 16px; }
+.scroll-fade.end { background: linear-gradient(to left, var(--yt-bg) 55%, transparent); padding: 0 16px 0 32px; }
+.scroll-arrow { min-width: 40px; min-height: 40px; padding: 0; border-radius: 20px; background: none; color: var(--yt-text); }
+.scroll-arrow:hover { background: var(--yt-raised); }
 .chip:checked { background: var(--yt-text); color: var(--yt-bg); }
 
 /* Video grid and cards */
@@ -593,3 +593,12 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
   border-radius: 18px;
 }
 .yt-toast .toast-action:hover { background: rgba(6, 95, 212, 0.1); }
+
+/* A channel's home: shelves as rows. */
+.shelves { padding: 8px 0 32px 0; }
+.shelf { margin: 0 0 24px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 24px; }
+.shelf:last-child { border-bottom: none; }
+.shelf-title { font-size: 20px; font-weight: 700; margin: 8px 0 16px 0; }
+.shelf-row { background: none; }
+.shelf-row > row { padding: 0 8px 0 0; background: none; }
+.video-card.shelf .title { font-size: 14px; }
