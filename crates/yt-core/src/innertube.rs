@@ -16,6 +16,7 @@ use crate::channel::{self, ChannelPage, ChannelRef, Subscription};
 use crate::comments::{self, Comment, CommentThread, CommentsPage};
 use crate::error::{Error, Result};
 use crate::feed::{self, FeedPage};
+use crate::playlist::{self, Playlist, PlaylistPage, Privacy, SaveOption};
 use crate::search::{self, SearchContinuation, SearchFilters, SearchPage, Suggestion};
 use crate::watch::{self, WatchPage};
 
@@ -65,6 +66,8 @@ pub enum Rating {
 
 /// The home feed's browse ID.
 pub const HOME: &str = "FEwhat_to_watch";
+/// The user's playlists.
+pub const PLAYLISTS: &str = "FEplaylist_aggregation";
 
 /// How long the TV player script found is trusted before checking for a
 /// newer one.
@@ -440,6 +443,104 @@ impl InnerTube {
                 status: 200,
                 message: Some(format!("no channel @{handle}")),
             })
+    }
+
+    /// A playlist's page: its details and first videos (`continuation`
+    /// loads more, as a feed page).
+    pub async fn playlist(&self, playlist_id: &str) -> Result<PlaylistPage> {
+        let resp = self
+            .call("browse", json!({ "browseId": format!("VL{playlist_id}") }))
+            .await?;
+        Ok(playlist::parse_page(&resp, playlist_id))
+    }
+
+    /// The user's playlists, Watch later and Liked videos first.
+    pub async fn playlists(&self) -> Result<Vec<Playlist>> {
+        let page = self.browse(PLAYLISTS).await?;
+        Ok(page.shelves.into_iter().flat_map(|s| s.playlists).collect())
+    }
+
+    /// The user's playlists to save `video_id` to, saying which hold it.
+    pub async fn save_options(&self, video_id: &str) -> Result<Vec<SaveOption>> {
+        let resp = self
+            .call(
+                "playlist/get_add_to_playlist",
+                json!({ "videoIds": [video_id] }),
+            )
+            .await?;
+        Ok(playlist::parse_save_options(&resp))
+    }
+
+    /// Changes a playlist: `actions` as YouTube writes them (see
+    /// [`add_to_playlist`](Self::add_to_playlist)), and the `params` a
+    /// video's menu may come with.
+    pub async fn edit_playlist(
+        &self,
+        playlist_id: &str,
+        actions: Value,
+        params: Option<&str>,
+    ) -> Result<()> {
+        let mut body = json!({ "playlistId": playlist_id, "actions": actions });
+        if let Some(params) = params {
+            body["params"] = params.into();
+        }
+        let resp = self.call("browse/edit_playlist", body).await?;
+        match resp.get("status").and_then(Value::as_str) {
+            Some("STATUS_SUCCEEDED") | None => Ok(()),
+            Some(status) => Err(Error::Api {
+                endpoint: "edit_playlist".into(),
+                status: 200,
+                message: Some(format!("YouTube answered {status}")),
+            }),
+        }
+    }
+
+    pub async fn add_to_playlist(&self, playlist_id: &str, video_id: &str) -> Result<()> {
+        let actions = json!([{ "action": "ACTION_ADD_VIDEO", "addedVideoId": video_id }]);
+        self.edit_playlist(playlist_id, actions, None).await
+    }
+
+    pub async fn remove_from_playlist(&self, playlist_id: &str, video_id: &str) -> Result<()> {
+        let actions =
+            json!([{ "action": "ACTION_REMOVE_VIDEO_BY_VIDEO_ID", "removedVideoId": video_id }]);
+        self.edit_playlist(playlist_id, actions, None).await
+    }
+
+    /// Makes a playlist (with `video_id` in it, if given); its ID.
+    pub async fn create_playlist(
+        &self,
+        title: &str,
+        privacy: Privacy,
+        video_id: Option<&str>,
+    ) -> Result<String> {
+        let body = json!({
+            "title": title,
+            "privacyStatus": privacy.as_api(),
+            "videoIds": video_id.into_iter().collect::<Vec<_>>(),
+        });
+        let resp = self.call("playlist/create", body).await?;
+        resp.get("playlistId")
+            .and_then(Value::as_str)
+            .map(str::to_owned)
+            .ok_or_else(|| Error::Api {
+                endpoint: "playlist/create".into(),
+                status: 200,
+                message: Some("YouTube didn't say which playlist it made".into()),
+            })
+    }
+
+    pub async fn delete_playlist(&self, playlist_id: &str) -> Result<()> {
+        self.call("playlist/delete", json!({ "playlistId": playlist_id }))
+            .await
+            .map(drop)
+    }
+
+    /// Tells YouTube something about a video ("Not interested", "Don't
+    /// recommend channel"), with a token from its menu.
+    pub async fn feedback(&self, token: &str) -> Result<()> {
+        self.call("feedback", json!({ "feedbackTokens": [token] }))
+            .await
+            .map(drop)
     }
 
     pub async fn subscribe(&self, subscription: &Subscription) -> Result<()> {

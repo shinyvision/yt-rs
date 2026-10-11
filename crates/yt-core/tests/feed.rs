@@ -88,6 +88,7 @@ fn first_page() {
         &page,
         &[
             Shelf {
+                playlists: vec![],
                 title: "Recommended".into(),
                 // The ad in front of A is skipped.
                 videos: vec![
@@ -105,6 +106,7 @@ fn first_page() {
                 continuation: Some("MORE_RECOMMENDED".into()),
             },
             Shelf {
+                playlists: vec![],
                 title: "Recently uploaded".into(),
                 videos: vec![
                     Video {
@@ -133,6 +135,7 @@ fn more_of_a_shelf() {
     check(
         &page,
         &[Shelf {
+            playlists: vec![],
             title: String::new(),
             videos: vec![
                 video(
@@ -158,6 +161,7 @@ fn more_shelves_skip_shows() {
         &page,
         &[
             Shelf {
+                playlists: vec![],
                 title: "Recommended shows".into(),
                 videos: vec![video(
                     "video-F-id",
@@ -170,6 +174,7 @@ fn more_shelves_skip_shows() {
                 continuation: Some("MORE_SHOWS".into()),
             },
             Shelf {
+                playlists: vec![],
                 title: "Nature and more".into(),
                 videos: vec![video(
                     "video-G-id",

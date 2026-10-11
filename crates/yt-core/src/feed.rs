@@ -33,6 +33,10 @@ pub struct Video {
     pub live: bool,
     #[serde(default)]
     pub short: bool,
+    /// What YouTube offers to do with it ("Save to Watch later", "Not
+    /// interested", ...), from the tile's menu.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub actions: Vec<crate::actions::VideoAction>,
 }
 
 impl Video {
@@ -45,11 +49,14 @@ impl Video {
     }
 }
 
-/// A row of videos with a title, which may be able to load more of itself.
+/// A row of videos (or playlists) with a title, which may be able to load
+/// more of itself.
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
 pub struct Shelf {
     pub title: String,
     pub videos: Vec<Video>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub playlists: Vec<crate::playlist::Playlist>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub continuation: Option<String>,
 }
@@ -116,6 +123,8 @@ impl Parser {
                         "tileRenderer" => {
                             if let Some(video) = from_tile(child) {
                                 self.shelf().videos.push(video);
+                            } else if let Some(playlist) = crate::playlist::from_tile(child) {
+                                self.shelf().playlists.push(playlist);
                             }
                         }
                         "lockupViewModel" => {
@@ -214,6 +223,7 @@ fn from_tile(tile: &Value) -> Option<Video> {
         header.and_then(|h| h.pointer("/thumbnail/thumbnails")),
     ));
     video.live = video.duration.as_deref() == Some("LIVE");
+    video.actions = crate::actions::from_tile(tile);
     (!video.title.is_empty()).then_some(video)
 }
 
@@ -315,7 +325,7 @@ fn progress(percent: f64) -> Option<f32> {
 
 /// Picks the thumbnail closest to card size: the largest one up to 720 px
 /// wide, or else the smallest one.
-fn best_thumbnail<'a>(thumbnails: impl Iterator<Item = &'a Value>) -> Option<String> {
+pub(crate) fn best_thumbnail<'a>(thumbnails: impl Iterator<Item = &'a Value>) -> Option<String> {
     let mut sized: Vec<(u64, &str)> = thumbnails
         .filter_map(|t| {
             Some((

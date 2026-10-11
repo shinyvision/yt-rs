@@ -6,6 +6,7 @@
 //! display and reused by any front end.
 
 pub mod account;
+pub mod actions;
 pub mod auth;
 pub mod captions;
 pub mod channel;
@@ -14,6 +15,7 @@ pub mod error;
 pub mod feed;
 pub mod innertube;
 pub mod paths;
+pub mod playlist;
 mod proto;
 pub mod search;
 pub mod solver;
