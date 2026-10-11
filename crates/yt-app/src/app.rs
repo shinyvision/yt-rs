@@ -144,6 +144,7 @@ impl App {
         commands::register(&app);
         social::register(&app);
         crate::playlists::register(&app);
+        crate::downloads::register(&app);
         search::register(&app);
         ui::register(&app);
         step("theme, commands, components");
@@ -312,6 +313,27 @@ impl App {
     }
 
     fn drop_hidden_pages(&self, visible: &gtk::Widget) {
+        // After the crossfade, which shows the page being left fading out:
+        // without it, the new page fades in from nothing.
+        if self.page_host.is_transition_running() {
+            let handler: Rc<RefCell<Option<glib::SignalHandlerId>>> = Rc::default();
+            let slot = handler.clone();
+            let id = self
+                .page_host
+                .connect_transition_running_notify(move |host| {
+                    if host.is_transition_running() {
+                        return;
+                    }
+                    if let Some(id) = slot.borrow_mut().take() {
+                        host.disconnect(id);
+                    }
+                    if let Some(current) = host.visible_child() {
+                        app().drop_hidden_pages(&current);
+                    }
+                });
+            *handler.borrow_mut() = Some(id);
+            return;
+        }
         let kept: Vec<gtk::Widget> = self.nav.borrow().kept.values().cloned().collect();
         let mut child = self.page_host.first_child();
         while let Some(w) = child {

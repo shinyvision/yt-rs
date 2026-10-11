@@ -12,6 +12,7 @@ pub mod comments;
 pub mod controls;
 pub mod cursor;
 pub mod dialog;
+pub mod downloads_page;
 pub mod feed;
 pub mod icons;
 pub mod layer;
@@ -96,6 +97,10 @@ pub fn register(app: &App) {
     );
     c.define("library", Component::new(library::build_library));
     c.define("settings", Component::new(settings_page::build));
+    c.define(
+        "downloads",
+        Component::new(downloads_page::build).with_update(downloads_page::update),
+    );
     c.define("list_panel", Component::new(list_panel::build));
     c.define(
         "playlists",
@@ -194,6 +199,7 @@ pub fn register(app: &App) {
         ("library", "You", false),
         ("playlists", "Playlists", false),
         ("settings", "Settings", false),
+        ("downloads", "Downloads", false),
     ] {
         pages.register(Page {
             name: name.into(),
@@ -248,6 +254,13 @@ pub fn register(app: &App) {
         "yt-settings-symbolic",
         0,
         "more",
+    ));
+    pages.add_nav(nav(
+        "downloads",
+        "Downloads",
+        "yt-download-symbolic",
+        40,
+        "library",
     ));
     for (id, title, icon, list, order) in [
         (

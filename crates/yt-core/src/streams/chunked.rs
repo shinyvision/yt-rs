@@ -268,7 +268,7 @@ fn refused(status: StatusCode) -> io::Error {
 }
 
 /// The length googlevideo URLs carry (`clen`).
-fn content_length(url: &str) -> Option<u64> {
+pub fn content_length(url: &str) -> Option<u64> {
     url::Url::parse(url)
         .ok()?
         .query_pairs()
@@ -509,6 +509,38 @@ mod tests {
         let error = read_all(&mut r, usize::MAX).unwrap_err();
         assert!(error.to_string().contains("403"), "{error}");
         assert!(started.elapsed() < Duration::from_secs(30));
+    }
+
+    #[test]
+    fn a_download_stops_and_carries_on() {
+        let rt = runtime();
+        let size = 3_000_000;
+        let server = Arc::new(Mutex::new(Server::default()));
+        let url = serve(size, server);
+        let dir = std::env::temp_dir().join(format!("yt-rs-test-{}", std::process::id()));
+        let path = dir.join("video.webm");
+        let _ = std::fs::remove_file(&path);
+        // Cancelled after a megabyte or so.
+        let stopped = crate::downloads::fetch(reader(url.clone(), None, &rt), &path, |saved, _| {
+            saved < 1_000_000
+        });
+        assert!(stopped.is_err());
+        let partial = std::fs::metadata(&path).unwrap().len();
+        assert!(partial >= 1_000_000 && partial < size, "{partial}");
+        // Then from there to the end.
+        let mut calls = 0;
+        let saved = crate::downloads::fetch(reader(url, None, &rt), &path, |_, total| {
+            calls += 1;
+            assert_eq!(total, size);
+            true
+        })
+        .unwrap();
+        assert_eq!(saved, size);
+        assert!(calls > 1);
+        let data = std::fs::read(&path).unwrap();
+        assert_eq!(data.len() as u64, size);
+        assert!(data.iter().enumerate().all(|(i, b)| *b == byte(i as u64)));
+        let _ = std::fs::remove_dir_all(dir);
     }
 
     #[test]

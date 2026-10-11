@@ -210,6 +210,19 @@ fn start(video: Video) {
 
 /// Looks the streams up, and plays them; or says why YouTube won't.
 fn look_up(video: Video, start: Option<f64>, generation: u64) {
+    // Downloaded: from its files, at once, offline or not. YouTube is still
+    // asked where to resume and told what was watched, if it can be.
+    if let Some(local) = crate::downloads::stream_set(&video.id) {
+        let start = start.or_else(|| fallback_resume(&video)).unwrap_or(0.0);
+        let id = video.id.clone();
+        runtime::spawn_local(async move {
+            let _ = crate::app::app().tracker.prepare(&id).await;
+        });
+        runtime::spawn_local(async move {
+            load(&video.id, &local, start, generation).await;
+        });
+        return;
+    }
     runtime::spawn_local(async move {
         let app = crate::app::app();
         let streams = app.streams.clone();

@@ -11,6 +11,7 @@ pub mod auth;
 pub mod captions;
 pub mod channel;
 pub mod comments;
+pub mod downloads;
 pub mod error;
 pub mod feed;
 pub mod innertube;

@@ -75,6 +75,12 @@ struct Watch {
     expanded: Cell<bool>,
     more: gtk::Button,
     comments: gtk::Box,
+    /// The video shown, as its card or the watch page knows it.
+    video: RefCell<Video>,
+    save: gtk::Button,
+    download: gtk::Button,
+    download_icon: gtk::Image,
+    download_label: gtk::Label,
 }
 
 pub fn build(props: &Value) -> gtk::Widget {
@@ -105,6 +111,23 @@ pub fn build(props: &Value) -> gtk::Widget {
             .create("watch.actions", gtk::Orientation::Horizontal, 8),
     );
     byline.append(&rating);
+    // Save and Download, as youtube.com has them beside the likes.
+    let save = action_pill("yt-playlist-add-symbolic", "Save");
+    save.set_tooltip_text(Some("Save to a playlist"));
+    let (download, download_icon, download_label) = {
+        let icon = gtk::Image::from_icon_name("yt-download-symbolic");
+        let label = gtk::Label::new(Some("Download"));
+        let content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+        content.append(&icon);
+        content.append(&label);
+        let button = gtk::Button::new();
+        button.set_child(Some(&content));
+        button.add_css_class("watch-action");
+        button.set_valign(gtk::Align::Center);
+        (button, icon, label)
+    };
+    byline.append(&save);
+    byline.append(&download);
 
     let stats = gtk::Label::new(None);
     stats.add_css_class("description-stats");
@@ -214,6 +237,11 @@ pub fn build(props: &Value) -> gtk::Widget {
         expanded: Cell::new(false),
         more,
         comments,
+        video: RefCell::default(),
+        save,
+        download,
+        download_icon,
+        download_label,
     });
     attach(&root, watch.clone());
     connect(&watch, &root);
@@ -320,6 +348,59 @@ fn connect(watch: &Rc<Watch>, root: &adw::BreakpointBin) {
     watch.dislike.connect_clicked(rate(Vote::Dislike));
 
     let weak = Rc::downgrade(watch);
+    watch.save.connect_clicked(move |_| {
+        if let Some(watch) = weak.upgrade() {
+            let id = watch.video_id.borrow().clone();
+            if let Err(e) = app()
+                .ext
+                .commands
+                .run("video.save", json!({ "video_id": id }))
+            {
+                app().toast(&e);
+            }
+        }
+    });
+    let weak = Rc::downgrade(watch);
+    watch.download.connect_clicked(move |button| {
+        let Some(watch) = weak.upgrade() else { return };
+        let id = watch.video_id.borrow().clone();
+        let run = |command: &str, args: Value| {
+            if let Err(e) = app().ext.commands.run(command, args) {
+                app().toast(&e);
+            }
+        };
+        if crate::downloads::is_running(&id) {
+            run("download.cancel", json!({ "video_id": id }));
+        } else if crate::downloads::get(&id).is_some_and(|d| d.complete) {
+            let props = json!({
+                "title": "Delete download?",
+                "body": "It won't play offline any more.",
+                "confirm": "Delete",
+            });
+            super::dialog::confirm(button, &props, move || {
+                if let Err(e) = app()
+                    .ext
+                    .commands
+                    .run("download.delete", json!({ "video_id": id }))
+                {
+                    app().toast(&e);
+                }
+            });
+        } else {
+            let video = watch.video.borrow().clone();
+            run("download.start", json!({ "video": video }));
+        }
+    });
+    let weak = Rc::downgrade(watch);
+    follow(root, "download.changed", move |payload| {
+        if let Some(watch) = weak.upgrade()
+            && payload.get("video_id").and_then(Value::as_str)
+                == Some(watch.video_id.borrow().as_str())
+        {
+            show_download(&watch);
+        }
+    });
+    let weak = Rc::downgrade(watch);
     watch.more.connect_clicked(move |_| {
         if let Some(watch) = weak.upgrade() {
             show_description(&watch, !watch.expanded.get());
@@ -345,6 +426,53 @@ fn connect(watch: &Rc<Watch>, root: &adw::BreakpointBin) {
         }
         arrange(&watch);
     });
+}
+
+/// A rounded button with an icon and a label, beside the likes.
+fn action_pill(icon: &str, label: &str) -> gtk::Button {
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    content.append(&gtk::Image::from_icon_name(icon));
+    content.append(&gtk::Label::new(Some(label)));
+    let button = gtk::Button::new();
+    button.set_child(Some(&content));
+    button.add_css_class("watch-action");
+    button.set_valign(gtk::Align::Center);
+    button
+}
+
+/// The Download button as the video's download stands: "Download", how far
+/// along it is, or "Downloaded".
+fn show_download(watch: &Watch) {
+    let id = watch.video_id.borrow().clone();
+    let download = crate::downloads::get(&id);
+    let running = crate::downloads::is_running(&id);
+    let live = watch.video.borrow().live;
+    let (icon, label, tooltip) = match (&download, running) {
+        (Some(d), _) if d.complete => (
+            "yt-downloaded-symbolic",
+            "Downloaded".to_owned(),
+            "Downloaded: plays offline. Click to delete",
+        ),
+        (Some(d), true) => (
+            "yt-download-symbolic",
+            format!("{:.0} %", d.progress() * 100.0),
+            "Downloading. Click to stop",
+        ),
+        (_, true) => (
+            "yt-download-symbolic",
+            "Starting".to_owned(),
+            "Downloading. Click to stop",
+        ),
+        _ => (
+            "yt-download-symbolic",
+            "Download".to_owned(),
+            "Download to watch offline",
+        ),
+    };
+    watch.download_icon.set_icon_name(Some(icon));
+    watch.download_label.set_label(&label);
+    watch.download.set_tooltip_text(Some(tooltip));
+    watch.download.set_visible(!live);
 }
 
 /// Places the grid's cells for the layout: default, theater or narrow.
@@ -487,6 +615,8 @@ fn fill_basic(watch: &Watch, props: &Value) {
         return;
     }
     *watch.video_id.borrow_mut() = video.id.clone();
+    *watch.video.borrow_mut() = video.clone();
+    show_download(watch);
     watch.scroller.vadjustment().set_value(0.0);
     watch.title.set_label(&video.title);
     let name = video.channel.clone().unwrap_or_default();
@@ -521,6 +651,16 @@ fn fill_basic(watch: &Watch, props: &Value) {
 fn fill_details(watch: &Watch, page: &WatchPage) {
     if !page.title.is_empty() {
         watch.title.set_label(&page.title);
+    }
+    // What a download keeps, for a video opened by its ID alone.
+    {
+        let mut video = watch.video.borrow_mut();
+        if video.title.is_empty() {
+            video.title = page.title.clone();
+        }
+        if video.channel.is_none() {
+            video.channel = page.owner.as_ref().map(|o| o.name.clone());
+        }
     }
     show_related(watch, page);
     if let Some(owner) = &page.owner {

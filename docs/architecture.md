@@ -194,6 +194,12 @@ destroyed, so handlers don't pile up as lists scroll and pages change.
   or, live, with `yt_core::streams::live`. A stream that can't be read
   ends like one at its end, so the reader notes why it gave up and the
   player reports an error instead of the video ending (no "Up next").
+- **Downloads:** `yt_core::downloads` keeps each download in its own
+  directory (the video and audio streams as YouTube sends them, and a
+  picture) and lists them in `downloads.json`; `fetch` saves a stream with
+  the chunked reader, resuming a partial file. `downloads.rs` runs each on a
+  thread of its own and plays a downloaded video from its files, which mpv
+  opens directly (no muxing needed), online or not.
 - **Media controls:** `media_controls.rs` puts the player on MPRIS (D-Bus) on
   Linux, as `org.mpris.MediaPlayer2.yt_rs` (another app ID, a test say, gets
   an `.instance<pid>` name, so it never takes the desktop's player). Its

@@ -89,6 +89,20 @@ pub struct Stream {
     pub segment_duration: Option<f64>,
 }
 
+/// Gets a new URL for a video's stream of format `itag`, for a reader whose
+/// URL YouTube refused (expired, or held back again): the video looked up
+/// again, once YouTube serves it.
+pub fn refresher(resolver: Arc<Resolver>, video_id: String, itag: u32) -> chunked::Refresh {
+    Arc::new(move || {
+        let (resolver, video_id) = (resolver.clone(), video_id.clone());
+        Box::pin(async move {
+            let fresh = resolver.resolve_fresh(&video_id).await.ok()?;
+            resolver.until_served(&fresh).await;
+            Some(fresh.by_itag(itag)?.url.clone())
+        })
+    })
+}
+
 impl StreamSet {
     /// The stream of this format (`itag`), among the video, audio and
     /// qualities.

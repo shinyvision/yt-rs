@@ -321,6 +321,10 @@ impl Player {
             (start > 0.0).then(|| head.segment_at(start, l.segment))
         });
         let url = |stream: &Stream| {
+            // A downloaded video's files.
+            if std::path::Path::new(&stream.url).is_absolute() {
+                return stream.url.clone();
+            }
             let source = match (&session, stream.segment_duration) {
                 (Some(l), Some(_)) => protocol::Source::Live {
                     start: first,
@@ -359,16 +363,11 @@ impl Player {
     /// up again, once YouTube serves them.
     fn refresh(&self, stream: &Stream) -> Option<Refresh> {
         let video_id = self.state.borrow().video_id.clone()?;
-        let itag = stream.itag()?;
-        let resolver = self.resolver.clone();
-        Some(Arc::new(move || {
-            let (resolver, video_id) = (resolver.clone(), video_id.clone());
-            Box::pin(async move {
-                let fresh = resolver.resolve_fresh(&video_id).await.ok()?;
-                resolver.until_served(&fresh).await;
-                Some(fresh.by_itag(itag)?.url.clone())
-            })
-        }))
+        Some(yt_core::streams::refresher(
+            self.resolver.clone(),
+            video_id,
+            stream.itag()?,
+        ))
     }
 
     /// The streams of the loaded video.

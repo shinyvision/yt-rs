@@ -26,6 +26,9 @@ of it.
   page; the "You" page; "Save video to..." with new playlists; a channel's
   playlists; playing a playlist in order, shuffled or looped, and the queue
   ("Add to queue"), shown beside the video.
+- **Downloads** to watch offline: the video and audio YouTube sends, kept
+  in the app and played from disk (also online, saving data), at full speed,
+  carrying on where they stopped, with a Downloads page.
 - **Media keys and the desktop's player widget** (MPRIS): title, channel,
   picture and position, and play, pause, seek, next, previous, volume, speed,
   loop and shuffle.
@@ -132,6 +135,7 @@ To try one: `ln -s "$PWD/examples/plugins/snake" ~/.config/yt-rs/plugins/`.
 |---|---|---|
 | `YT_RS_CONFIG_DIR` | `~/.config/yt-rs` | sign-in, plugins. A separate profile runs as its own instance |
 | `YT_RS_CACHE_DIR` | `~/.cache/yt-rs` | thumbnails |
+| `YT_RS_DATA_DIR` | `~/.local/share/yt-rs`, or `$YT_RS_CONFIG_DIR/data` for a profile of its own | downloads |
 | `YT_RS_APP_ID` | `dev.ytrs.YtRs` | the app ID, which is also the window's class: another one lets window-manager rules tell an instance apart |
 | `YT_RS_LOG` | `warn,yt_app=info,yt_core=info` | log filter (`tracing` syntax) |
 | `YT_RS_MPV_LOG` | `warn` | how much of mpv's own log to pass on (`v`, `debug`, `trace`; shown with `YT_RS_LOG=mpv=debug`) |

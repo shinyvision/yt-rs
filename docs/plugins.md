@@ -186,6 +186,8 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `playlist.loaded` | `{ playlist_id, page }`: a playlist's page loaded (`page.videos`, `page.continuation`, `page.owner`, ...) |
 | `video.hidden` | `{ video_id }`: YouTube was told it isn't wanted ("Not interested", "Don't recommend channel"); feeds drop it |
 | `video.menu_loaded` | `{ video_id }`: YouTube's own menu for a video (sent on request) arrived; `video.menu` now has it |
+| `download.changed` | `{ video_id, download?, running }`: a download started, got further, finished, stopped or was deleted (`download` null). `download = { video, quality?, bytes, total, complete, video_file, audio_file? }` |
+| `download.done`, `download.failed` | `{ video_id, error? }` |
 | `list.changed` | `{ list }`: the list playing changed (`null`: none). `list = { playlist_id?, title, owner?, videos, order, position, looping, shuffled }`; the queue has no `playlist_id`. `order` holds indices into `videos` (0-based), `position` an index into `order` |
 | `channel.loaded` | `{ channel }`: a channel page (`channel`, `banner`, `description`, `about`, `subscription`, `tabs`, `home`) |
 | `channel.subscription` | `{ channel_id, subscribed }` |
@@ -318,6 +320,9 @@ app.commands()                     -- all names
 | `playlist.add`, `playlist.remove` | `{ playlist_id, video_id, title?, undo? }` |
 | `playlist.create` | `{ title, privacy? = "private" \| "unlisted" \| "public", video_id? }` → reports `playlist.created` |
 | `playlist.delete` | `{ playlist_id }` |
+| `download.start` | `{ video, quality? }`: downloads it to watch offline (`quality` as the player names them, `"720p"`; the player's choice otherwise). One that stopped carries on |
+| `download.cancel`, `download.delete` | `{ video_id }` |
+| `download.list` | → every download, newest first; `download.get` `{ video_id }` → one |
 | `queue.add` | `{ video }`: to the queue, which starts with the video playing (or plays this one, in the mini player, if none is) |
 | `list.current` | → the list playing (see `list.changed`), or nothing |
 | `list.next`, `list.previous`, `list.play_at` | `{ position }` for `play_at`: an index into the list's `order` |
@@ -420,6 +425,7 @@ app.components()
 | `list_panel` | the list playing, above "Up next" on the watch page |
 | `save_dialog` | `{ video_id }`: "Save video to..." |
 | `settings` | the Settings page |
+| `downloads` | the Downloads page |
 | `search_box` | the search field in the top bar, with its list of earlier searches and suggestions |
 | `search` | `{ query, filters?, chip?, chips? }`: the search page |
 | `search_video`, `search_channel`, `search_playlist`, `search_shelf` | a result (an item of `search.page`); shelves are "People also watched", a row of Shorts, ... |

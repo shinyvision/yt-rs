@@ -3,6 +3,7 @@
 mod app;
 mod channels;
 mod commands;
+mod downloads;
 mod ext;
 mod images;
 mod lists;

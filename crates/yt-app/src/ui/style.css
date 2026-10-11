@@ -676,3 +676,13 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .shortcuts-heading { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
 .shortcut { padding: 5px 0; font-size: 14px; }
 .keycap { padding: 2px 8px; border-radius: 6px; background: var(--yt-raised); border: 1px solid #3f3f3f; font-size: 12px; font-weight: 500; }
+
+/* Downloads, and the watch page's Save and Download. */
+.watch-action { min-height: 36px; border-radius: 18px; padding: 0 16px; background: var(--yt-raised); font-weight: 500; font-size: 14px; }
+.watch-action:hover { background: #3f3f3f; }
+.downloads-page { padding: 24px 32px 48px 32px; }
+.download-row { padding: 8px; border-radius: 12px; }
+.download-row:hover { background: rgba(255, 255, 255, 0.05); }
+.download-title { font-size: 16px; font-weight: 500; }
+.download-progress, .download-progress trough, .download-progress progress { min-height: 4px; border-radius: 2px; }
+.download-progress progress { background: var(--yt-accent); }

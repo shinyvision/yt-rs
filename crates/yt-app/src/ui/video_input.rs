@@ -156,6 +156,15 @@ pub fn menu_items(video: &Value) -> Value {
         defaults.push(json!({ "label": "Save to Watch later", "icon": "yt-watch-later-symbolic", "command": "video.save_to_watch_later" }));
         defaults.push(json!({ "label": "Save to playlist", "icon": "yt-playlist-add-symbolic", "command": "video.save" }));
     }
+    let id = video.get("id").and_then(Value::as_str).unwrap_or_default();
+    let live = video.get("live").and_then(Value::as_bool).unwrap_or(false);
+    if crate::downloads::is_running(id) {
+        defaults.push(json!({ "label": "Cancel download", "icon": "yt-close-symbolic", "command": "download.cancel", "args": { "video_id": id } }));
+    } else if crate::downloads::get(id).is_some_and(|d| d.complete) {
+        defaults.push(json!({ "label": "Delete download", "icon": "yt-delete-symbolic", "command": "download.delete", "args": { "video_id": id } }));
+    } else if !live {
+        defaults.push(json!({ "label": "Download", "icon": "yt-download-symbolic", "command": "download.start" }));
+    }
     defaults.extend([
         json!({ "label": "Copy link", "icon": "yt-link-symbolic", "command": "video.copy_link" }),
         json!({ "label": "Open in browser", "icon": "yt-open-symbolic", "command": "video.open_in_browser" }),
