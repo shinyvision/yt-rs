@@ -196,6 +196,12 @@ either growing.
   VA-API, with frames shared with OpenGL through the Wayland display. GTK
   uses its OpenGL renderer, so the frames need no conversion. The renderer
   goes before mpv when the window closes (`player_dock::shut_down`).
+- **Ambient mode** (`ui/ambient.rs`): every two seconds while the video
+  plays on the watch page, the frame on screen (the picture, without
+  mpv's bars) is drawn once into a small, blurred texture with clear
+  margins, and the player's frame (`AspectBin::set_backdrop`) shows it
+  larger behind the player, crossfading from the last. Between updates
+  the glow is a small texture drawn scaled: no blur on every frame.
 - **Refused streams:** when the player loads a video but can't open its
   audio, or the video fails to open (YouTube answering 403, say, after a
   player script change), `playback.rs` looks the video up again

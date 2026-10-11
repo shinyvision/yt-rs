@@ -307,6 +307,7 @@ app.commands()                     -- all names
 | `player.toggle_captions` | |
 | `player.set_looping`, `player.toggle_loop` | `{ looping }` |
 | `player.set_stable_volume` | `{ enabled }`: evens out loud and quiet parts |
+| `player.set_ambient` | `{ enabled }`: ambient mode, the video's colors glowing softly around the player (on by default) |
 | `player.sleep_timer` | `{ minutes }`, `{ minutes = "end" }` for the end of the video, or `{ minutes = nil }` |
 | `player.frame_step` | `{ forward }`, one frame |
 | `player.seek_percent`, `player.seek_end` | `{ percent }`: of the video, or of the part of a live stream YouTube keeps; `seek_end` goes back to a live stream's edge |

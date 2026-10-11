@@ -3,6 +3,7 @@
 //! wrap any part of it.
 
 pub mod account;
+pub mod ambient;
 pub mod aspect;
 pub mod avatar;
 pub mod bezel;

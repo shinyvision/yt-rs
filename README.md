@@ -47,6 +47,8 @@ of it.
   between videos), stable volume, sleep timer, loop, chapters on the seek
   bar, preview frames while hovering it, theater mode, autoplay with an "Up
   next" countdown, a right-click menu and "stats for nerds".
+- **Ambient mode:** the video's colors glow softly around the player, as on
+  youtube.com (in the player's settings).
 - **Watch page:** title, channel, likes and dislikes, the description with
   working links and timestamps, "Up next", and the comments: sort them, read
   replies, like or dislike them, write comments and replies, and delete your

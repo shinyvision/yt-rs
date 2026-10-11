@@ -33,6 +33,13 @@ pub struct Settings {
     /// Live chat folded away ("Hide chat").
     #[serde(default)]
     pub live_chat_hidden: bool,
+    /// The video's colors glowing around the player (ambient mode).
+    #[serde(default = "on")]
+    pub ambient: bool,
+}
+
+fn on() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -46,6 +53,7 @@ impl Default for Settings {
             stable_volume: false,
             download_height: None,
             live_chat_hidden: false,
+            ambient: true,
         }
     }
 }

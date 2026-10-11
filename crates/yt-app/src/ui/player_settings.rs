@@ -24,10 +24,16 @@ pub fn entries() -> Value {
     let app = app();
     let state = app.player.state();
     let streams = app.player.streams().unwrap_or_default();
-    let mut entries = vec![json!({
-        "label": "Stable volume", "icon": "yt-stable-volume-symbolic", "toggle": true,
-        "active": state.stable_volume, "command": "player.set_stable_volume",
-    })];
+    let mut entries = vec![
+        json!({
+            "label": "Stable volume", "icon": "yt-stable-volume-symbolic", "toggle": true,
+            "active": state.stable_volume, "command": "player.set_stable_volume",
+        }),
+        json!({
+            "label": "Ambient mode", "icon": "yt-ambient-symbolic", "toggle": true,
+            "active": app.settings.get().ambient, "command": "player.set_ambient",
+        }),
+    ];
 
     if !streams.captions.is_empty() {
         let mut options = vec![json!({

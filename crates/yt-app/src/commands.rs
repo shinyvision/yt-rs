@@ -427,6 +427,12 @@ pub fn register(this: &Rc<App>) {
         player.set_looping(!player.state().looping);
         Ok(json!(player.state().looping))
     });
+    // { enabled }: the video's colors glowing around the player.
+    c.register("player.set_ambient", |args| {
+        let on = args.get("enabled").and_then(Value::as_bool).unwrap_or(true);
+        app().settings.update(|s| s.ambient = on);
+        Ok(Value::Null)
+    });
     c.register("player.set_stable_volume", |args| {
         let on = args.get("enabled").and_then(Value::as_bool).unwrap_or(true);
         app().player.set_stable_volume(on);

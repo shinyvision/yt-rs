@@ -504,6 +504,15 @@ impl Player {
         }]);
     }
 
+    /// The picture's width divided by its height, once it shows.
+    pub fn video_aspect(&self) -> Option<f64> {
+        self.mpv
+            .get_string("video-params/aspect")?
+            .parse::<f64>()
+            .ok()
+            .filter(|a| *a > 0.0)
+    }
+
     /// Details for "stats for nerds", as mpv reports them.
     pub fn stats(&self) -> Vec<(&'static str, String)> {
         let get = |name: &str| self.mpv.get_string(name).unwrap_or_default();

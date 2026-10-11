@@ -1,13 +1,14 @@
 //! A container that is always a fixed shape: given a width, it asks for
 //! `width × ratio` height. Thumbnails use it so cards keep their 16:9 shape
 //! even before the image has loaded; the watch page uses it for the player,
-//! with a maximum height so the player never gets taller than the view.
+//! with a maximum height so the player never gets taller than the view, and
+//! a backdrop behind it (ambient mode's glow, see `ambient.rs`).
 
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
 
-use gtk::glib;
-use gtk::prelude::*;
+use adw::prelude::*;
 use gtk::subclass::prelude::*;
+use gtk::{gdk, glib, graphene};
 
 mod imp {
     use super::*;
@@ -23,6 +24,14 @@ mod imp {
         pub natural_width: Cell<i32>,
         /// Never taller than at this width, if above 0.
         pub max_width: Cell<i32>,
+        /// Drawn behind the child, past its edges (see `set_backdrop`), and
+        /// the one fading out, with how far the change has got (0 to 1).
+        pub backdrop: RefCell<Option<gdk::Texture>>,
+        pub previous: RefCell<Option<gdk::Texture>>,
+        pub fade: Cell<f64>,
+        pub spread: Cell<f32>,
+        pub opacity: Cell<f32>,
+        pub animation: RefCell<Option<adw::TimedAnimation>>,
     }
 
     impl Default for AspectBin {
@@ -33,6 +42,12 @@ mod imp {
                 fill: Cell::new(false),
                 natural_width: Cell::new(320),
                 max_width: Cell::new(0),
+                backdrop: RefCell::new(None),
+                previous: RefCell::new(None),
+                fade: Cell::new(1.0),
+                spread: Cell::new(1.0),
+                opacity: Cell::new(1.0),
+                animation: RefCell::new(None),
             }
         }
     }
@@ -53,6 +68,31 @@ mod imp {
     }
 
     impl WidgetImpl for AspectBin {
+        fn snapshot(&self, snapshot: &gtk::Snapshot) {
+            let (width, height) = (self.obj().width() as f32, self.obj().height() as f32);
+            if width > 0.0 && height > 0.0 {
+                // The backdrop covers the bin spread out around its middle.
+                let spread = self.spread.get();
+                let (w, h) = (width * spread, height * spread);
+                let bounds = graphene::Rect::new((width - w) / 2.0, (height - h) / 2.0, w, h);
+                let fade = self.fade.get() as f32;
+                let opacity = self.opacity.get();
+                for (texture, alpha) in [
+                    (self.previous.borrow().clone(), 1.0 - fade),
+                    (self.backdrop.borrow().clone(), fade),
+                ] {
+                    if let Some(texture) = texture
+                        && alpha > 0.0
+                    {
+                        snapshot.push_opacity(f64::from(alpha * opacity));
+                        snapshot.append_texture(&texture, &bounds);
+                        snapshot.pop();
+                    }
+                }
+            }
+            self.parent_snapshot(snapshot);
+        }
+
         fn request_mode(&self) -> gtk::SizeRequestMode {
             gtk::SizeRequestMode::HeightForWidth
         }
@@ -143,6 +183,38 @@ impl AspectBin {
         if self.imp().max_width.replace(width) != width {
             self.queue_resize();
         }
+    }
+
+    pub fn has_backdrop(&self) -> bool {
+        self.imp().backdrop.borrow().is_some()
+    }
+
+    /// Draws `texture` behind the child, `spread` times its size around its
+    /// middle and at `opacity`, crossfading from the last one over a second;
+    /// `None` fades it out.
+    pub fn set_backdrop(&self, texture: Option<gdk::Texture>, spread: f32, opacity: f32) {
+        let imp = self.imp();
+        if imp.backdrop.borrow().is_none() && texture.is_none() {
+            return;
+        }
+        imp.spread.set(spread);
+        imp.opacity.set(opacity);
+        let last = imp.backdrop.replace(texture);
+        *imp.previous.borrow_mut() = last;
+        imp.fade.set(0.0);
+        let weak = self.downgrade();
+        let target = adw::CallbackAnimationTarget::new(move |value| {
+            if let Some(bin) = weak.upgrade() {
+                bin.imp().fade.set(value);
+                if value >= 1.0 {
+                    bin.imp().previous.borrow_mut().take();
+                }
+                bin.queue_draw();
+            }
+        });
+        let animation = adw::TimedAnimation::new(self, 0.0, 1.0, 1000, target);
+        animation.play();
+        *imp.animation.borrow_mut() = Some(animation);
     }
 
     /// Caps the height (0 for no cap).

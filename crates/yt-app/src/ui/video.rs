@@ -185,6 +185,16 @@ impl VideoView {
         glib::Object::new()
     }
 
+    /// The frame on screen, as drawn (mpv's picture at the widget's size).
+    pub fn frame(&self) -> Option<gdk::Texture> {
+        self.imp()
+            .output
+            .borrow()
+            .as_ref()
+            .and_then(|output| output.shown.as_ref())
+            .map(|(texture, _)| texture.clone())
+    }
+
     /// Calls `f` with what went wrong if the video can't be shown.
     pub fn connect_error(&self, f: impl Fn(&str) + 'static) {
         *self.imp().on_error.borrow_mut() = Some(Box::new(f));

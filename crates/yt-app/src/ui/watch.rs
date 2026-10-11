@@ -197,6 +197,8 @@ pub fn build(props: &Value) -> gtk::Widget {
     theater.set_visible(false);
     super::player_dock::register("watch", &frame);
     super::player_dock::register("theater", &theater);
+    super::ambient::follow(&frame, "watch");
+    super::ambient::follow(&theater, "theater");
     let grid = gtk::Grid::new();
     grid.add_css_class("watch-column");
     grid.set_column_spacing(PADDING as u32);

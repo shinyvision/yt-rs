@@ -84,7 +84,11 @@ const WRENCH: &str = "M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6
 const ARROW_DOWN: &str = "M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z";
 const CHAT: &str = "M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z";
 
+/// Ambient mode: a picture with light around it (Material's "wb_iridescent"-like).
+const AMBIENT: &str = "M5 14.5h14v-6H5v6zM11 .55V3.5h2V.55h-2zm8.04 2.5l-1.79 1.79 1.41 1.41 1.8-1.79-1.42-1.41zM13 22.45V19.5h-2v2.95h2zm7.45-3.91l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zM3.55 4.46l1.79 1.79 1.41-1.41-1.79-1.79-1.41 1.41zm1.41 15.49l1.79-1.8-1.41-1.41-1.79 1.79 1.41 1.42z";
+
 const ICONS: &[(&str, &str, bool)] = &[
+    ("yt-ambient-symbolic", AMBIENT, false),
     ("yt-wrench-symbolic", WRENCH, false),
     ("yt-arrow-down-symbolic", ARROW_DOWN, false),
     ("yt-chat-symbolic", CHAT, false),
