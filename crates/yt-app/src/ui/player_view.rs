@@ -62,8 +62,6 @@ struct PlayerView {
     up_next_picture: gtk::Picture,
     up_next_count: gtk::Label,
     up_next_timer: RefCell<Option<glib::SourceId>>,
-    /// Counts down while YouTube holds the streams back (`player.waiting`).
-    waiting: RefCell<Option<glib::SourceId>>,
 }
 
 pub fn build(_props: &Value) -> gtk::Widget {
@@ -202,7 +200,6 @@ pub fn build(_props: &Value) -> gtk::Widget {
         up_next_picture,
         up_next_count,
         up_next_timer: RefCell::new(None),
-        waiting: RefCell::new(None),
     });
     attach(&overlay, view.clone());
     connect_rendering(&view);
@@ -293,9 +290,6 @@ fn connect_player(view: &Rc<PlayerView>) {
         let Some(view) = weak.upgrade() else { return };
         match event {
             PlayerEvent::Loading { .. } => {
-                if let Some(timer) = view.waiting.borrow_mut().take() {
-                    timer.remove();
-                }
                 view.message.set_visible(false);
                 show_action(&view, None);
                 view.spinner.set_visible(true);
@@ -311,38 +305,12 @@ fn connect_player(view: &Rc<PlayerView>) {
         }
     });
     // YouTube holds the streams back for as long as a pre-roll ad would
-    // play; count that down.
+    // play: the spinner says the video is on its way.
     let weak = Rc::downgrade(view);
-    app().ext.events.on("player.waiting", move |payload| {
-        let Some(view) = weak.upgrade() else { return };
-        let left = std::rc::Rc::new(std::cell::Cell::new(
-            payload
-                .get("seconds")
-                .and_then(Value::as_f64)
-                .unwrap_or(0.0) as u32,
-        ));
-        let show = |view: &PlayerView, seconds: u32| {
-            view.message.set_label(&format!("Starting in {seconds} s"));
-            view.message.set_visible(true);
+    app().ext.events.on("player.waiting", move |_| {
+        if let Some(view) = weak.upgrade() {
+            view.message.set_visible(false);
             view.spinner.set_visible(true);
-        };
-        show(&view, left.get());
-        let target = Rc::downgrade(&view);
-        let timer = glib::timeout_add_seconds_local(1, move || {
-            let Some(view) = target.upgrade() else {
-                return glib::ControlFlow::Break;
-            };
-            left.set(left.get().saturating_sub(1));
-            if left.get() == 0 {
-                view.waiting.borrow_mut().take();
-                view.message.set_visible(false);
-                return glib::ControlFlow::Break;
-            }
-            show(&view, left.get());
-            glib::ControlFlow::Continue
-        });
-        if let Some(old) = view.waiting.borrow_mut().replace(timer) {
-            old.remove();
         }
     });
     // In the mini player, the controls and the "Up next" card stay away.
