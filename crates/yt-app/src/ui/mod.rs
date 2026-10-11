@@ -15,9 +15,11 @@ pub mod dialog;
 pub mod downloads_page;
 pub mod feed;
 pub mod icons;
+pub mod inline_label;
 pub mod layer;
 pub mod library;
 pub mod list_panel;
+pub mod live_chat;
 pub mod logo;
 pub mod menu;
 pub mod mini_player;
@@ -102,6 +104,7 @@ pub fn register(app: &App) {
         Component::new(downloads_page::build).with_update(downloads_page::update),
     );
     c.define("list_panel", Component::new(list_panel::build));
+    c.define("live_chat", Component::new(live_chat::build));
     c.define(
         "playlists",
         Component::new(library::build_playlists).with_update(library::update_playlists),

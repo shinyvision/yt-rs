@@ -145,7 +145,8 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `feed.order_selected` | `{ browse_id, index }`: an order chip over a channel's videos (0 Latest, 1 Popular, 2 Oldest) |
 | `video.opened` | `{ video }`, before playback starts |
 | `player.loading` | `{ video_id }` |
-| `player.loaded`, `player.ended` | `{ video_id }` |
+| `player.loaded` | `{ video_id, live }`: `live` for a live stream |
+| `player.ended` | `{ video_id }` |
 | `player.position` | `{ position, duration }`, at most four times a second |
 | `player.paused`, `player.buffering` | `{ paused }`, `{ buffering }` |
 | `player.seeking` | `{ from, to }` |
@@ -189,6 +190,7 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `video.menu_loaded` | `{ video_id }`: YouTube's own menu for a video (sent on request) arrived; `video.menu` now has it |
 | `download.changed` | `{ video_id, download?, running }`: a download started, got further, finished, stopped or was deleted (`download` null). `download = { video, quality?, bytes, total, complete, video_file, audio_file? }` |
 | `download.done`, `download.failed` | `{ video_id, error? }` |
+| `chat.message` | `{ video_id, message }`: a message shows in the live chat (see the `chat.messages` filter) |
 | `list.changed` | `{ list }`: the list playing changed (`null`: none). `list = { playlist_id?, title, owner?, videos, order, position, looping, shuffled }`; the queue has no `playlist_id`. `order` holds indices into `videos` (0-based), `position` an index into `order` |
 | `channel.loaded` | `{ channel }`: a channel page (`channel`, `banner`, `description`, `about`, `subscription`, `tabs`, `home`) |
 | `channel.subscription` | `{ channel_id, subscribed }` |
@@ -217,6 +219,7 @@ app.filter("feed.page", function(data) ... return data end, order)
 | `video.card` | a video, before it fills a card |
 | `video.menu` | `{ video, items }`: a card's menu items, `{ label, icon?, command, args?, confirm? }`, in youtube.com's order: Add to queue, Save to Watch later, Save to playlist, Download, Copy link, Open in browser, Go to channel, then a `{ separator = true }` and YouTube's own for the video ("Not interested", "Remove from Watch later", ...; asked for when the video came without them). The command runs with `{ video }` added to its arguments |
 | `watch.page` | a video's details, before they are shown (see `watch.loaded`) |
+| `chat.messages` | `{ video_id, messages }`: a live chat's new messages (each page of them), before they show: drop some, or change them. A message is `{ id, author = { name, channel_id?, avatar?, owner, moderator, verified, member?, member_badge? }, text, time_usec, kind }`, `kind` one of `text`, `super_chat` (with `amount`, `header_color`, `body_color`), `sticker` (`amount`, `sticker`, `color`), `membership` (`header`, `subtext?`), `gift` (`image?`), `notice` |
 | `comments.page` | `{ comments, next }`: each page of comments, before it is shown. Remove comments to hide them |
 | `comment` | a comment (plus `by_creator`), before it fills a `comment` component |
 | `comment.menu` | `{ comment, items }`: a comment's menu items, like `video.menu`. The command runs with `{ video_id, comment_id, comment }` added |
@@ -324,6 +327,9 @@ app.commands()                     -- all names
 | `download.start` | `{ video, quality? }`: downloads it to watch offline (`quality` as the player names them, `"720p"`; the player's choice otherwise). One that stopped carries on |
 | `download.cancel`, `download.delete` | `{ video_id }` |
 | `download.list` | → every download, newest first; `download.get` `{ video_id }` → one |
+| `chat.state` | → the live chat on screen: `{ video_id, view, live, hidden, running, messages, pinned, following, status }` (`status`: `loading`, `messages` or `status` for a message instead), or `nil` |
+| `chat.hide`, `chat.show` | folds the live chat away ("Show chat" brings it back), remembered |
+| `chat.set_view` | `{ view }`: `"top"` (YouTube's pick, without potential spam) or `"live"` (every message) |
 | `queue.add` | `{ video }`: to the queue, which starts with the video playing (or plays this one, in the mini player, if none is) |
 | `list.current` | → the list playing (see `list.changed`), or nothing |
 | `list.next`, `list.previous`, `list.play_at` | `{ position }` for `play_at`: an index into the list's `order` |
@@ -424,6 +430,7 @@ app.components()
 | `library` | the "You" page: rows of history, playlists, Watch later and liked videos |
 | `playlists` | the user's playlists, as a grid |
 | `list_panel` | the list playing, above "Up next" on the watch page |
+| `live_chat` | a live stream's chat, above "Up next": it follows the video on screen and shows only for a live stream (or one about to start) |
 | `save_dialog` | `{ video_id }`: "Save video to..." |
 | `settings` | the Settings page |
 | `downloads` | the Downloads page |
@@ -452,7 +459,8 @@ app.unslot(id)
 
 `sidebar.top`, `sidebar.bottom`, `topbar.start`, `topbar.center` (after
 the search box), `topbar.end`, `feed.header`, `search.header`,
-`watch.actions`, `watch.below_player`,
+`watch.actions`, `watch.below_player`, `live_chat.header` (the live chat's
+header),
 `player.overlay`, `player.controls.start`, `player.controls.end`,
 `settings.sections` (the Settings page: add an `AdwPreferencesGroup`),
 `mini_player.info` (under the mini player's title), `playlist.panel` (under

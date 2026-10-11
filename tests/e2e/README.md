@@ -83,3 +83,12 @@ and Oldest chips: there before the videos load, each order loading in its
 order (Popular and Oldest from the web client), more loading on scrolling,
 back to the top on another order, and no chips on the other tabs. Reads
 only.
+
+## Live chat
+
+`live-chat` plays a live stream by its ID alone (`E2E_VIDEO`; pick one live
+now, with its chat on, e.g. from a signed-out search filtered to Live) and
+checks the chat: it shows and fills, new messages come in, Live chat, hide
+and show, theater mode, nothing asked for off screen (the mini player plays)
+and a fresh start back on the watch page, and the `chat.messages` filter.
+Reads only.

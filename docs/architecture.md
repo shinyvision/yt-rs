@@ -194,6 +194,15 @@ destroyed, so handlers don't pile up as lists scroll and pages change.
   or, live, with `yt_core::streams::live`. A stream that can't be read
   ends like one at its end, so the reader notes why it gave up and the
   player reports an error instead of the video ending (no "Up next").
+- **Live chat:** `yt_core::live_chat` reads a live stream's chat with the
+  TV client (signed in, the user's view). Its watch page has no chat, so the
+  first token is built as youtube.com builds its own (the channel and the
+  video, and Top or Live chat); each page brings the next token and how long
+  to wait. The `live_chat` component asks only while it is on screen,
+  trickles each page's messages in over the wait, keeps the newest 150, and
+  draws channels' emoji and badges in the text with `inline_label`: a label
+  that keeps a place for each picture (a shaped character) and lays the
+  picture over it.
 - **Downloads:** `yt_core::downloads` keeps each download in its own
   directory (the video and audio streams as YouTube sends them, and a
   picture) and lists them in `downloads.json`; `fetch` saves a stream with

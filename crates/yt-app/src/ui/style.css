@@ -695,3 +695,31 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .feed-title { margin: 24px 0 8px 0; }
 .settings-heading label { font-size: 28px; font-weight: 700; }
 .yt-menu-separator { margin: 8px 0; background: rgba(255, 255, 255, 0.1); }
+
+/* Live chat, beside a live stream. */
+.live-chat { border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; }
+.live-chat-header { padding: 6px 8px 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.live-chat-view { font-size: 16px; font-weight: 500; padding: 4px 8px; }
+.live-chat-view-description { font-size: 12px; }
+.live-chat-messages { padding: 8px 0; }
+.live-chat-message, .live-chat-notice { padding: 4px 24px 4px 16px; }
+.live-chat-notice { font-size: 12px; color: rgba(255, 255, 255, 0.7); }
+.live-chat-text { color: #f1f1f1; font-size: 13px; }
+.live-chat-notice .live-chat-text { color: rgba(255, 255, 255, 0.7); font-size: 12px; }
+.live-chat-badge { color: rgba(255, 255, 255, 0.7); }
+.live-chat-moderator { color: #5e84f1; }
+.live-chat-card { margin: 4px 16px 4px 16px; border-radius: 4px; }
+.live-chat-card-header { padding: 8px 16px; border-radius: 4px 4px 0 0; color: #ffffff; }
+.live-chat-card > .live-chat-card-header:last-child, .live-chat-card.live-chat-card-header { border-radius: 4px; }
+.live-chat-card-name { font-size: 13px; color: rgba(255, 255, 255, 0.85); }
+.live-chat-amount { font-size: 14px; font-weight: 600; }
+.live-chat-card-body { padding: 8px 16px; border-radius: 0 0 4px 4px; }
+.live-chat-card-body .live-chat-text { color: #ffffff; }
+.live-chat-membership { background-color: #0f9d58; }
+.live-chat-membership-body { background-color: #0a7c45; }
+.live-chat-pinned > box { margin: 8px; padding: 8px 12px; border-radius: 8px; background: rgba(255, 255, 255, 0.1); }
+.live-chat-pinned .live-chat-message { padding: 0; }
+.live-chat-jump { min-width: 32px; min-height: 32px; padding: 0; margin-bottom: 8px; border-radius: 9999px; background: #272727; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5); }
+.live-chat-footer { padding: 8px 12px 8px 16px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.live-chat-viewer { font-size: 13px; color: rgba(255, 255, 255, 0.7); }
+.live-chat-show { min-height: 36px; }

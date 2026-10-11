@@ -428,6 +428,15 @@ impl InnerTube {
         Ok(feed::parse_web_grid(&resp))
     }
 
+    /// A page of a live stream's chat, from a token (the first built by
+    /// [`live_chat::token`](crate::live_chat::token), then each page's).
+    pub async fn live_chat(&self, token: &str) -> Result<crate::live_chat::ChatPage> {
+        let resp = self
+            .call("live_chat/get_live_chat", json!({ "continuation": token }))
+            .await?;
+        Ok(crate::live_chat::parse(&resp))
+    }
+
     /// A video's watch page: details, channel, description, comments entry.
     pub async fn watch(&self, video_id: &str) -> Result<WatchPage> {
         let resp = self.call("next", json!({ "videoId": video_id })).await?;

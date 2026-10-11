@@ -400,7 +400,10 @@ impl App {
             let events = &app().ext.events;
             let (name, payload) = match event {
                 E::Loading { video_id } => ("player.loading", json!({ "video_id": video_id })),
-                E::Loaded => ("player.loaded", json!({ "video_id": state.video_id })),
+                E::Loaded => (
+                    "player.loaded",
+                    json!({ "video_id": state.video_id, "live": app().player.is_live() }),
+                ),
                 E::Position(p) => {
                     if (p - last_position.get()).abs() < 0.25
                         || !events.has_handlers("player.position")

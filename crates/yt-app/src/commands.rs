@@ -46,6 +46,26 @@ pub fn register(this: &Rc<App>) {
         app().toast_with(&args);
         Ok(Value::Null)
     });
+    // The live chat on screen (the watch page of a live stream).
+    use crate::ui::live_chat;
+    c.register("chat.state", |_| {
+        Ok(live_chat::on_screen().map_or(Value::Null, |chat| live_chat::describe(&chat)))
+    });
+    for (name, hide) in [("chat.hide", true), ("chat.show", false)] {
+        c.register(name, move |_| {
+            let chat = live_chat::on_screen().ok_or("no live chat on screen")?;
+            live_chat::hide(&chat, hide);
+            Ok(Value::Null)
+        });
+    }
+    // { view = "top" | "live" }
+    c.register("chat.set_view", |args| {
+        let chat = live_chat::on_screen().ok_or("no live chat on screen")?;
+        let view = serde_json::from_value(args.get("view").cloned().unwrap_or_default())
+            .map_err(|_| "view is \"top\" or \"live\"")?;
+        live_chat::set_view(&chat, view);
+        Ok(Value::Null)
+    });
     c.register("app.shortcuts", |_| {
         crate::ui::shortcuts::present();
         Ok(Value::Null)

@@ -20,6 +20,11 @@ of it.
   bounded chunks, which YouTube serves at full speed: a video starts in well
   under a second and seeks in a few hundred milliseconds. Live streams can
   be rewound over everything YouTube keeps (up to 12 hours).
+- **Live chat** beside a live stream, as on youtube.com: Top chat or Live
+  chat, messages coming in one by one, moderators, members and the channel
+  marked, Super Chats, memberships and gifts in their colors, the pinned
+  message, and channels' own emoji. (Chatting opens youtube.com: the TV
+  client can't post to a chat.)
 - **The mini player:** leave the watch page and the video carries on in the
   corner, with play, pause, next, previous and a way back (`i`).
 - **Playlists:** your playlists, Watch later and Liked videos, each with its

@@ -59,6 +59,8 @@ struct Watch {
     info: gtk::Box,
     comments_area: gtk::Box,
     related: gtk::Box,
+    /// A live stream's chat, above "Up next".
+    chat: gtk::Widget,
     /// "Up next", at most its width.
     related_column: adw::Clamp,
     fullscreen: Cell<bool>,
@@ -167,8 +169,11 @@ pub fn build(props: &Value) -> gtk::Widget {
     related.set_widget_name("watch-related");
     related.set_valign(gtk::Align::Start);
 
-    // The list playing (a playlist, the queue) goes above "Up next".
+    // A live stream's chat, then the list playing (a playlist, the
+    // queue), above "Up next".
     let side = gtk::Box::new(gtk::Orientation::Vertical, 16);
+    let chat = app.ext.components.build("live_chat", &Value::Null);
+    side.append(&chat);
     side.append(&app.ext.components.build("list_panel", &Value::Null));
     side.append(&related);
     // Long titles would make it as wide as they are.
@@ -222,6 +227,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         info,
         comments_area,
         related,
+        chat,
         related_column,
         fullscreen: Cell::new(false),
         narrow: Cell::new(false),
@@ -544,6 +550,7 @@ fn arrange(watch: &Watch) {
     } else {
         watch.related.remove_css_class("narrow");
     }
+    fit_player(watch);
 }
 
 /// "Up next": the videos YouTube suggests, as compact cards.
@@ -603,6 +610,9 @@ fn fit_player(watch: &Watch) {
         watch.grid.set_margin_start(margin);
         watch.grid.set_margin_end(margin);
     }
+    // Beside the player, a live chat is as tall as it.
+    let beside_player = !watch.narrow.get() && !watch.theater.is_visible();
+    super::live_chat::set_height(&watch.chat, beside_player.then_some(player_width * 9 / 16));
 }
 
 /// What the feed card knew: shown at once, before the details load.

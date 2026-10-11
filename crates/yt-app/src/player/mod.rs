@@ -589,6 +589,12 @@ impl Player {
         self.seek(f64::INFINITY, true);
     }
 
+    /// Whether what plays is a live stream (known when it opens; its window
+    /// comes with the first position).
+    pub fn is_live(&self) -> bool {
+        self.live.borrow().is_some()
+    }
+
     fn live_window(&self) -> Option<LiveWindow> {
         let live = self.live.borrow();
         let live = live.as_ref()?;

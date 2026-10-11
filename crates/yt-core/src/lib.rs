@@ -15,6 +15,7 @@ pub mod downloads;
 pub mod error;
 pub mod feed;
 pub mod innertube;
+pub mod live_chat;
 pub mod paths;
 pub mod playlist;
 mod proto;

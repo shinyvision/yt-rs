@@ -1,6 +1,6 @@
-//! Formatted text from YouTube (descriptions, comments) as structured runs:
-//! plain text, bold and italic, and links to URLs, moments in the video,
-//! channels, videos and hashtags.
+//! Formatted text from YouTube (descriptions, comments, live chat) as
+//! structured runs: plain text, bold and italic, links to URLs, moments in
+//! the video, channels, videos and hashtags, and emoji.
 
 use std::sync::LazyLock;
 
@@ -18,6 +18,10 @@ pub struct Run {
     pub italic: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub link: Option<Link>,
+    /// A channel's own emoji (`text` is its shortcut, ":yt:"): its picture.
+    /// Other emoji are text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub emoji: Option<String>,
 }
 
 /// Where a link goes.
@@ -214,6 +218,10 @@ impl RichText {
             .into_iter()
             .flatten()
         {
+            if let Some(emoji) = run.get("emoji") {
+                runs.extend(emoji_run(emoji));
+                continue;
+            }
             let text = run.get("text").and_then(Value::as_str).unwrap_or_default();
             let bold = run.get("bold").and_then(Value::as_bool).unwrap_or(false);
             let italic = run.get("italics").and_then(Value::as_bool).unwrap_or(false);
@@ -223,12 +231,36 @@ impl RichText {
                     bold,
                     italic,
                     link: Some(link),
+                    emoji: None,
                 }),
                 None => linkify(text, bold, italic, video_id, &mut runs),
             }
         }
         Self { runs }
     }
+}
+
+/// An emoji: the character itself, or a channel's own (a picture, with its
+/// shortcut as the text).
+fn emoji_run(emoji: &Value) -> Option<Run> {
+    let id = emoji.get("emojiId").and_then(Value::as_str)?;
+    let custom = emoji.get("isCustomEmoji").and_then(Value::as_bool) == Some(true);
+    if !custom {
+        return Some(Run {
+            text: id.to_owned(),
+            ..Run::default()
+        });
+    }
+    let shortcut = emoji
+        .pointer("/shortcuts/0")
+        .and_then(Value::as_str)
+        .unwrap_or(id);
+    let thumbnails = emoji.pointer("/image/thumbnails").and_then(Value::as_array);
+    Some(Run {
+        text: shortcut.to_owned(),
+        emoji: crate::feed::best_thumbnail(thumbnails.into_iter().flatten()),
+        ..Run::default()
+    })
 }
 
 /// Reads the link out of a navigation endpoint.
@@ -306,6 +338,7 @@ fn linkify(text: &str, bold: bool, italic: bool, video_id: Option<&str>, out: &m
                 bold,
                 italic,
                 link: None,
+                emoji: None,
             });
         }
     };
@@ -339,6 +372,7 @@ fn linkify(text: &str, bold: bool, italic: bool, video_id: Option<&str>, out: &m
             bold,
             italic,
             link: Some(link),
+            emoji: None,
         });
         last = whole.end();
     }
@@ -540,7 +574,8 @@ mod tests {
                 italic: false,
                 link: Some(Link::Url {
                     url: "https://example.org/".into()
-                })
+                }),
+                emoji: None,
             }
         );
         assert!(text.runs[2].italic);

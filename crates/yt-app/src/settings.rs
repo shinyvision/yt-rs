@@ -30,6 +30,9 @@ pub struct Settings {
     /// the player goes.
     #[serde(default)]
     pub download_height: Option<u32>,
+    /// Live chat folded away ("Hide chat").
+    #[serde(default)]
+    pub live_chat_hidden: bool,
 }
 
 impl Default for Settings {
@@ -42,6 +45,7 @@ impl Default for Settings {
             captions: None,
             stable_volume: false,
             download_height: None,
+            live_chat_hidden: false,
         }
     }
 }
