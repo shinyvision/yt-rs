@@ -1,0 +1,29 @@
+[package]
+name = "yt-app"
+description = "A fast native YouTube client for the desktop, moddable with Lua"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "yt-rs"
+path = "src/main.rs"
+
+[dependencies]
+yt-core.workspace = true
+adw.workspace = true
+anyhow.workspace = true
+gdk-wayland.workspace = true
+gtk.workspace = true
+libloading.workspace = true
+mlua.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[target.'cfg(all(target_os = "linux", target_env = "gnu"))'.dependencies]
+libc.workspace = true

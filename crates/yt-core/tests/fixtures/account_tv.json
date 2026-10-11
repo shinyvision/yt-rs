@@ -1,0 +1,98 @@
+{
+ "responseContext": {
+  "visitorData": "CgtFc3R4Q3ZxTG42WSjGkKrWBjIoCgJOTBIiEh4SHAsMDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicgQGLfAgrcAjIyLllUPUhHV0hVcGdKeTZ3bU5idFB4Uk4xSlQ0N2d6aFBkWWdUYm55LXB1U1VndHB2cUN6U1MzX3NORFdiRmNXWjhoXy1yc3owUzJTeEFQOVp0eTVVbFBYNXdRVW14ZWtTM0tjR3A0Ql9KWE1zdWNwa2M4T3NNSURIVnk3RmlubW5NeW5rWjdrUFRYYkh2WFl0dmN2WlAyVkVUaC05QnhZUmFHQlJyQjhlM2E4OENMSnVlNXQ1Q1JBLTdMX2JXaXVXZ3VKQms3X2U3Z0c5cGRfVm9oQjFFYUVBbzdXNmNlOGVoV09kcXczMUtWRkszMVNOYXR5TXVBbVI4V0hSR3hOMlJaZlhRUERyREFhdTk5Z1lNMlZYTGVsd3JmUHRIOGNTMHRPWng1TzR6NTNaYUg4QXYwUG52TTF0Z0dMMUdYOUJtb1ZmSW9Db1BycG81V25rZmRrNzAtVkE3dw%3D%3D",
+  "serviceTrackingParams": [
+   {
+    "service": "GFEEDBACK",
+    "params": [
+     {
+      "key": "logged_in",
+      "value": "1"
+     }
+    ]
+   }
+  ],
+  "responseId": "IhMIv6Khr46wlwMVlGP7BB1Fwir4",
+  "webResponseContextExtensionData": {
+   "webResponseContextPreloadData": {
+    "preloadMessageNames": [
+     "accountSectionListRenderer",
+     "accountItemSectionRenderer",
+     "accountItem"
+    ]
+   },
+   "hasDecorated": true
+  }
+ },
+ "contents": [
+  {
+   "accountSectionListRenderer": {
+    "contents": [
+     {
+      "accountItemSectionRenderer": {
+       "contents": [
+        {
+         "accountItem": {
+          "accountName": {
+           "simpleText": "Test Person"
+          },
+          "accountPhoto": {
+           "thumbnails": [
+            {
+             "url": "https://yt3.ggpht.com/me=s216",
+             "width": 216,
+             "height": 216
+            }
+           ]
+          },
+          "isSelected": true,
+          "isDisabled": false,
+          "hasChannel": true,
+          "serviceEndpoint": {
+           "selectActiveIdentityEndpoint": {
+            "supportedTokens": [
+             {
+              "accountStateToken": {
+               "hasChannel": true,
+               "isMerged": true,
+               "obfuscatedGaiaId": "111403113057955861588"
+              }
+             },
+             {
+              "offlineCacheKeyToken": {
+               "clientCacheKey": "3Nhbu5I7gIIbGXkTUvuNQA"
+              }
+             },
+             {
+              "datasyncIdToken": {
+               "datasyncIdToken": "111403113057955861588||"
+              }
+             }
+            ]
+           }
+          },
+          "accountByline": {
+           "simpleText": "test@example.org"
+          },
+          "channelHandle": {
+           "simpleText": "@testperson"
+          },
+          "shouldShowPremiumLogo": false,
+          "canSuperviseInForceKidsMode": true,
+          "accountLogDirectiveInts": [
+           3,
+           9
+          ]
+         }
+        }
+       ]
+      }
+     }
+    ]
+   }
+  }
+ ],
+ "selectText": {
+  "simpleText": "OK"
+ }
+}

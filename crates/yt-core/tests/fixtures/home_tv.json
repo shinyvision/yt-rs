@@ -1,0 +1,760 @@
+{
+ "contents": {
+  "tvBrowseRenderer": {
+   "content": {
+    "tvSurfaceContentRenderer": {
+     "content": {
+      "sectionListRenderer": {
+       "contents": [
+        {
+         "shelfRenderer": {
+          "content": {
+           "horizontalListRenderer": {
+            "items": [
+             {
+              "fulfillmentContent": {
+               "fulfilledLayout": {
+                "inFeedAdLayoutRenderer": {
+                 "renderingContent": {
+                  "tileRenderer": {
+                   "style": "TILE_STYLE_YTLR_DEFAULT",
+                   "header": {
+                    "tileHeaderRenderer": {
+                     "thumbnail": {
+                      "thumbnails": [
+                       {
+                        "url": "https://i.ytimg.com/vi/adadadadadadad/default.jpg",
+                        "width": 120,
+                        "height": 90
+                       },
+                       {
+                        "url": "https://i.ytimg.com/vi/adadadadadadad/hq720_custom_1.jpg",
+                        "width": 640,
+                        "height": 360
+                       },
+                       {
+                        "url": "https://i.ytimg.com/vi/adadadadadadad/maxresdefault.jpg",
+                        "width": 1280,
+                        "height": 720
+                       }
+                      ]
+                     },
+                     "thumbnailOverlays": [
+                      {
+                       "thumbnailOverlayTimeStatusRenderer": {
+                        "text": {
+                         "simpleText": "0:14"
+                        }
+                       }
+                      }
+                     ]
+                    }
+                   },
+                   "metadata": {
+                    "tileMetadataRenderer": {
+                     "title": {
+                      "simpleText": "An ad"
+                     },
+                     "lines": [
+                      {
+                       "lineRenderer": {
+                        "items": [
+                         {
+                          "lineItemRenderer": {
+                           "badge": {
+                            "adBadgeViewModel": {
+                             "style": "AD_BADGE_STYLE_STARK",
+                             "label": {
+                              "content": "Sponsored"
+                             }
+                            }
+                           }
+                          }
+                         },
+                         {
+                          "lineItemRenderer": {
+                           "text": {
+                            "runs": [
+                             {
+                              "text": "•",
+                              "textColor": 4293519849
+                             }
+                            ]
+                           }
+                          }
+                         },
+                         {
+                          "lineItemRenderer": {
+                           "text": {
+                            "simpleText": "Advertiser"
+                           },
+                           "overflowHidden": true
+                          }
+                         }
+                        ]
+                       }
+                      }
+                     ]
+                    }
+                   },
+                   "onSelectCommand": {},
+                   "contentId": "adadadadadadad",
+                   "customData": {
+                    "onFocusHint": {
+                     "lines": [
+                      {
+                       "lineRenderer": {
+                        "items": [
+                         {
+                          "lineItemRenderer": {
+                           "badge": {
+                            "metadataBadgeRenderer": {
+                             "icon": {
+                              "iconType": "RADIO_BUTTON_CHECKED"
+                             },
+                             "style": "BADGE_STYLE_TYPE_VERIFIED"
+                            }
+                           }
+                          }
+                         },
+                         {
+                          "lineItemRenderer": {
+                           "text": {
+                            "runs": [
+                             {
+                              "text": "Press and hold for ad options"
+                             }
+                            ]
+                           }
+                          }
+                         }
+                        ]
+                       }
+                      }
+                     ]
+                    },
+                    "activeViewData": {
+                     "activeView": {
+                      "viewableCommands": [
+                       {
+                        "pingingEndpoint": {
+                         "hack": true
+                        }
+                       }
+                      ],
+                      "endOfSessionCommands": [
+                       {
+                        "pingingEndpoint": {
+                         "hack": true
+                        }
+                       }
+                      ],
+                      "regexUriMacroValidator": {
+                       "emptyMap": true
+                      },
+                      "identifier": "6c86fbe3-0000-2a20-84ba-14c14ef271d8"
+                     }
+                    }
+                   },
+                   "onFirstVisibleCommand": {}
+                  }
+                 }
+                }
+               }
+              },
+              "enablePacfLoggingWeb": true
+             },
+             {
+              "tileRenderer": {
+               "style": "TILE_STYLE_YTLR_DEFAULT",
+               "header": {
+                "tileHeaderRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/default.jpg",
+                    "width": 120,
+                    "height": 90
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/hq720_custom_1.jpg",
+                    "width": 640,
+                    "height": 360
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/maxresdefault.jpg",
+                    "width": 1280,
+                    "height": 720
+                   }
+                  ]
+                 },
+                 "thumbnailOverlays": [
+                  {
+                   "thumbnailOverlayTimeStatusRenderer": {
+                    "text": {
+                     "simpleText": "1:04:53"
+                    },
+                    "style": "DEFAULT"
+                   }
+                  }
+                 ]
+                }
+               },
+               "metadata": {
+                "tileMetadataRenderer": {
+                 "title": {
+                  "simpleText": "Video A"
+                 },
+                 "lines": [
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Channel A"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "2.6M views"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "•"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "10 months ago"
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  }
+                 ]
+                }
+               },
+               "onSelectCommand": {
+                "watchEndpoint": {
+                 "videoId": "video-A-id"
+                }
+               },
+               "contentId": "video-A-id",
+               "contentType": "TILE_CONTENT_TYPE_VIDEO"
+              }
+             },
+             {
+              "tileRenderer": {
+               "style": "TILE_STYLE_YTLR_DEFAULT",
+               "header": {
+                "tileHeaderRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/video-B-id/default.jpg",
+                    "width": 120,
+                    "height": 90
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-B-id/hq720_custom_1.jpg",
+                    "width": 640,
+                    "height": 360
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-B-id/maxresdefault.jpg",
+                    "width": 1280,
+                    "height": 720
+                   }
+                  ]
+                 },
+                 "thumbnailOverlays": [
+                  {
+                   "thumbnailOverlayResumePlaybackRenderer": {
+                    "percentDurationWatched": 0,
+                    "videoPlaybackPositionToggleEntityKey": "EgtrTzlMOV9JdThFOCDpAigB"
+                   }
+                  },
+                  {
+                   "thumbnailOverlayTimeStatusRenderer": {
+                    "text": {
+                     "runs": [
+                      {
+                       "text": "LIVE"
+                      }
+                     ]
+                    },
+                    "style": "LIVE",
+                    "icon": {
+                     "iconType": "LIVE"
+                    }
+                   }
+                  }
+                 ]
+                }
+               },
+               "metadata": {
+                "tileMetadataRenderer": {
+                 "title": {
+                  "simpleText": "Video B"
+                 },
+                 "lines": [
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Channel B"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "2"
+                         },
+                         {
+                          "text": " watching"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  }
+                 ]
+                }
+               },
+               "onSelectCommand": {
+                "watchEndpoint": {
+                 "videoId": "video-B-id"
+                }
+               },
+               "contentId": "video-B-id",
+               "contentType": "TILE_CONTENT_TYPE_VIDEO"
+              }
+             },
+             {
+              "tileRenderer": {
+               "style": "TILE_STYLE_YTLR_DEFAULT",
+               "header": {
+                "tileHeaderRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/video-C-id/default.jpg",
+                    "width": 120,
+                    "height": 90
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-C-id/hq720_custom_1.jpg",
+                    "width": 640,
+                    "height": 360
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-C-id/maxresdefault.jpg",
+                    "width": 1280,
+                    "height": 720
+                   }
+                  ]
+                 },
+                 "thumbnailOverlays": [
+                  {
+                   "thumbnailOverlayTimeStatusRenderer": {
+                    "text": {
+                     "simpleText": "47:40"
+                    },
+                    "style": "DEFAULT"
+                   }
+                  }
+                 ]
+                }
+               },
+               "metadata": {
+                "tileMetadataRenderer": {
+                 "title": {
+                  "simpleText": "Video C"
+                 },
+                 "lines": [
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Channel C"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "badge": {
+                        "metadataBadgeRenderer": {
+                         "style": "BADGE_STYLE_TYPE_SIMPLE",
+                         "label": "4K"
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "36K views"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "•"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "5 hours ago"
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  }
+                 ]
+                }
+               },
+               "onSelectCommand": {
+                "watchEndpoint": {
+                 "videoId": "video-C-id"
+                }
+               },
+               "contentId": "video-C-id",
+               "contentType": "TILE_CONTENT_TYPE_VIDEO"
+              }
+             }
+            ],
+            "continuations": [
+             {
+              "nextContinuationData": {
+               "continuation": "MORE_RECOMMENDED"
+              }
+             }
+            ],
+            "collapsedItemCount": 3,
+            "visibleItemCount": 3
+           }
+          },
+          "headerRenderer": {
+           "shelfHeaderRenderer": {
+            "avatarLockup": {
+             "avatarLockupRenderer": {
+              "title": {
+               "simpleText": "Recommended"
+              },
+              "size": "AVATAR_LOCKUP_SIZE_SMALL"
+             }
+            }
+           }
+          },
+          "tvhtml5Style": {
+           "effects": {
+            "enlarge": true
+           }
+          }
+         }
+        },
+        {
+         "shelfRenderer": {
+          "content": {
+           "horizontalListRenderer": {
+            "items": [
+             {
+              "tileRenderer": {
+               "style": "TILE_STYLE_YTLR_DEFAULT",
+               "header": {
+                "tileHeaderRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/video-D-id/default.jpg",
+                    "width": 120,
+                    "height": 90
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-D-id/hq720_custom_1.jpg",
+                    "width": 640,
+                    "height": 360
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-D-id/maxresdefault.jpg",
+                    "width": 1280,
+                    "height": 720
+                   }
+                  ]
+                 },
+                 "thumbnailOverlays": [
+                  {
+                   "thumbnailOverlayTimeStatusRenderer": {
+                    "text": {
+                     "simpleText": "1:04:53"
+                    },
+                    "style": "DEFAULT"
+                   }
+                  },
+                  {
+                   "thumbnailOverlayResumePlaybackRenderer": {
+                    "percentDurationWatched": 40
+                   }
+                  }
+                 ]
+                }
+               },
+               "metadata": {
+                "tileMetadataRenderer": {
+                 "title": {
+                  "simpleText": "Video D"
+                 },
+                 "lines": [
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Channel D"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "2.6M views"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "•"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "10 months ago"
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  }
+                 ]
+                }
+               },
+               "onSelectCommand": {
+                "watchEndpoint": {
+                 "videoId": "video-D-id"
+                }
+               },
+               "contentId": "video-D-id",
+               "contentType": "TILE_CONTENT_TYPE_VIDEO"
+              }
+             },
+             {
+              "tileRenderer": {
+               "style": "TILE_STYLE_YTLR_DEFAULT",
+               "header": {
+                "tileHeaderRenderer": {
+                 "thumbnail": {
+                  "thumbnails": [
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/default.jpg",
+                    "width": 120,
+                    "height": 90
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/hq720_custom_1.jpg",
+                    "width": 640,
+                    "height": 360
+                   },
+                   {
+                    "url": "https://i.ytimg.com/vi/video-A-id/maxresdefault.jpg",
+                    "width": 1280,
+                    "height": 720
+                   }
+                  ]
+                 },
+                 "thumbnailOverlays": [
+                  {
+                   "thumbnailOverlayTimeStatusRenderer": {
+                    "text": {
+                     "simpleText": "1:04:53"
+                    },
+                    "style": "DEFAULT"
+                   }
+                  }
+                 ]
+                }
+               },
+               "metadata": {
+                "tileMetadataRenderer": {
+                 "title": {
+                  "simpleText": "Video A"
+                 },
+                 "lines": [
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "runs": [
+                         {
+                          "text": "Channel A"
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  },
+                  {
+                   "lineRenderer": {
+                    "items": [
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "2.6M views"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "•"
+                       }
+                      }
+                     },
+                     {
+                      "lineItemRenderer": {
+                       "text": {
+                        "simpleText": "10 months ago"
+                       }
+                      }
+                     }
+                    ]
+                   }
+                  }
+                 ]
+                }
+               },
+               "onSelectCommand": {
+                "watchEndpoint": {
+                 "videoId": "video-A-id"
+                }
+               },
+               "contentId": "video-A-id",
+               "contentType": "TILE_CONTENT_TYPE_VIDEO"
+              }
+             }
+            ],
+            "continuations": [
+             {
+              "nextContinuationData": {
+               "continuation": "MORE_RECENT"
+              }
+             }
+            ],
+            "collapsedItemCount": 3,
+            "visibleItemCount": 3
+           }
+          },
+          "headerRenderer": {
+           "shelfHeaderRenderer": {
+            "avatarLockup": {
+             "avatarLockupRenderer": {
+              "title": {
+               "simpleText": "Recently uploaded"
+              },
+              "size": "AVATAR_LOCKUP_SIZE_SMALL"
+             }
+            }
+           }
+          },
+          "tvhtml5Style": {
+           "effects": {
+            "enlarge": true
+           }
+          }
+         }
+        }
+       ],
+       "continuations": [
+        {
+         "nextContinuationData": {
+          "continuation": "MORE_SHELVES"
+         }
+        }
+       ]
+      }
+     },
+     "targetId": "browse-feedFEtopics"
+    }
+   }
+  }
+ }
+}

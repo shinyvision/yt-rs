@@ -1,0 +1,529 @@
+{
+ "contents": {
+  "singleColumnWatchNextResults": {
+   "results": {
+    "results": {
+     "contents": [
+      {
+       "itemSectionRenderer": {
+        "contents": [
+         {
+          "videoMetadataRenderer": {
+           "title": {
+            "runs": [
+             {
+              "text": "1 Hour of Magnificent Moments Narrated by Sir David Attenborough | BBC Earth"
+             }
+            ]
+           },
+           "dateText": {
+            "simpleText": "10mo ago"
+           },
+           "videoId": "Vd7iuPV_AF0",
+           "owner": {
+            "videoOwnerRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/owner=s48",
+                "width": 48,
+                "height": 48
+               },
+               {
+                "url": "https://yt3.ggpht.com/owner=s88",
+                "width": 88,
+                "height": 88
+               }
+              ]
+             },
+             "title": {
+              "simpleText": "BBC Earth"
+             },
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UCwmZiChSryoWQCZMIQezgTg",
+               "canonicalBaseUrl": "/@bbcearth"
+              }
+             },
+             "subscriberCountText": {
+              "simpleText": "14.6M subscribers"
+             },
+             "subscribeButton": {
+              "subscribeButtonRenderer": {
+               "buttonText": {
+                "runs": [
+                 {
+                  "text": "Subscribe"
+                 }
+                ]
+               },
+               "subscribed": false,
+               "enabled": true,
+               "type": "FREE",
+               "channelId": "UCwmZiChSryoWQCZMIQezgTg",
+               "showPreferences": true,
+               "unsubscribedButtonText": {
+                "runs": [
+                 {
+                  "text": "Subscribe"
+                 }
+                ]
+               },
+               "unsubscribeButtonText": {
+                "runs": [
+                 {
+                  "text": "Unsubscribe"
+                 }
+                ]
+               },
+               "serviceEndpoints": [
+                {
+                 "authDeterminedCommand": {
+                  "authenticatedCommand": {
+                   "subscribeEndpoint": {
+                    "channelIds": [
+                     "UCwmZiChSryoWQCZMIQezgTg"
+                    ],
+                    "params": "EgIIAxgAIgtWZDdpdVBWX0FGMA%3D%3D"
+                   }
+                  },
+                  "unauthenticatedCommand": {
+                   "authRequiredCommand": {
+                    "identityActionContext": {
+                     "eventTrigger": "ACCOUNT_EVENT_TRIGGER_SUBSCRIBE",
+                     "nextEndpoint": {
+                      "commandExecutorCommand": {
+                       "commands": [
+                        {
+                         "signalAction": {
+                          "signal": "CLOSE_POPUP"
+                         }
+                        },
+                        {
+                         "subscribeEndpoint": {
+                          "channelIds": [
+                           "UCwmZiChSryoWQCZMIQezgTg"
+                          ],
+                          "params": "EgIIAxgAIgtWZDdpdVBWX0FGMA%3D%3D"
+                         }
+                        }
+                       ]
+                      }
+                     }
+                    }
+                   }
+                  }
+                 }
+                }
+               ],
+               "notificationPreferenceButton": {
+                "subscriptionNotificationToggleButtonRenderer": {
+                 "states": [
+                  {
+                   "stateId": 2,
+                   "nextStateId": 2,
+                   "state": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_ACTIVE"
+                     }
+                    }
+                   },
+                   "inlineMenuButton": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "text": {
+                      "simpleText": "All"
+                     },
+                     "serviceEndpoint": {
+                      "modifyChannelNotificationPreferenceEndpoint": {
+                       "params": "ChhVQ3dtWmlDaFNyeW9XUUNaTUlRZXpnVGcSAggCGAAgBA%3D%3D"
+                      }
+                     },
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_ACTIVE"
+                     }
+                    }
+                   },
+                   "notificationState": "SUBSCRIPTION_NOTIFICATION_STATE_ALL"
+                  },
+                  {
+                   "stateId": 3,
+                   "nextStateId": 3,
+                   "state": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_NONE"
+                     }
+                    }
+                   },
+                   "inlineMenuButton": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "text": {
+                      "simpleText": "Personalized"
+                     },
+                     "serviceEndpoint": {
+                      "modifyChannelNotificationPreferenceEndpoint": {
+                       "params": "ChhVQ3dtWmlDaFNyeW9XUUNaTUlRZXpnVGcSAggBGAAgBA%3D%3D"
+                      }
+                     },
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_NONE"
+                     }
+                    }
+                   },
+                   "notificationState": "SUBSCRIPTION_NOTIFICATION_STATE_OCCASIONAL"
+                  },
+                  {
+                   "stateId": 0,
+                   "nextStateId": 0,
+                   "state": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_OFF"
+                     }
+                    }
+                   },
+                   "inlineMenuButton": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "text": {
+                      "simpleText": "None"
+                     },
+                     "serviceEndpoint": {
+                      "modifyChannelNotificationPreferenceEndpoint": {
+                       "params": "ChhVQ3dtWmlDaFNyeW9XUUNaTUlRZXpnVGcSAggDGAAgBA%3D%3D"
+                      }
+                     },
+                     "icon": {
+                      "iconType": "NOTIFICATIONS_OFF"
+                     }
+                    }
+                   },
+                   "notificationState": "SUBSCRIPTION_NOTIFICATION_STATE_OFF"
+                  },
+                  {
+                   "state": {
+                    "buttonRenderer": {
+                     "style": "STYLE_TEXT",
+                     "size": "SIZE_DEFAULT",
+                     "isDisabled": false,
+                     "text": {
+                      "runs": [
+                       {
+                        "text": "Unsubscribe"
+                       }
+                      ]
+                     },
+                     "icon": {
+                      "iconType": "PERSON_MINUS"
+                     },
+                     "command": {
+                      "commandExecutorCommand": {
+                       "commands": [
+                        {
+                         "unsubscribeEndpoint": {
+                          "channelIds": [
+                           "UCwmZiChSryoWQCZMIQezgTg"
+                          ],
+                          "params": "CgIIAxgA"
+                         }
+                        }
+                       ]
+                      }
+                     }
+                    }
+                   }
+                  }
+                 ],
+                 "currentStateId": 3,
+                 "onTapBehavior": "ON_TAP_BEHAVIOR_TOGGLE_ICON_WITH_INLINE_MENU",
+                 "targetId": "notification-bell",
+                 "notificationStateEntityKey": "EhhVQ3dtWmlDaFNyeW9XUUNaTUlRZXpnVGcgjAEoAQ%3D%3D"
+                }
+               },
+               "targetId": "watch-subscribe",
+               "subscribedEntityKey": "EhhVQ3dtWmlDaFNyeW9XUUNaTUlRZXpnVGcgMygB"
+              }
+             },
+             "badges": [
+              {
+               "metadataBadgeRenderer": {
+                "icon": {
+                 "iconType": "CHECK_CIRCLE_THICK"
+                },
+                "style": "BADGE_STYLE_TYPE_VERIFIED",
+                "tooltip": "Verified"
+               }
+              }
+             ]
+            }
+           },
+           "viewCount": {
+            "videoViewCountRenderer": {
+             "viewCount": {
+              "simpleText": "2,673,306 views"
+             },
+             "shortViewCount": {
+              "simpleText": "2.6M views"
+             },
+             "originalViewCount": "0"
+            }
+           },
+           "underTitleStandaloneBadge": {
+            "standaloneCollectionBadgeRenderer": {
+             "label": {
+              "runs": [
+               {
+                "text": "#Wildlife",
+                "navigationEndpoint": {
+                 "searchEndpoint": {
+                  "query": "#wildlife"
+                 }
+                }
+               },
+               {
+                "text": " "
+               },
+               {
+                "text": "#Animals",
+                "navigationEndpoint": {
+                 "searchEndpoint": {
+                  "query": "#animals"
+                 }
+                }
+               },
+               {
+                "text": " "
+               },
+               {
+                "text": "#Nature",
+                "navigationEndpoint": {
+                 "searchEndpoint": {
+                  "query": "#nature"
+                 }
+                }
+               }
+              ]
+             },
+             "style": {
+              "badgeStyle": "STYLE_PLAIN"
+             }
+            }
+           },
+           "isLimitedState": false,
+           "publishedTimeText": {
+            "simpleText": "Published on Nov 30, 2025"
+           },
+           "mayTruncateChannelName": true
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   }
+  }
+ },
+ "engagementPanels": [
+  {
+   "engagementPanelSectionListRenderer": {
+    "panelIdentifier": "comment-item-section",
+    "header": {
+     "engagementPanelTitleHeaderRenderer": {
+      "title": {
+       "runs": [
+        {
+         "text": "Comments"
+        }
+       ]
+      },
+      "contextualInfo": {
+       "runs": [
+        {
+         "text": "239"
+        }
+       ]
+      },
+      "menu": {
+       "sortFilterSubMenuRenderer": {
+        "subMenuItems": [
+         {
+          "title": "Top",
+          "selected": true,
+          "continuation": {
+           "reloadContinuationData": {
+            "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyWCIxIgtWZDdpdVBWX0FGMDAAeAKqAhpVZ3pob0ZCYjZKYVVnbzhHV3R4NEFhQUJBZ_ADATABQiFlbmdhZ2VtZW50LXBhbmVsLWNvbW1lbnRzLXNlY3Rpb24%3D",
+            "disableContinuationClickLogging": false
+           }
+          },
+          "subtitle": "Show featured comments"
+         },
+         {
+          "title": "Newest",
+          "selected": false,
+          "continuation": {
+           "reloadContinuationData": {
+            "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyOyIUIgtWZDdpdVBWX0FGMDABeALwAwEwAUIhZW5nYWdlbWVudC1wYW5lbC1jb21tZW50cy1zZWN0aW9u",
+            "disableContinuationClickLogging": false
+           }
+          },
+          "subtitle": "Show recent comments, including potential spam"
+         }
+        ],
+        "icon": {
+         "iconType": "SORT"
+        }
+       }
+      }
+     }
+    },
+    "content": {
+     "sectionListRenderer": {
+      "contents": [
+       {
+        "itemSectionRenderer": {
+         "continuations": [
+          {
+           "reloadContinuationData": {
+            "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyNSIxIgtWZDdpdVBWX0FGMDAAeAKqAhpVZ3pob0ZCYjZKYVVnbzhHV3R4NEFhQUJBZ_ADATAB",
+            "disableContinuationClickLogging": false
+           }
+          }
+         ],
+         "sectionIdentifier": "comment-item-section",
+         "targetId": "comment-item-section-target"
+        }
+       }
+      ]
+     }
+    },
+    "veType": 159421,
+    "onShowCommands": [
+     {
+      "handoffInitiateActionCommand": {
+       "type": "HANDOFF_FEATURE_TYPE_LR_COMMENTS",
+       "lrDeviceState": {
+        "isPauseCommentsEnabled": false,
+        "canCreateComments": true
+       }
+      }
+     }
+    ],
+    "onCloseCommand": {
+     "signalAction": {
+      "signal": "CANCEL_HANDOFF_COMMENTS"
+     }
+    }
+   }
+  },
+  {
+   "engagementPanelSectionListRenderer": {
+    "panelIdentifier": "video-description-ep-identifier",
+    "content": {
+     "structuredDescriptionContentRenderer": {
+      "items": [
+       {
+        "videoDescriptionHeaderRenderer": {
+         "title": {
+          "runs": [
+           {
+            "text": "1 Hour of Magnificent Moments Narrated by Sir David Attenborough | BBC Earth"
+           }
+          ]
+         },
+         "channel": {
+          "simpleText": "BBC Earth"
+         },
+         "views": {
+          "simpleText": "2,673,306 views"
+         },
+         "publishDate": {
+          "simpleText": "Published on Nov 30, 2025"
+         },
+         "factoid": [
+          {
+           "factoidRenderer": {
+            "value": {
+             "simpleText": "13K"
+            },
+            "label": {
+             "simpleText": "Likes"
+            },
+            "accessibilityText": "13 thousand likes"
+           }
+          },
+          {
+           "factoidRenderer": {
+            "value": {
+             "simpleText": "2,673,306"
+            },
+            "label": {
+             "simpleText": "Views"
+            },
+            "accessibilityText": "2,673,306 views"
+           }
+          },
+          {
+           "factoidRenderer": {
+            "value": {
+             "simpleText": "Nov 30"
+            },
+            "label": {
+             "simpleText": "2025"
+            },
+            "accessibilityText": "Published on Nov 30, 2025",
+            "position": "FACTOID_POSITION_LAST"
+           }
+          }
+         ]
+        }
+       },
+       {
+        "expandableVideoDescriptionBodyRenderer": {
+         "descriptionBodyText": {
+          "runs": [
+           {
+            "text": "As a puffin ventures out to sea to feed its chick and sharks patrol the deep waters in search of their next meal, these are some magnificent moments narrated by Sir David Attenborough.\n\nSubscribe: http://bit.ly/BBCEarthSub \nSign up to our newsletter for the latest news, updates and exclusives from BBC Earth https://www.bbcearth.com/newsletter\n\n#Animals #Wildlife #Nature\n\nWatch more: \nBest of BBC Earth 🌍 https://bit.ly/BestOfBBCEarth\nBest Animal Fights 🥊 https://bit.ly/BestAnimalFights\nVideos over 10 minutes ⏰ https://bit.ly/3SHJCEJ\nPlanet Earth III 🌍 https://bit.ly/PlanetEarthIIIPlaylist\nFrozen Planet II ❄️ https:/bit.ly/FrozenPlanetIIPlaylist\nBlue Planet II in 4K 🌊 https://bit.ly/BluePlanetII4kPlaylist\n\nWelcome to BBC EARTH! The world is an amazing place full of stories, beauty and natural wonder. Here you'll find 50 years worth of entertaining and thought-provoking natural history content. Dramatic, rare, and exclusive, nature doesn't get more exciting than this.\n\nThis is a commercial page from BBC Studios. Service information and feedback: http://bbcworldwide.com/vod-feedback--contact-details.aspx"
+           }
+          ]
+         },
+         "expandLoggingData": {},
+         "collapseLoggingData": {},
+         "loggingData": {},
+         "label": {
+          "simpleText": "Description"
+         },
+         "onSelectCommand": {
+          "showEngagementPanelEndpoint": {
+           "identifier": {
+            "tag": "expanded-description-engagement-panel"
+           }
+          }
+         }
+        }
+       }
+      ]
+     }
+    }
+   }
+  }
+ ]
+}

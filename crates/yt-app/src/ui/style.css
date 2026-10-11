@@ -1,0 +1,520 @@
+/* The built-in theme. Plugins can override any of it with app.theme.add_css. */
+
+:root {
+  --yt-bg: #0f0f0f;
+  --yt-raised: #272727;
+  --yt-hover: rgba(255, 255, 255, 0.1);
+  --yt-text: #f1f1f1;
+  --yt-text-dim: #aaaaaa;
+  --yt-accent: #ff0033;
+  --yt-radius: 12px;
+
+  --window-bg-color: var(--yt-bg);
+  --window-fg-color: var(--yt-text);
+  --view-bg-color: var(--yt-bg);
+  --view-fg-color: var(--yt-text);
+  --headerbar-bg-color: var(--yt-bg);
+  --popover-bg-color: #282828;
+  --dialog-bg-color: #282828;
+  --accent-bg-color: var(--yt-accent);
+  --accent-color: #ff4e45;
+}
+
+window.yt-window {
+  background: var(--yt-bg);
+  color: var(--yt-text);
+  font-family: "Roboto", "Inter", "Noto Sans", sans-serif;
+}
+
+.dim { color: var(--yt-text-dim); }
+
+/* Top bar */
+.topbar {
+  min-height: 56px;
+  padding: 0 16px;
+}
+/* The logo: the play button (drawn in `color`) and the name. */
+.topbar .logo {
+  font-weight: 700;
+  font-size: 20px;
+  letter-spacing: -1.2px;
+}
+.topbar .logo-mark { color: var(--yt-accent); min-height: 20px; }
+.icon-button {
+  font-size: 20px;
+  min-width: 40px;
+  min-height: 40px;
+  border-radius: 999px;
+  padding: 0;
+  background: none;
+}
+.icon-button:hover { background: var(--yt-hover); }
+
+.account-button { padding: 0; min-width: 32px; min-height: 32px; margin: 0 4px; }
+.account-menu .yt-menu { min-width: 280px; }
+.account-header { padding: 8px 16px 12px 16px; }
+.account-name { font-weight: 600; font-size: 15px; }
+
+/* Sidebar */
+.sidebar {
+  padding: 12px;
+  min-width: 228px;
+}
+.sidebar.mini { min-width: 0; padding: 4px; }
+.sidebar .nav-item {
+  min-height: 40px;
+  padding: 0 12px;
+  border-radius: 10px;
+  background: none;
+  font-weight: 400;
+}
+.sidebar.mini .nav-item { padding: 16px 0 14px 0; min-width: 64px; }
+.sidebar .nav-item:hover { background: var(--yt-hover); }
+.sidebar .nav-item.current { background: var(--yt-raised); font-weight: 500; }
+.sidebar .nav-item label.nav-title { margin-left: 12px; }
+.sidebar.mini .nav-item label.nav-title { margin: 6px 0 0 0; font-size: 10px; }
+.sidebar .section-title {
+  font-weight: 600;
+  font-size: 16px;
+  padding: 6px 12px;
+}
+.sidebar separator { margin: 12px 0; background: rgba(255, 255, 255, 0.1); }
+
+/* Chips */
+.chip-bar { padding: 12px 24px; }
+.chip {
+  background: var(--yt-raised);
+  color: var(--yt-text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  min-height: 0;
+  font-weight: 500;
+  font-size: 14px;
+}
+.chip:hover { background: #3f3f3f; }
+.chip:checked { background: var(--yt-text); color: var(--yt-bg); }
+
+/* Video grid and cards */
+.video-grid { background: none; padding: 0 16px 24px 16px; }
+.video-grid > child { padding: 8px 8px 32px 8px; background: none; border-radius: var(--yt-radius); }
+.video-grid > child:hover, .video-grid > child:selected, .video-grid > child:focus { background: none; outline: none; }
+
+/* Thumbnails (cards, search results): the length and watched progress
+   over them, and a ⋮ menu beside them that shows on hover. */
+.thumb {
+  border-radius: var(--yt-radius);
+  background: #222222;
+}
+.thumb picture { border-radius: var(--yt-radius); }
+.video-card:hover .thumb { box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08); }
+.duration {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  border-radius: 4px;
+  padding: 1px 4px;
+  margin: 8px;
+}
+.duration.live { background: #cc0000; }
+.duration image { -gtk-icon-size: 12px; }
+.watched { min-height: 4px; }
+.watched trough { min-height: 4px; background: rgba(255, 255, 255, 0.35); border-radius: 0; }
+.watched progress { min-height: 4px; background: var(--yt-accent); border-radius: 0; }
+.video-card .title { font-size: 16px; font-weight: 500; }
+.video-card .meta { font-size: 14px; }
+.menu-button { opacity: 0; transition: opacity 120ms; }
+.video-card:hover .menu-button, .search-video:hover .menu-button,
+.search-playlist:hover .menu-button, .menu-button:checked { opacity: 1; }
+.menu-button > button { min-width: 32px; min-height: 32px; padding: 0; background: none; border-radius: 999px; box-shadow: none; }
+.menu-button > button:hover, .menu-button > button:checked { background: var(--yt-hover); }
+
+/* Watch page: the player, then the details, scrolling together. */
+.watch-page .watch-column { padding: 24px 24px 32px 24px; }
+.watch-page.fullscreen .watch-column { padding: 0; }
+.watch-details { padding-top: 16px; }
+.watch-page .video-title { font-size: 20px; font-weight: 700; }
+.watch-page .channel { font-size: 16px; font-weight: 500; }
+.caption { font-size: 12px; }
+.verified { color: var(--yt-text-dim); -gtk-icon-size: 14px; }
+.owner-link { padding: 0 8px 0 0; background: none; border-radius: 999px; }
+.owner-link:hover { background: none; }
+.owner-link:hover .channel { color: white; }
+
+.rating > button {
+  background: var(--yt-raised);
+  min-height: 36px;
+  padding: 0 16px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.rating > button:hover { background: #3f3f3f; }
+.rating > button:first-child { border-radius: 999px 0 0 999px; border-right: 1px solid rgba(255, 255, 255, 0.2); }
+.rating > button:last-child { border-radius: 0 999px 999px 0; }
+
+.subscribe-button { background: var(--yt-text); color: var(--yt-bg); padding: 8px 16px; }
+.subscribe-button:hover { background: #d9d9d9; }
+.subscribe-button.subscribed { background: var(--yt-raised); color: var(--yt-text); }
+.subscribe-button.subscribed:hover { background: #3f3f3f; }
+.manage-button { background: var(--yt-raised); padding: 8px 16px; }
+.manage-button:hover { background: #3f3f3f; }
+
+.description-card { background: var(--yt-raised); border-radius: var(--yt-radius); padding: 12px; }
+.description-stats { font-weight: 600; font-size: 14px; }
+.description-more { padding: 0; min-height: 0; font-weight: 600; background: none; }
+.description-more:hover { background: none; text-decoration: underline; }
+
+/* Descriptions and comments */
+.rich-text { font-size: 14px; }
+.rich-text link, .rich-text link:visited { color: #3ea6ff; }
+.rich-text link:hover { text-decoration: underline; }
+
+.comments-title { font-size: 20px; font-weight: 700; }
+.composer-field {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 2px 0 6px 0;
+}
+.composer-field:focus-within { border-bottom: 2px solid var(--yt-text); padding-bottom: 5px; }
+.composer-field textview.composer-input,
+.composer-field textview.composer-input > text { background: none; color: var(--yt-text); padding: 0; }
+.composer-field textview.composer-input, .composer-field .composer-placeholder { font-size: 14px; }
+.comment-composer .pill-button { padding: 6px 16px; }
+.comment-composer .pill-button.suggested-action:disabled { background: var(--yt-raised); color: var(--yt-text-dim); }
+.comment-author { padding: 0; min-height: 0; font-weight: 600; font-size: 13px; background: none; }
+.comment-author:hover { background: none; text-decoration: underline; }
+.comment-author.by-creator { background: #4d4d4d; border-radius: 999px; padding: 1px 8px; }
+.comment-time { font-size: 12px; }
+.comment-avatar { padding: 0; min-width: 0; min-height: 0; background: none; }
+.read-more { padding: 0; min-height: 0; font-weight: 600; font-size: 13px; color: var(--yt-text-dim); background: none; }
+.read-more:hover { background: none; color: var(--yt-text); }
+.comment-pinned { font-size: 12px; color: var(--yt-text-dim); }
+.comment-actions { margin-left: -8px; }
+.comment-actions label { font-size: 12px; margin: 0 6px 0 0; }
+.comment-actions .vote-button { min-width: 32px; min-height: 32px; padding: 0; }
+.comment-actions .pill-button { padding: 4px 12px; font-size: 12px; min-height: 0; }
+.comment-actions menubutton > button { min-width: 32px; min-height: 32px; padding: 0; opacity: 0; transition: opacity 120ms; }
+.comment:hover > box > .comment-actions menubutton > button,
+.reply:hover > box > .comment-actions menubutton > button,
+.comment-actions menubutton > button:checked { opacity: 1; }
+.replies-toggle { color: #3ea6ff; font-weight: 600; padding: 6px 12px; margin-left: -12px; }
+.replies-toggle:hover { background: rgba(62, 166, 255, 0.15); }
+.replies { margin-top: 8px; }
+
+/* Channel page */
+.channel-page > box { padding: 0 32px; }
+.channel-banner { background: #222222; border-radius: 16px; margin-top: 12px; }
+.channel-banner picture { border-radius: 16px; }
+.channel-header { padding: 16px 0 8px 0; }
+.channel-name { font-size: 36px; font-weight: 700; }
+.channel-header .verified { -gtk-icon-size: 20px; }
+.channel-description { padding: 0; min-height: 0; background: none; color: var(--yt-text-dim); font-weight: 400; }
+.channel-description:hover { background: none; color: var(--yt-text); }
+.channel-tabs { border-bottom: 1px solid rgba(255, 255, 255, 0.15); }
+.channel-tab {
+  background: none;
+  border-radius: 0;
+  padding: 10px 4px;
+  min-height: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--yt-text-dim);
+  border-bottom: 2px solid transparent;
+  box-shadow: none;
+}
+.channel-tab:hover { color: var(--yt-text); border-bottom-color: var(--yt-text-dim); background: none; }
+.channel-tab:checked { color: var(--yt-text); border-bottom-color: var(--yt-text); background: none; }
+.channel-page .feed-page .chip-bar { padding: 12px 8px; }
+.channel-page .video-grid { padding: 0 0 24px 0; }
+label.channel-link:hover { color: var(--yt-text); }
+
+.player { background: black; border-radius: var(--yt-radius); }
+.player.fullscreen { border-radius: 0; }
+.player-controls {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.35) 55%, transparent);
+  padding: 56px 12px 0 12px;
+  color: white;
+}
+.player-controls .controls-row { min-height: 48px; }
+.player-controls button {
+  color: white;
+  background: none;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border-radius: 999px;
+  box-shadow: none;
+  -gtk-icon-size: 24px;
+}
+.player-controls button:hover { background: rgba(255, 255, 255, 0.12); }
+.player-controls button.captions.on image { border-bottom: 3px solid var(--yt-accent); padding-bottom: 2px; }
+.player-controls .time { font-size: 13px; font-feature-settings: "tnum"; margin: 0 8px; }
+.player-controls .chapter { font-size: 13px; color: #eee; }
+/* A live stream's "● LIVE": red at the edge, grey (and a way back) behind. */
+.player-controls button.live-button { min-width: 0; min-height: 32px; padding: 0 8px; border-radius: 4px; font-size: 13px; font-weight: 500; }
+.player-controls .live-dot { min-width: 8px; min-height: 8px; border-radius: 999px; background: #ff0000; }
+.player-controls button.live-button.behind .live-dot { background: #909090; }
+.player-controls button.live-button:not(.behind) { color: white; }
+.player.fullscreen .player-controls button { min-width: 60px; min-height: 60px; -gtk-icon-size: 32px; }
+.player.fullscreen .player-controls .time, .player.fullscreen .player-controls .chapter { font-size: 16px; }
+switch.autoplay { margin: 0 8px; min-height: 14px; min-width: 34px; background: rgba(255, 255, 255, 0.3); border-radius: 999px; }
+switch.autoplay:checked { background: rgba(255, 255, 255, 0.85); }
+switch.autoplay slider { min-width: 18px; min-height: 18px; margin: -2px; background: #717171; border-radius: 999px; box-shadow: none; }
+switch.autoplay:checked slider { background: white; }
+
+/* The settings panel (the gear). */
+popover.player-settings-popover > contents {
+  background: rgba(28, 28, 28, 0.92);
+  border-radius: 12px;
+  padding: 8px 0;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+}
+.player-settings { min-width: 280px; color: #eee; }
+.settings-row, .settings-option, .settings-back {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 0;
+  background: none;
+  color: #eee;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.settings-row:hover, .settings-option:hover, .settings-back:hover { background: rgba(255, 255, 255, 0.1); }
+.settings-back { min-height: 48px; }
+.settings-back image { margin-right: 8px; }
+.settings-icon { -gtk-icon-size: 24px; margin-right: 15px; }
+.settings-value { font-weight: 400; margin: 0 4px 0 24px; }
+.settings-check { -gtk-icon-size: 20px; margin-right: 15px; }
+.settings-badge { font-size: 9px; font-weight: 700; color: #f03; margin-left: 2px; }
+.player-settings separator { background: rgba(255, 255, 255, 0.2); margin-bottom: 8px; }
+
+/* Over the video: the bezel's text, the seek preview, stats, up next. */
+.bezel-text {
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  font-size: 17px;
+  font-weight: 500;
+  padding: 8px 14px;
+  border-radius: 6px;
+  margin-top: 48px;
+}
+.seek-bubble label { color: white; font-weight: 500; text-shadow: 0 0 3px rgba(0, 0, 0, 0.9); }
+.seek-preview { border: 2px solid white; border-radius: 10px; background: black; }
+.seek-time { font-size: 13px; }
+.seek-chapter { font-size: 13px; }
+.stats-for-nerds {
+  background: rgba(28, 28, 28, 0.82);
+  color: #ddd;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 4px 10px 10px 10px;
+  margin: 16px;
+  border-radius: 6px;
+}
+.stats-for-nerds .stats-name { font-weight: 700; }
+.stats-close { min-width: 24px; min-height: 24px; padding: 0; background: none; color: #ddd; }
+.up-next-backdrop { background: rgba(0, 0, 0, 0.6); padding-bottom: 64px; }
+.up-next { padding: 8px; }
+.up-next-count { color: #ccc; font-size: 14px; }
+.up-next-picture { border-radius: 10px; }
+.up-next-title { color: white; font-size: 16px; font-weight: 600; }
+.up-next button { border-radius: 999px; font-weight: 600; min-height: 36px; }
+.up-next-cancel { background: rgba(255, 255, 255, 0.15); color: white; }
+.up-next-play { background: white; color: #0f0f0f; }
+.player-status {
+  background: rgba(0, 0, 0, 0.7);
+  border-radius: 12px;
+  padding: 16px 20px;
+  color: white;
+}
+
+/* Seek bar, drawn in code; these set its colors. */
+.seekbar { min-height: 18px; color: var(--yt-accent); }
+
+/* Sign-in */
+.signin-code {
+  font-family: monospace;
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: 6px;
+  background: var(--yt-raised);
+  border-radius: 12px;
+  padding: 12px 24px;
+}
+.pill-button { border-radius: 999px; padding: 8px 20px; font-weight: 600; }
+.pill-button.suggested-action { background: var(--yt-accent); color: white; }
+
+/* The volume slider: white, as on youtube.com. */
+.player-controls scale.volume trough { background: rgba(255, 255, 255, 0.3); min-height: 3px; }
+.player-controls scale.volume highlight { background: white; }
+.player-controls scale.volume slider { background: white; min-width: 12px; min-height: 12px; margin: -5px; box-shadow: none; }
+
+/* Menus (the ⋮ menus, sort, account): a dark rounded list, icon and label. */
+popover.yt-menu-popover > contents {
+  background: #282828;
+  border-radius: 12px;
+  padding: 8px 0;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.45);
+}
+.yt-menu { min-width: 200px; }
+.yt-menu-item {
+  min-height: 36px;
+  padding: 0 36px 0 16px;
+  border-radius: 0;
+  background: none;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--yt-text);
+}
+.yt-menu-item image { margin-right: 16px; -gtk-icon-size: 24px; }
+.yt-menu-item:hover, .yt-menu-item:focus-visible { background: rgba(255, 255, 255, 0.1); }
+.yt-menu-item.selected { background: rgba(255, 255, 255, 0.2); }
+.yt-menu-popover separator { margin: 8px 0; background: rgba(255, 255, 255, 0.2); }
+
+/* Confirmation dialogs: title, message, text buttons at the bottom right. */
+dialog.yt-dialog floating-sheet > sheet,
+dialog.yt-dialog bottom-sheet > sheet {
+  background: #282828;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+}
+.yt-dialog-content { padding: 24px 24px 8px 24px; min-width: 320px; }
+.yt-dialog-title { font-size: 16px; font-weight: 500; color: var(--yt-text); }
+.yt-dialog-body { font-size: 14px; color: var(--yt-text-dim); margin-top: 12px; }
+.yt-dialog-actions { margin-top: 20px; margin-right: -8px; }
+.yt-dialog-button {
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--yt-text);
+  box-shadow: none;
+}
+.yt-dialog-button:hover { background: rgba(255, 255, 255, 0.1); }
+.yt-dialog-button.confirm { color: #3ea6ff; }
+.yt-dialog-button.confirm:hover { background: rgba(62, 166, 255, 0.2); }
+
+/* The watch page's "Up next" column: compact cards. */
+.watch-related.narrow { margin: 8px 0 24px 0; }
+.watch-column.theater .watch-related { margin-top: 16px; }
+.video-card.compact { padding: 0; }
+.video-card.compact .thumb, .video-card.compact .thumb picture { border-radius: 8px; }
+.video-card.compact .title { font-size: 14px; font-weight: 500; }
+.video-card.compact .meta { font-size: 12px; }
+.video-card.compact .duration { margin: 4px; font-size: 11px; }
+.video-card.compact .menu-button > button { min-width: 24px; min-height: 24px; }
+
+/* The search box: a field and a button, as on youtube.com, and below the
+   field earlier searches and suggestions. */
+.search-field {
+  background: #121212;
+  border: 1px solid #303030;
+  border-right: none;
+  border-radius: 40px 0 0 40px;
+  padding: 0 4px 0 16px;
+  min-height: 38px;
+}
+.search-field.focused { border-color: #1c62b9; }
+.search-entry, .search-entry:focus-within { background: none; box-shadow: none; outline: none; padding: 0; min-height: 38px; font-size: 16px; }
+.search-clear { min-width: 36px; min-height: 36px; padding: 0; border-radius: 999px; background: none; box-shadow: none; -gtk-icon-size: 22px; }
+.search-clear:hover { background: var(--yt-hover); }
+.search-button {
+  min-width: 64px;
+  min-height: 38px;
+  padding: 0;
+  background: #222222;
+  border: 1px solid #303030;
+  border-radius: 0 40px 40px 0;
+  box-shadow: none;
+  -gtk-icon-size: 24px;
+}
+.search-button:hover { background: #303030; }
+popover.search-popover > contents {
+  background: #212121;
+  border-radius: 12px;
+  padding: 16px 0;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+}
+.suggestion {
+  min-height: 32px;
+  padding: 0 24px 0 16px;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 16px;
+  font-weight: 400;
+}
+.suggestion:hover, .suggestion.selected { background: #3d3d3d; }
+.suggestion-icon { -gtk-icon-size: 24px; margin-right: 16px; }
+.suggestion-image { border-radius: 4px; margin: 4px 16px 4px 0; }
+.suggestion-description { font-size: 12px; color: var(--yt-text-dim); }
+.suggestion-remove { font-size: 13px; color: #3ea6ff; background: none; box-shadow: none; padding: 0 0 0 16px; min-height: 0; opacity: 0; }
+.suggestion:hover .suggestion-remove, .suggestion.selected .suggestion-remove { opacity: 1; }
+.suggestion-remove:hover { text-decoration: underline; }
+
+/* The search page: chips and Filters, then a column of results. */
+.search-header { padding: 12px 24px 0 24px; }
+.search-header .chip-bar { padding: 4px 0 8px 0; }
+.search-filters-button { background: none; border-radius: 999px; padding: 0 12px; min-height: 36px; font-weight: 500; font-size: 14px; box-shadow: none; }
+.search-filters-button:hover { background: var(--yt-hover); }
+.search-filters-button.active { background: var(--yt-raised); }
+.search-results { background: none; padding: 8px 0 0 0; }
+.search-results > row { padding: 0; background: none; }
+.search-results > row:hover, .search-results > row:focus { background: none; outline: none; }
+.search-row { padding: 8px 24px; }
+.search-title { font-size: 18px; font-weight: 400; }
+.search-text .meta { font-size: 12px; }
+.search-video .search-title { margin-bottom: 4px; }
+.search-owner { margin: 12px 0; }
+.search-owner:hover label { color: var(--yt-text); }
+.search-snippet { font-size: 12px; }
+.search-badges { margin-top: 8px; }
+.search-badge { background: rgba(255, 255, 255, 0.1); color: var(--yt-text-dim); font-size: 12px; font-weight: 500; border-radius: 4px; padding: 1px 4px; }
+.search-channel .search-title { font-size: 18px; }
+.search-channel .subscribe-button { padding: 8px 16px; }
+.search-view-playlist { font-size: 12px; font-weight: 500; color: var(--yt-text-dim); margin-top: 4px; }
+.search-view-playlist:hover { color: var(--yt-text); }
+.playlist-stack-back { min-height: 4px; margin: 0 24px 2px 24px; border-radius: 8px 8px 0 0; background: rgba(255, 255, 255, 0.18); }
+.playlist-stack-middle { min-height: 4px; margin: 0 12px 2px 12px; border-radius: 10px 10px 0 0; background: rgba(255, 255, 255, 0.3); }
+.search-correction { padding: 4px 0 8px 0; font-size: 16px; }
+.search-correction.dim, .search-correction .dim { font-size: 14px; }
+.search-correction link, .search-correction link:visited { color: #3ea6ff; }
+.search-shelf { padding: 16px 0; border-top: 1px solid rgba(255, 255, 255, 0.1); border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
+.search-shelf-title { font-size: 20px; font-weight: 700; }
+.shorts-icon { color: var(--yt-accent); -gtk-icon-size: 26px; }
+.search-shelf-more { border-radius: 999px; min-height: 36px; font-weight: 500; border: 1px solid rgba(255, 255, 255, 0.2); }
+.search-shelf-more:hover { background: var(--yt-hover); }
+.short-card .thumb, .short-card .thumb picture { border-radius: 8px; }
+.short-title { font-size: 16px; font-weight: 500; }
+.shelf-arrow {
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0;
+  margin: 0 4px;
+  border-radius: 999px;
+  background: #212121;
+  box-shadow: 0 4px 4px rgba(0, 0, 0, 0.3), 0 0 4px rgba(0, 0, 0, 0.2);
+}
+.shelf-arrow:hover { background: #3d3d3d; }
+.search-footer { padding: 24px 0 40px 0; }
+
+/* The search filters dialog. */
+.search-filters-heading { font-size: 14px; font-weight: 700; padding-bottom: 12px; }
+.search-filters separator { background: rgba(255, 255, 255, 0.2); margin-bottom: 8px; }
+.search-filters-columns > flowboxchild { padding: 0; background: none; }
+.search-filter-option {
+  min-height: 0;
+  padding: 8px 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--yt-text-dim);
+}
+.search-filter-option:hover { color: var(--yt-text); background: none; }
+.search-filter-option.selected { color: var(--yt-text); font-weight: 700; }
+.search-filter-option image { -gtk-icon-size: 16px; }
+dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }

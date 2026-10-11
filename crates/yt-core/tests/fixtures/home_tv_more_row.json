@@ -1,0 +1,214 @@
+{
+ "continuationContents": {
+  "horizontalListContinuation": {
+   "items": [
+    {
+     "tileRenderer": {
+      "style": "TILE_STYLE_YTLR_DEFAULT",
+      "header": {
+       "tileHeaderRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://i.ytimg.com/vi/video-E-id/default.jpg",
+           "width": 120,
+           "height": 90
+          },
+          {
+           "url": "https://i.ytimg.com/vi/video-E-id/hq720_custom_1.jpg",
+           "width": 640,
+           "height": 360
+          },
+          {
+           "url": "https://i.ytimg.com/vi/video-E-id/maxresdefault.jpg",
+           "width": 1280,
+           "height": 720
+          }
+         ]
+        },
+        "thumbnailOverlays": [
+         {
+          "thumbnailOverlayTimeStatusRenderer": {
+           "text": {
+            "simpleText": "1:04:53"
+           },
+           "style": "DEFAULT"
+          }
+         }
+        ]
+       }
+      },
+      "metadata": {
+       "tileMetadataRenderer": {
+        "title": {
+         "simpleText": "Video E"
+        },
+        "lines": [
+         {
+          "lineRenderer": {
+           "items": [
+            {
+             "lineItemRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Channel E"
+                }
+               ]
+              }
+             }
+            }
+           ]
+          }
+         },
+         {
+          "lineRenderer": {
+           "items": [
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "2.6M views"
+              }
+             }
+            },
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "•"
+              }
+             }
+            },
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "10 months ago"
+              }
+             }
+            }
+           ]
+          }
+         }
+        ]
+       }
+      },
+      "onSelectCommand": {
+       "watchEndpoint": {
+        "videoId": "video-E-id"
+       }
+      },
+      "contentId": "video-E-id",
+      "contentType": "TILE_CONTENT_TYPE_VIDEO"
+     }
+    },
+    {
+     "tileRenderer": {
+      "style": "TILE_STYLE_YTLR_DEFAULT",
+      "header": {
+       "tileHeaderRenderer": {
+        "thumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://i.ytimg.com/vi/video-C-id/default.jpg",
+           "width": 120,
+           "height": 90
+          },
+          {
+           "url": "https://i.ytimg.com/vi/video-C-id/hq720_custom_1.jpg",
+           "width": 640,
+           "height": 360
+          },
+          {
+           "url": "https://i.ytimg.com/vi/video-C-id/maxresdefault.jpg",
+           "width": 1280,
+           "height": 720
+          }
+         ]
+        },
+        "thumbnailOverlays": [
+         {
+          "thumbnailOverlayTimeStatusRenderer": {
+           "text": {
+            "simpleText": "47:40"
+           },
+           "style": "DEFAULT"
+          }
+         }
+        ]
+       }
+      },
+      "metadata": {
+       "tileMetadataRenderer": {
+        "title": {
+         "simpleText": "Video C"
+        },
+        "lines": [
+         {
+          "lineRenderer": {
+           "items": [
+            {
+             "lineItemRenderer": {
+              "text": {
+               "runs": [
+                {
+                 "text": "Channel C"
+                }
+               ]
+              }
+             }
+            }
+           ]
+          }
+         },
+         {
+          "lineRenderer": {
+           "items": [
+            {
+             "lineItemRenderer": {
+              "badge": {
+               "metadataBadgeRenderer": {
+                "style": "BADGE_STYLE_TYPE_SIMPLE",
+                "label": "4K"
+               }
+              }
+             }
+            },
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "36K views"
+              }
+             }
+            },
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "•"
+              }
+             }
+            },
+            {
+             "lineItemRenderer": {
+              "text": {
+               "simpleText": "5 hours ago"
+              }
+             }
+            }
+           ]
+          }
+         }
+        ]
+       }
+      },
+      "onSelectCommand": {
+       "watchEndpoint": {
+        "videoId": "video-C-id"
+       }
+      },
+      "contentId": "video-C-id",
+      "contentType": "TILE_CONTENT_TYPE_VIDEO"
+     }
+    }
+   ]
+  }
+ }
+}

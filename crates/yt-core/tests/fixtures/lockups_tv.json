@@ -1,0 +1,195 @@
+{
+ "contents": {
+  "sectionListRenderer": {
+   "contents": [
+    {
+     "shelfRenderer": {
+      "content": {
+       "horizontalListRenderer": {
+        "items": [
+         {
+          "lockupViewModel": {
+           "contentImage": {
+            "thumbnailViewModel": {
+             "overlays": [
+              {
+               "thumbnailBottomOverlayViewModel": {
+                "badges": [
+                 {
+                  "thumbnailBadgeViewModel": {
+                   "text": "24:52",
+                   "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_DEFAULT"
+                  }
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           "metadata": {
+            "lockupMetadataViewModel": {
+             "title": {
+              "content": "I Asked Famous Youtubers To Cook in Their Homes"
+             },
+             "metadata": {
+              "contentMetadataViewModel": {
+               "metadataRows": [
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "Joshua Weissman"
+                   }
+                  }
+                 ]
+                },
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "3.2M views"
+                   }
+                  },
+                  {
+                   "text": {
+                    "content": "6 days ago"
+                   },
+                   "accessibilityLabel": "6 days ago"
+                  }
+                 ],
+                 "badges": [
+                  {
+                   "badgeViewModel": {
+                    "badgeText": "New",
+                    "badgeStyle": "BADGE_DEFAULT"
+                   }
+                  },
+                  {
+                   "badgeViewModel": {
+                    "badgeText": "4K",
+                    "badgeStyle": "BADGE_DEFAULT"
+                   }
+                  }
+                 ]
+                }
+               ],
+               "delimiter": " • "
+              }
+             },
+             "metadataStyling": {
+              "secondaryFontSize": "LOCKUP_METADATA_FONT_SIZE_SMALL"
+             }
+            }
+           },
+           "contentId": "QDleZC5l_rk",
+           "contentType": "LOCKUP_CONTENT_TYPE_VIDEO"
+          }
+         },
+         {
+          "lockupViewModel": {
+           "contentImage": {
+            "thumbnailViewModel": {
+             "overlays": [
+              {
+               "thumbnailBottomOverlayViewModel": {
+                "badges": [
+                 {
+                  "thumbnailBadgeViewModel": {
+                   "icon": {},
+                   "badgeStyle": "THUMBNAIL_OVERLAY_BADGE_STYLE_DEFAULT"
+                  }
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           "metadata": {
+            "lockupMetadataViewModel": {
+             "title": {
+              "content": "Knife Skills Progression"
+             },
+             "metadata": {
+              "contentMetadataViewModel": {
+               "metadataRows": [
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "Nick DiGiovanni"
+                   }
+                  }
+                 ]
+                },
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "132M views"
+                   }
+                  },
+                  {
+                   "text": {
+                    "content": "1 year ago"
+                   },
+                   "accessibilityLabel": "1 year ago"
+                  }
+                 ],
+                 "badges": [
+                  {
+                   "badgeViewModel": {
+                    "badgeText": "4K",
+                    "badgeStyle": "BADGE_DEFAULT"
+                   }
+                  },
+                  {
+                   "badgeViewModel": {
+                    "badgeText": "CC",
+                    "badgeStyle": "BADGE_DEFAULT"
+                   }
+                  }
+                 ]
+                }
+               ],
+               "delimiter": " • "
+              }
+             },
+             "metadataStyling": {
+              "secondaryFontSize": "LOCKUP_METADATA_FONT_SIZE_SMALL"
+             }
+            }
+           },
+           "contentId": "j19HFPplMQ0",
+           "contentType": "LOCKUP_CONTENT_TYPE_SHORT"
+          }
+         }
+        ],
+        "collapsedItemCount": 3,
+        "visibleItemCount": 3
+       }
+      },
+      "headerRenderer": {
+       "shelfHeaderRenderer": {
+        "avatarLockup": {
+         "avatarLockupRenderer": {
+          "title": {
+           "simpleText": "Search results"
+          },
+          "size": "AVATAR_LOCKUP_SIZE_SMALL"
+         }
+        }
+       }
+      },
+      "tvhtml5Style": {
+       "effects": {
+        "enlarge": true
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

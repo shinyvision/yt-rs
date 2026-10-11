@@ -1,0 +1,1824 @@
+{
+ "header": {
+  "searchHeaderRenderer": {
+   "chipBar": {
+    "chipCloudRenderer": {
+     "chips": [
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "All"
+        },
+        "isSelected": true,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      },
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "Shorts"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "Es0FEgVoZWxsbxrABUVvc0VrZ0dIQkRxWEFSS1FBU2hoSUhsdmRYUjFZbVZmYzJodmNuUnpYMlJsWm1sdWFYUnBiMjRnT25SNWNHVTZjaUFvYmlCNWIzVjBkV0psWDJac1lXZGZhR0Z6WDNCeVpXMXBaWEpsWDNacFpHVnZYMjFsZEdGa1lYUmhQVEVnT25SNWNHVTZjaWtnS0c0Z2VXOTFkSFZpWlY5bWJHRm5YMmhoYzE5c2FYWmxYM04wY21WaGJWOXRaWFJoWkdGMFlUMHhJRHAwZVhCbE9uSXBLVGdCWUJwSzZnSUtGUW9GYUdWc2JHX3lBUVVLQTBGc2JOZ0NBYmdEWVFxbEFmSUJDQW9HVTJodmNuUnp3Z0tRQVNoaElIbHZkWFIxWW1WZmMyaHZjblJ6WDJSbFptbHVhWFJwYjI0Z09uUjVjR1U2Y2lBb2JpQjViM1YwZFdKbFgyWnNZV2RmYUdGelgzQnlaVzFwWlhKbFgzWnBaR1Z2WDIxbGRHRmtZWFJoUFRFZ09uUjVjR1U2Y2lrZ0tHNGdlVzkxZEhWaVpWOW1iR0ZuWDJoaGMxOXNhWFpsWDNOMGNtVmhiVjl0WlhSaFpHRjBZVDB4SURwMGVYQmxPbklwS2ZnQ0FiZ0RHZ29XOGdFTENnbFZibmRoZEdOb1pXVEtBZ0lZQWJnREhBbzY4Z0VJQ2daV2FXUmxiM1BDQWhwNWIzVjBkV0psWDNacFpHVnZYM0JoWjJVZ09uUjVjR1U2Y3VnQ0FhZ0RBYmdEU01BREFjZ0RBZEFEQVFvYllBZnlBUk1LRVZKbFkyVnVkR3g1SUhWd2JHOWhaR1ZrdUFNSENqYnlBUVlLQkV4cGRtWENBaWQ1YjNWMGRXSmxYMnhwZG1WZlluSnZZV1JqWVhOMFgzTjBZWFIxY3owd0lEcDBlWEJsT25LNEF3UVlDM2dBkAEBGIHg6BgiC3NlYXJjaC1wYWdl",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH",
+          "command": {
+           "showReloadUiCommand": {
+            "targetId": "search-page"
+           }
+          }
+         }
+        },
+        "isSelected": false,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      },
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "Unwatched"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "EpEEEgVoZWxsbxqEBEV2a0NrZ0gxQWpvR0dnSVlBV0FjU3VvQ0NoVUtCV2hsYkd4djhnRUZDZ05CYkd6WUFnRzRBMkVLcFFIeUFRZ0tCbE5vYjNKMGM4SUNrQUVvWVNCNWIzVjBkV0psWDNOb2IzSjBjMTlrWldacGJtbDBhVzl1SURwMGVYQmxPbklnS0c0Z2VXOTFkSFZpWlY5bWJHRm5YMmhoYzE5d2NtVnRhV1Z5WlY5MmFXUmxiMTl0WlhSaFpHRjBZVDB4SURwMGVYQmxPbklwSUNodUlIbHZkWFIxWW1WZlpteGhaMTlvWVhOZmJHbDJaVjl6ZEhKbFlXMWZiV1YwWVdSaGRHRTlNU0E2ZEhsd1pUcHlLU240QWdHNEF4b0tGdklCQ3dvSlZXNTNZWFJqYUdWa3lnSUNHQUc0QXh3S092SUJDQW9HVm1sa1pXOXp3Z0lhZVc5MWRIVmlaVjkyYVdSbGIxOXdZV2RsSURwMGVYQmxPbkxvQWdHb0F3RzRBMGpBQXdISUF3SFFBd0VLRzJBSDhnRVRDaEZTWldObGJuUnNlU0IxY0d4dllXUmxaTGdEQndvMjhnRUdDZ1JNYVhabHdnSW5lVzkxZEhWaVpWOXNhWFpsWDJKeWIyRmtZMkZ6ZEY5emRHRjBkWE05TUNBNmRIbHdaVHB5dUFNRUdBdDRBQSUzRCUzRJABARiB4OgYIgtzZWFyY2gtcGFnZQ%3D%3D",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH",
+          "command": {
+           "showReloadUiCommand": {
+            "targetId": "search-page"
+           }
+          }
+         }
+        },
+        "isSelected": false,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      },
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "Videos"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "ErsEEgVoZWxsbxquBEVwc0RrZ0dYQXpvb0VocDViM1YwZFdKbFgzWnBaR1Z2WDNCaFoyVWdPblI1Y0dVNmNpZ0JVQUZnU0dnQmNBRjRBVXJxQWdvVkNnVm9aV3hzYl9JQkJRb0RRV3hzMkFJQnVBTmhDcVVCOGdFSUNnWlRhRzl5ZEhQQ0FwQUJLR0VnZVc5MWRIVmlaVjl6YUc5eWRITmZaR1ZtYVc1cGRHbHZiaUE2ZEhsd1pUcHlJQ2h1SUhsdmRYUjFZbVZmWm14aFoxOW9ZWE5mY0hKbGJXbGxjbVZmZG1sa1pXOWZiV1YwWVdSaGRHRTlNU0E2ZEhsd1pUcHlLU0FvYmlCNWIzVjBkV0psWDJac1lXZGZhR0Z6WDJ4cGRtVmZjM1J5WldGdFgyMWxkR0ZrWVhSaFBURWdPblI1Y0dVNmNpa3AtQUlCdUFNYUNoYnlBUXNLQ1ZWdWQyRjBZMmhsWk1vQ0FoZ0J1QU1jQ2pyeUFRZ0tCbFpwWkdWdmM4SUNHbmx2ZFhSMVltVmZkbWxrWlc5ZmNHRm5aU0E2ZEhsd1pUcHk2QUlCcUFNQnVBTkl3QU1CeUFNQjBBTUJDaHRnQl9JQkV3b1JVbVZqWlc1MGJIa2dkWEJzYjJGa1pXUzRBd2NLTnZJQkJnb0VUR2wyWmNJQ0ozbHZkWFIxWW1WZmJHbDJaVjlpY205aFpHTmhjM1JmYzNSaGRIVnpQVEFnT25SNWNHVTZjcmdEQkJnTGVBQSUzRJABARiB4OgYIgtzZWFyY2gtcGFnZQ%3D%3D",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH",
+          "command": {
+           "showReloadUiCommand": {
+            "targetId": "search-page"
+           }
+          }
+         }
+        },
+        "isSelected": false,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      },
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "Recently uploaded"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "EosEEgVoZWxsbxr-A0V2Y0NrZ0h6QWpvRUlBZGdCMHJxQWdvVkNnVm9aV3hzYl9JQkJRb0RRV3hzMkFJQnVBTmhDcVVCOGdFSUNnWlRhRzl5ZEhQQ0FwQUJLR0VnZVc5MWRIVmlaVjl6YUc5eWRITmZaR1ZtYVc1cGRHbHZiaUE2ZEhsd1pUcHlJQ2h1SUhsdmRYUjFZbVZmWm14aFoxOW9ZWE5mY0hKbGJXbGxjbVZmZG1sa1pXOWZiV1YwWVdSaGRHRTlNU0E2ZEhsd1pUcHlLU0FvYmlCNWIzVjBkV0psWDJac1lXZGZhR0Z6WDJ4cGRtVmZjM1J5WldGdFgyMWxkR0ZrWVhSaFBURWdPblI1Y0dVNmNpa3AtQUlCdUFNYUNoYnlBUXNLQ1ZWdWQyRjBZMmhsWk1vQ0FoZ0J1QU1jQ2pyeUFRZ0tCbFpwWkdWdmM4SUNHbmx2ZFhSMVltVmZkbWxrWlc5ZmNHRm5aU0E2ZEhsd1pUcHk2QUlCcUFNQnVBTkl3QU1CeUFNQjBBTUJDaHRnQl9JQkV3b1JVbVZqWlc1MGJIa2dkWEJzYjJGa1pXUzRBd2NLTnZJQkJnb0VUR2wyWmNJQ0ozbHZkWFIxWW1WZmJHbDJaVjlpY205aFpHTmhjM1JmYzNSaGRIVnpQVEFnT25SNWNHVTZjcmdEQkJnTGVBQSUzRJABARiB4OgYIgtzZWFyY2gtcGFnZQ%3D%3D",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH",
+          "command": {
+           "showReloadUiCommand": {
+            "targetId": "search-page"
+           }
+          }
+         }
+        },
+        "isSelected": false,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      },
+      {
+       "chipCloudChipRenderer": {
+        "style": {
+         "styleType": "STYLE_HOME_FILTER"
+        },
+        "text": {
+         "simpleText": "Live"
+        },
+        "navigationEndpoint": {
+         "continuationCommand": {
+          "token": "Er8EEgVoZWxsbxqyBEVwNERrZ0dhQXpvckVpZDViM1YwZFdKbFgyeHBkbVZmWW5KdllXUmpZWE4wWDNOMFlYUjFjejB3SURwMGVYQmxPbkpnQkVycUFnb1ZDZ1ZvWld4c2JfSUJCUW9EUVd4czJBSUJ1QU5oQ3FVQjhnRUlDZ1pUYUc5eWRIUENBcEFCS0dFZ2VXOTFkSFZpWlY5emFHOXlkSE5mWkdWbWFXNXBkR2x2YmlBNmRIbHdaVHB5SUNodUlIbHZkWFIxWW1WZlpteGhaMTlvWVhOZmNISmxiV2xsY21WZmRtbGtaVzlmYldWMFlXUmhkR0U5TVNBNmRIbHdaVHB5S1NBb2JpQjViM1YwZFdKbFgyWnNZV2RmYUdGelgyeHBkbVZmYzNSeVpXRnRYMjFsZEdGa1lYUmhQVEVnT25SNWNHVTZjaWtwLUFJQnVBTWFDaGJ5QVFzS0NWVnVkMkYwWTJobFpNb0NBaGdCdUFNY0NqcnlBUWdLQmxacFpHVnZjOElDR25sdmRYUjFZbVZmZG1sa1pXOWZjR0ZuWlNBNmRIbHdaVHB5NkFJQnFBTUJ1QU5Jd0FNQnlBTUIwQU1CQ2h0Z0JfSUJFd29SVW1WalpXNTBiSGtnZFhCc2IyRmtaV1M0QXdjS052SUJCZ29FVEdsMlpjSUNKM2x2ZFhSMVltVmZiR2wyWlY5aWNtOWhaR05oYzNSZmMzUmhkSFZ6UFRBZ09uUjVjR1U2Y3JnREJCZ0xlQUElM0SQAQEYgeDoGCILc2VhcmNoLXBhZ2U%3D",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH",
+          "command": {
+           "showReloadUiCommand": {
+            "targetId": "search-page"
+           }
+          }
+         }
+        },
+        "isSelected": false,
+        "location": "CHIP_LOCATION_SEARCH_RESULTS"
+       }
+      }
+     ],
+     "nextButton": {
+      "buttonRenderer": {
+       "style": "STYLE_DEFAULT",
+       "size": "SIZE_DEFAULT",
+       "isDisabled": false,
+       "icon": {
+        "iconType": "CHEVRON_RIGHT"
+       }
+      }
+     },
+     "previousButton": {
+      "buttonRenderer": {
+       "style": "STYLE_DEFAULT",
+       "size": "SIZE_DEFAULT",
+       "isDisabled": false,
+       "icon": {
+        "iconType": "CHEVRON_LEFT"
+       }
+      }
+     }
+    }
+   },
+   "searchFilterButton": {
+    "buttonRenderer": {
+     "style": "STYLE_TEXT",
+     "size": "SIZE_DEFAULT",
+     "isDisabled": false,
+     "text": {
+      "runs": [
+       {
+        "text": "Filters"
+       }
+      ]
+     },
+     "icon": {
+      "iconType": "TUNE"
+     },
+     "tooltip": "Search filters",
+     "command": {
+      "openPopupAction": {
+       "popup": {
+        "searchFilterOptionsDialogRenderer": {
+         "title": {
+          "runs": [
+           {
+            "text": "Search filters"
+           }
+          ]
+         },
+         "groups": [
+          {
+           "searchFilterGroupRenderer": {
+            "title": {
+             "simpleText": "Type"
+            },
+            "filters": [
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Videos"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIQAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Videos"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Shorts"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIQCQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Shorts"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Channels"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIQAg%3D%3D"
+                }
+               },
+               "tooltip": "Search for Channels"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Playlists"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIQAw%3D%3D"
+                }
+               },
+               "tooltip": "Search for Playlists"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Movies"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIQBA%3D%3D"
+                }
+               },
+               "tooltip": "Search for Movies"
+              }
+             }
+            ]
+           }
+          },
+          {
+           "searchFilterGroupRenderer": {
+            "title": {
+             "simpleText": "Duration"
+            },
+            "filters": [
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Under 3 minutes"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIYBA%3D%3D"
+                }
+               },
+               "tooltip": "Search for Under 3 minutes"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "3 - 20 minutes"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIYBQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for 3 - 20 minutes"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Over 20 minutes"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIYAg%3D%3D"
+                }
+               },
+               "tooltip": "Search for Over 20 minutes"
+              }
+             }
+            ]
+           }
+          },
+          {
+           "searchFilterGroupRenderer": {
+            "title": {
+             "simpleText": "Upload date"
+            },
+            "filters": [
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Today"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIIAg%3D%3D"
+                }
+               },
+               "tooltip": "Search for Today"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "This week"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIIAw%3D%3D"
+                }
+               },
+               "tooltip": "Search for This week"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "This month"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIIBA%3D%3D"
+                }
+               },
+               "tooltip": "Search for This month"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "This year"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIIBQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for This year"
+              }
+             }
+            ]
+           }
+          },
+          {
+           "searchFilterGroupRenderer": {
+            "title": {
+             "simpleText": "Features"
+            },
+            "filters": [
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Live"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgJAAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Live"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "4K"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgJwAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for 4K"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "HD"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIgAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for HD"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Subtitles/CC"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIoAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Subtitles/CC"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Creative Commons"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgIwAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Creative Commons"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "360\u00b0"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgJ4AQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for 360\u00b0"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "VR180"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgPQAQE%3D"
+                }
+               },
+               "tooltip": "Search for VR180"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "3D"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgI4AQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for 3D"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "HDR"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgPIAQE%3D"
+                }
+               },
+               "tooltip": "Search for HDR"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Location"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgO4AQE%3D"
+                }
+               },
+               "tooltip": "Search for Location"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Purchased"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "EgJIAQ%3D%3D"
+                }
+               },
+               "tooltip": "Search for Purchased"
+              }
+             }
+            ]
+           }
+          },
+          {
+           "searchFilterGroupRenderer": {
+            "title": {
+             "simpleText": "Prioritize"
+            },
+            "filters": [
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Relevance"
+               },
+               "status": "FILTER_STATUS_SELECTED",
+               "tooltip": "Prioritize by relevance"
+              }
+             },
+             {
+              "searchFilterRenderer": {
+               "label": {
+                "simpleText": "Popularity"
+               },
+               "navigationEndpoint": {
+                "searchEndpoint": {
+                 "query": "hello",
+                 "params": "CAM%3D"
+                }
+               },
+               "tooltip": "Prioritize by popularity"
+              }
+             }
+            ]
+           }
+          }
+         ]
+        }
+       },
+       "popupType": "DIALOG"
+      }
+     },
+     "iconPosition": "BUTTON_ICON_POSITION_TYPE_RIGHT_OF_TEXT"
+    }
+   },
+   "aboutTheseResultsButton": {
+    "buttonRenderer": {
+     "style": "STYLE_TEXT",
+     "size": "SIZE_DEFAULT",
+     "isDisabled": false,
+     "text": {
+      "runs": [
+       {
+        "text": "About these results"
+       }
+      ]
+     },
+     "icon": {
+      "iconType": "INFO"
+     },
+     "command": {
+      "urlEndpoint": {
+       "url": "https://www.youtube.com/howyoutubeworks/product-features/search/",
+       "target": "TARGET_NEW_WINDOW"
+      }
+     },
+     "iconPosition": "BUTTON_ICON_POSITION_TYPE_RIGHT_OF_TEXT"
+    }
+   }
+  }
+ },
+ "contents": {
+  "twoColumnSearchResultsRenderer": {
+   "primaryContents": {
+    "sectionListRenderer": {
+     "contents": [
+      {
+       "itemSectionRenderer": {
+        "contents": [
+         {
+          "showingResultsForRenderer": {
+           "showingResultsFor": {
+            "runs": [
+             {
+              "text": "Showing results for"
+             }
+            ]
+           },
+           "correctedQuery": {
+            "runs": [
+             {
+              "text": "hello",
+              "italics": true
+             },
+             {
+              "text": " "
+             },
+             {
+              "text": "world",
+              "italics": true
+             }
+            ]
+           },
+           "correctedQueryEndpoint": {
+            "searchEndpoint": {
+             "query": "hello world"
+            }
+           },
+           "searchInsteadFor": {
+            "runs": [
+             {
+              "text": "Search instead for"
+             }
+            ]
+           },
+           "originalQuery": {
+            "simpleText": "helo wrold"
+           },
+           "originalQueryEndpoint": {
+            "searchEndpoint": {
+             "query": "helo wrold",
+             "params": "QgIIAQ%3D%3D"
+            }
+           }
+          }
+         },
+         {
+          "officialCardViewModel": {
+           "header": {
+            "pageHeaderViewModel": {
+             "title": {
+              "dynamicTextViewModel": {
+               "text": {
+                "content": "Adele",
+                "styleRuns": [
+                 {
+                  "startIndex": 5,
+                  "styleRunExtensions": {
+                   "styleRunColorMapExtension": {
+                    "colorMap": [
+                     {
+                      "key": "USER_INTERFACE_THEME_DARK",
+                      "value": 4294967295
+                     },
+                     {
+                      "key": "USER_INTERFACE_THEME_LIGHT",
+                      "value": 4279440147
+                     }
+                    ]
+                   }
+                  }
+                 }
+                ],
+                "attachmentRuns": [
+                 {
+                  "startIndex": 5,
+                  "length": 0,
+                  "element": {
+                   "type": {
+                    "imageType": {
+                     "image": {
+                      "sources": [
+                       {
+                        "clientResource": {
+                         "imageName": "AUDIO_BADGE"
+                        },
+                        "width": 24,
+                        "height": 24
+                       }
+                      ],
+                      "processor": {
+                       "borderImageProcessor": {
+                        "imageTint": {
+                         "color": 4293983487
+                        }
+                       }
+                      }
+                     }
+                    }
+                   },
+                   "properties": {
+                    "layoutProperties": {
+                     "height": {
+                      "value": 24,
+                      "unit": "DIMENSION_UNIT_POINT"
+                     },
+                     "width": {
+                      "value": 24,
+                      "unit": "DIMENSION_UNIT_POINT"
+                     },
+                     "margin": {
+                      "left": {
+                       "value": 8,
+                       "unit": "DIMENSION_UNIT_POINT"
+                      }
+                     }
+                    }
+                   }
+                  },
+                  "alignment": "ALIGNMENT_VERTICAL_CENTER"
+                 }
+                ]
+               },
+               "rendererContext": {
+                "commandContext": {
+                 "onTap": {
+                  "innertubeCommand": {
+                   "browseEndpoint": {
+                    "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             "image": {
+              "contentPreviewImageViewModel": {
+               "image": {
+                "sources": [
+                 {
+                  "url": "https://yt3.ggpht.com/BkJSG0gIJTKyUziqxJOdtJSjXbPNtOelrBBFjRoOaa_xcFgaptqm8hvHxbh46P4uZc4lV3f4=s176-c-k-c0x00ffffff-no-rj-mo",
+                  "width": 176,
+                  "height": 176
+                 }
+                ]
+               },
+               "style": "CONTENT_PREVIEW_IMAGE_STYLE_CIRCLE",
+               "layoutMode": "CONTENT_PREVIEW_IMAGE_LAYOUT_MODE_UNKNOWN",
+               "rendererContext": {
+                "accessibilityContext": {
+                 "label": "Adele"
+                },
+                "commandContext": {
+                 "onTap": {
+                  "innertubeCommand": {
+                   "browseEndpoint": {
+                    "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             "metadata": {
+              "contentMetadataViewModel": {
+               "metadataRows": [
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "@adele"
+                   }
+                  }
+                 ]
+                },
+                {
+                 "metadataParts": [
+                  {
+                   "text": {
+                    "content": "33.5M subscribers"
+                   }
+                  },
+                  {
+                   "text": {
+                    "content": "67 videos"
+                   }
+                  }
+                 ]
+                }
+               ],
+               "delimiter": "\u2022",
+               "rendererContext": {
+                "commandContext": {
+                 "onTap": {
+                  "innertubeCommand": {
+                   "browseEndpoint": {
+                    "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             "actions": {
+              "flexibleActionsViewModel": {
+               "actionsRows": [
+                {
+                 "actions": [
+                  {
+                   "subscribeButtonViewModel": {
+                    "subscribeButtonContent": {
+                     "buttonText": "Subscribe",
+                     "accessibilityText": "Subscribe to Adele.",
+                     "imageName": "ic_video_youtube",
+                     "subscribeState": {
+                      "key": "EhhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cgMygB",
+                      "subscribed": false
+                     },
+                     "onTapCommand": {
+                      "innertubeCommand": {
+                       "signInEndpoint": {
+                        "nextEndpoint": {
+                         "subscribeEndpoint": {
+                          "channelIds": [
+                           "UCsRM0YB_dabtEPGPTKo-gcw"
+                          ],
+                          "params": "EgIIDRgA"
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "unsubscribeButtonContent": {
+                     "buttonText": "Subscribed",
+                     "accessibilityText": "Unsubscribe from Adele.",
+                     "imageName": "ic_video_youtube",
+                     "subscribeState": {
+                      "key": "EhhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cgMygB",
+                      "subscribed": true
+                     },
+                     "onTapCommand": {
+                      "innertubeCommand": {
+                       "signalServiceEndpoint": {
+                        "signal": "CLIENT_SIGNAL",
+                        "actions": [
+                         {
+                          "openPopupAction": {
+                           "popup": {
+                            "confirmDialogRenderer": {
+                             "dialogMessages": [
+                              {
+                               "runs": [
+                                {
+                                 "text": "Unsubscribe from "
+                                },
+                                {
+                                 "text": "Adele"
+                                },
+                                {
+                                 "text": "?"
+                                }
+                               ]
+                              }
+                             ],
+                             "confirmButton": {
+                              "buttonRenderer": {
+                               "style": "STYLE_BLUE_TEXT",
+                               "size": "SIZE_DEFAULT",
+                               "isDisabled": false,
+                               "text": {
+                                "runs": [
+                                 {
+                                  "text": "Unsubscribe"
+                                 }
+                                ]
+                               },
+                               "serviceEndpoint": {
+                                "unsubscribeEndpoint": {
+                                 "channelIds": [
+                                  "UCsRM0YB_dabtEPGPTKo-gcw"
+                                 ],
+                                 "params": "CgIIDRgA"
+                                }
+                               }
+                              }
+                             },
+                             "cancelButton": {
+                              "buttonRenderer": {
+                               "style": "STYLE_TEXT",
+                               "size": "SIZE_DEFAULT",
+                               "isDisabled": false,
+                               "text": {
+                                "runs": [
+                                 {
+                                  "text": "Cancel"
+                                 }
+                                ]
+                               }
+                              }
+                             },
+                             "primaryIsCancel": false
+                            }
+                           },
+                           "popupType": "DIALOG"
+                          }
+                         }
+                        ]
+                       }
+                      }
+                     }
+                    },
+                    "stateEntityStoreKey": "EhhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cgMygB",
+                    "disableNotificationBell": false,
+                    "buttonStyle": {
+                     "unsubscribedStateStyle": "SUBSCRIBE_BUTTON_VIEW_MODEL_UNSUBSCRIBED_STATE_STYLE_UNKNOWN",
+                     "subscribedStateStyle": "SUBSCRIBE_BUTTON_VIEW_MODEL_SUBSCRIBED_STATE_STYLE_UNKNOWN",
+                     "subscribeButtonAnimationStyle": "SUBSCRIBE_BUTTON_VIEW_MODEL_ANIMATION_STYLE_CAIRO"
+                    },
+                    "isSignedOut": true,
+                    "backgroundStyle": "SUBSCRIBE_BUTTON_VIEW_MODEL_BACKGROUND_STYLE_COLOR_SAMPLED",
+                    "disableSubscribeButton": false,
+                    "onShowSubscriptionOptions": {
+                     "innertubeCommand": {
+                      "showSheetCommand": {
+                       "panelLoadingStrategy": {
+                        "inlineContent": {
+                         "sheetViewModel": {
+                          "content": {
+                           "listViewModel": {
+                            "listItems": [
+                             {
+                              "listItemViewModel": {
+                               "title": {
+                                "content": "Personalized"
+                               },
+                               "leadingImage": {
+                                "sources": [
+                                 {
+                                  "clientResource": {
+                                   "imageName": "NOTIFICATIONS_NONE"
+                                  }
+                                 }
+                                ]
+                               },
+                               "isDisabled": false,
+                               "isSelected": true,
+                               "selectionStyle": "LIST_ITEM_SELECTION_STYLE_DEFAULT",
+                               "rendererContext": {
+                                "commandContext": {
+                                 "onTap": {
+                                  "innertubeCommand": {
+                                   "modifyChannelNotificationPreferenceEndpoint": {
+                                    "params": "ChhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cSAggBGAAgBFIGCgIIDRgA"
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             },
+                             {
+                              "listItemViewModel": {
+                               "title": {
+                                "content": "None"
+                               },
+                               "leadingImage": {
+                                "sources": [
+                                 {
+                                  "clientResource": {
+                                   "imageName": "NOTIFICATIONS_OFF"
+                                  }
+                                 }
+                                ]
+                               },
+                               "isDisabled": false,
+                               "isSelected": false,
+                               "selectionStyle": "LIST_ITEM_SELECTION_STYLE_DEFAULT",
+                               "rendererContext": {
+                                "commandContext": {
+                                 "onTap": {
+                                  "innertubeCommand": {
+                                   "modifyChannelNotificationPreferenceEndpoint": {
+                                    "params": "ChhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cSAggDGAAgBFIGCgIIDRgA"
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             },
+                             {
+                              "listItemViewModel": {
+                               "title": {
+                                "content": "Unsubscribe"
+                               },
+                               "leadingImage": {
+                                "sources": [
+                                 {
+                                  "clientResource": {
+                                   "imageName": "PERSON_MINUS"
+                                  }
+                                 }
+                                ]
+                               },
+                               "isDisabled": false,
+                               "rendererContext": {
+                                "commandContext": {
+                                 "onTap": {
+                                  "innertubeCommand": {
+                                   "signalServiceEndpoint": {
+                                    "signal": "CLIENT_SIGNAL",
+                                    "actions": [
+                                     {
+                                      "openPopupAction": {
+                                       "popup": {
+                                        "confirmDialogRenderer": {
+                                         "dialogMessages": [
+                                          {
+                                           "runs": [
+                                            {
+                                             "text": "Unsubscribe from "
+                                            },
+                                            {
+                                             "text": "Adele"
+                                            },
+                                            {
+                                             "text": "?"
+                                            }
+                                           ]
+                                          }
+                                         ],
+                                         "confirmButton": {
+                                          "buttonRenderer": {
+                                           "style": "STYLE_BLUE_TEXT",
+                                           "size": "SIZE_DEFAULT",
+                                           "isDisabled": false,
+                                           "text": {
+                                            "runs": [
+                                             {
+                                              "text": "Unsubscribe"
+                                             }
+                                            ]
+                                           },
+                                           "serviceEndpoint": {
+                                            "unsubscribeEndpoint": {
+                                             "channelIds": [
+                                              "UCsRM0YB_dabtEPGPTKo-gcw"
+                                             ],
+                                             "params": "CgIIDRgA"
+                                            }
+                                           }
+                                          }
+                                         },
+                                         "cancelButton": {
+                                          "buttonRenderer": {
+                                           "style": "STYLE_TEXT",
+                                           "size": "SIZE_DEFAULT",
+                                           "isDisabled": false,
+                                           "text": {
+                                            "runs": [
+                                             {
+                                              "text": "Cancel"
+                                             }
+                                            ]
+                                           }
+                                          }
+                                         },
+                                         "primaryIsCancel": false
+                                        }
+                                       },
+                                       "popupType": "DIALOG"
+                                      }
+                                     }
+                                    ]
+                                   }
+                                  }
+                                 }
+                                }
+                               }
+                              }
+                             }
+                            ]
+                           }
+                          }
+                         }
+                        }
+                       }
+                      }
+                     }
+                    },
+                    "channelId": "UCsRM0YB_dabtEPGPTKo-gcw",
+                    "enableSubscribeButtonPostClickAnimation": true,
+                    "notificationStateEntityStoreKeys": {
+                     "subsNotificationStateKey": "EhhVQ3NSTTBZQl9kYWJ0RVBHUFRLby1nY3cgjAEoAQ%3D%3D"
+                    },
+                    "bellAccessibilityData": {
+                     "offLabel": "Current setting is receive no notifications. Tap to change your notification setting for Adele",
+                     "allLabel": "Current setting is all notifications. Tap to change your notification setting for Adele",
+                     "occasionalLabel": "Current setting is personalized notifications. Tap to change your notification setting for Adele",
+                     "disabledLabel": "YouTube notifications are off. Tap to change your notification setting"
+                    }
+                   }
+                  },
+                  {
+                   "buttonViewModel": {
+                    "title": "View Channel",
+                    "onTap": {
+                     "innertubeCommand": {
+                      "browseEndpoint": {
+                       "browseId": "UCsRM0YB_dabtEPGPTKo-gcw",
+                       "canonicalBaseUrl": "/@adele"
+                      }
+                     }
+                    },
+                    "style": "BUTTON_VIEW_MODEL_STYLE_CUSTOM",
+                    "type": "BUTTON_VIEW_MODEL_TYPE_OUTLINE",
+                    "buttonSize": "BUTTON_VIEW_MODEL_SIZE_DEFAULT",
+                    "customBorderColor": 1070263282,
+                    "customFontColor": 4292933114,
+                    "customDarkThemeBorderColor": 1070263282,
+                    "customDarkThemeFontColor": 4292933114
+                   }
+                  },
+                  {
+                   "buttonViewModel": {
+                    "iconName": "MIX",
+                    "title": "Mix",
+                    "onTap": {
+                     "innertubeCommand": {
+                      "watchEndpoint": {
+                       "videoId": "rYEDA3JcQqw",
+                       "playlistId": "RDEMTPfPURSbYpb0YHCKyIG37Q",
+                       "params": "OALAAQE%3D",
+                       "continuePlayback": true
+                      }
+                     }
+                    },
+                    "style": "BUTTON_VIEW_MODEL_STYLE_CUSTOM",
+                    "type": "BUTTON_VIEW_MODEL_TYPE_OUTLINE",
+                    "buttonSize": "BUTTON_VIEW_MODEL_SIZE_DEFAULT",
+                    "customBorderColor": 1070263282,
+                    "customFontColor": 4292933114,
+                    "customDarkThemeBorderColor": 1070263282,
+                    "customDarkThemeFontColor": 4292933114
+                   }
+                  },
+                  {
+                   "buttonViewModel": {
+                    "iconName": "YOUTUBE_MUSIC_MONOCHROME_CAIRO",
+                    "title": "YouTube Music",
+                    "onTap": {
+                     "innertubeCommand": {
+                      "urlEndpoint": {
+                       "url": "https://music.youtube.com/channel/UCRw0x9_EfawqmgDI2IgQLLg?ybp=mgYiCiASHhIaUkRBT1RQZlBVUlNiWXBiMFlIQ0t5SUczN1EYAQ%253D%253D"
+                      }
+                     }
+                    },
+                    "style": "BUTTON_VIEW_MODEL_STYLE_CUSTOM",
+                    "type": "BUTTON_VIEW_MODEL_TYPE_OUTLINE",
+                    "buttonSize": "BUTTON_VIEW_MODEL_SIZE_DEFAULT",
+                    "customBorderColor": 1070263282,
+                    "customFontColor": 4292933114,
+                    "customDarkThemeBorderColor": 1070263282,
+                    "customDarkThemeFontColor": 4292933114
+                   }
+                  }
+                 ]
+                }
+               ]
+              }
+             },
+             "description": {
+              "descriptionPreviewViewModel": {
+               "description": {
+                "content": "Adele Laurie Blue Adkins is an English singer and songwriter."
+               },
+               "maxLines": 2,
+               "rendererContext": {
+                "accessibilityContext": {
+                 "label": "Description. Adele Laurie Blue Adkins is an English singer and songwriter...tap for more."
+                },
+                "commandContext": {
+                 "onTap": {
+                  "innertubeCommand": {
+                   "browseEndpoint": {
+                    "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                   }
+                  }
+                 }
+                }
+               }
+              }
+             },
+             "background": {
+              "cinematicContainerViewModel": {
+               "backgroundImageConfig": {
+                "image": {
+                 "sources": [
+                  {
+                   "url": "https://lh3.googleusercontent.com/mFjMekiL9JJDrJOSTpAvu264z4DDmYS6pdy51ZCLr98kA256rvxSrIIuNv12kMj8RJW2vtTq1ECDhA=w600-h176-p",
+                   "width": 600,
+                   "height": 176
+                  }
+                 ]
+                }
+               },
+               "presentationStyle": "CINEMATIC_CONTAINER_PRESENTATION_STYLE_GRADUAL_BLURRED",
+               "gradualBlurConfig": {
+                "startPercentage": 0.25,
+                "stopPercentage": 0.8,
+                "blurRadius": 10
+               },
+               "fadeToThemeConfig": {
+                "lightThemeStartColor": 11326685,
+                "darkThemeStartColor": 2642781,
+                "midMarkerPosition": 0.55,
+                "midMarkerOpacity": 0.67,
+                "imageOpacity": 0,
+                "lightThemeEndColor": 4289516765,
+                "darkThemeEndColor": 4280832861
+               }
+              }
+             },
+             "layoutPreset": "PAGE_HEADER_LAYOUT_PRESET_RESPONSIVE_TWO_COLUMN",
+             "disableMaxLinesConstraint": true,
+             "rendererContext": {
+              "commandContext": {
+               "onTap": {
+                "innertubeCommand": {
+                 "browseEndpoint": {
+                  "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                 }
+                }
+               }
+              }
+             }
+            }
+           },
+           "backgroundColor": {
+            "lightTheme": 4289516765,
+            "darkTheme": 4280832861
+           },
+           "forceDarkTheme": true,
+           "baseBackgroundColor": {
+            "lightTheme": 4293983487,
+            "darkTheme": 4278327068
+           },
+           "reducedHeight": true,
+           "rendererContext": {
+            "commandContext": {
+             "onTap": {
+              "innertubeCommand": {
+               "browseEndpoint": {
+                "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "YQHsXMglC9A",
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://i.ytimg.com/vi/YQHsXMglC9A/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAHnhWEMlSYbwVzv7HE1YaH8_8RrQ",
+              "width": 360,
+              "height": 202
+             },
+             {
+              "url": "https://i.ytimg.com/vi/YQHsXMglC9A/hq720.jpg?sqp=-oaymwEXCNAFEJQDSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLCdLcY7Ni9L3AP5ZQ7RDGNaIo6H3g",
+              "width": 720,
+              "height": 404
+             }
+            ]
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Adele - Hello (Official Music Video)"
+             }
+            ]
+           },
+           "longBylineText": {
+            "runs": [
+             {
+              "text": "Adele",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCsRM0YB_dabtEPGPTKo-gcw",
+                "canonicalBaseUrl": "/channel/UCsRM0YB_dabtEPGPTKo-gcw"
+               }
+              }
+             }
+            ]
+           },
+           "publishedTimeText": {
+            "simpleText": "10 years ago"
+           },
+           "lengthText": {
+            "simpleText": "6:07"
+           },
+           "viewCountText": {
+            "simpleText": "3,282,872,781 views"
+           },
+           "navigationEndpoint": {
+            "watchEndpoint": {
+             "videoId": "YQHsXMglC9A",
+             "playlistId": "RDYQHsXMglC9A",
+             "params": "wAEBqgMFaGVsbG-6AwsIgKa71NnFjdeQAboDCwjiyumYm7fsjooBugMKCJmP35SR_MS4LroDCgjx-YDthtLlwna6AwsItoDvstym47mYAboDCwjqrcuaiJKF-fEBugMLCLXpueiqxfOIhwG6AwoIvL7ombrrqPdYugMLCMW967i9hujkrQG6AwoI0abI2rPKsfMHugMLCPaa3OjDxMe71AG6AwoI1IOwqYi0o74mugMPEg1SRFlRSHNYTWdsQzlBugMLCL3AwpyqkpmWugG6AwoInoz7oqe8rJVtugMKCMCbrefps9L2LLoDCgiL8vzPqZWd21O6AwoI7PSDs4KJs9Z98gMFDZN9nz64BQE%3D",
+             "playerParams": "ygUFaGVsbG-gBwE%3D"
+            }
+           },
+           "badges": [
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_SIMPLE",
+              "label": "CC"
+             }
+            }
+           ],
+           "ownerBadges": [
+            {
+             "metadataBadgeRenderer": {
+              "icon": {
+               "iconType": "AUDIO_BADGE"
+              },
+              "style": "BADGE_STYLE_TYPE_VERIFIED_ARTIST",
+              "tooltip": "Official Artist Channel"
+             }
+            }
+           ],
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Adele",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCsRM0YB_dabtEPGPTKo-gcw",
+                "canonicalBaseUrl": "/channel/UCsRM0YB_dabtEPGPTKo-gcw"
+               }
+              }
+             }
+            ]
+           },
+           "shortBylineText": {
+            "runs": [
+             {
+              "text": "Adele",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCsRM0YB_dabtEPGPTKo-gcw",
+                "canonicalBaseUrl": "/channel/UCsRM0YB_dabtEPGPTKo-gcw"
+               }
+              }
+             }
+            ]
+           },
+           "showActionMenu": false,
+           "shortViewCountText": {
+            "simpleText": "3.2B views"
+           },
+           "channelThumbnailSupportedRenderers": {
+            "channelThumbnailWithLinkRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/BkJSG0gIJTKyUziqxJOdtJSjXbPNtOelrBBFjRoOaa_xcFgaptqm8hvHxbh46P4uZc4lV3f4=s88-c-k-c0x00ffffff-no-rj",
+                "width": 68,
+                "height": 68
+               }
+              ]
+             },
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+              }
+             }
+            }
+           },
+           "detailedMetadataSnippets": [
+            {
+             "snippetText": {
+              "runs": [
+               {
+                "text": "Listen to \"Easy On Me\" here: http://Adele.lnk.to/EOM Pre-order Adele's new album \"30\" before its release on November 19:\u00a0..."
+               }
+              ]
+             },
+             "snippetHoverText": {
+              "runs": [
+               {
+                "text": "From the video description"
+               }
+              ]
+             },
+             "maxOneLine": false
+            }
+           ],
+           "avatar": {
+            "decoratedAvatarViewModel": {
+             "avatar": {
+              "avatarViewModel": {
+               "image": {
+                "sources": [
+                 {
+                  "url": "https://yt3.ggpht.com/BkJSG0gIJTKyUziqxJOdtJSjXbPNtOelrBBFjRoOaa_xcFgaptqm8hvHxbh46P4uZc4lV3f4=s88-c-k-c0x00ffffff-no-rj",
+                  "width": 68,
+                  "height": 68
+                 }
+                ]
+               },
+               "avatarImageSize": "AVATAR_SIZE_M"
+              }
+             },
+             "a11yLabel": "Go to channel Adele",
+             "rendererContext": {
+              "commandContext": {
+               "onTap": {
+                "innertubeCommand": {
+                 "browseEndpoint": {
+                  "browseId": "UCsRM0YB_dabtEPGPTKo-gcw"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "kK42LZqO0wA",
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://i.ytimg.com/vi/kK42LZqO0wA/hqdefault.jpg?sqp=-oaymwEjCOADEI4CSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLAD7ZYW5mh8BHNzr1bjUvZsSDStLw",
+              "width": 480,
+              "height": 270
+             }
+            ]
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "Martin Solveig & Dragonette - Hello (Official Short Video Version HD)"
+             }
+            ]
+           },
+           "longBylineText": {
+            "runs": [
+             {
+              "text": "Kontor.TV",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCb3tJ5NKw7mDxyaQ73mwbRg",
+                "canonicalBaseUrl": "/@kontorrecords"
+               }
+              }
+             }
+            ]
+           },
+           "publishedTimeText": {
+            "simpleText": "16 years ago"
+           },
+           "lengthText": {
+            "simpleText": "4:13"
+           },
+           "viewCountText": {
+            "simpleText": "136,296,897 views"
+           },
+           "navigationEndpoint": {
+            "watchEndpoint": {
+             "videoId": "kK42LZqO0wA",
+             "playlistId": "RDkK42LZqO0wA",
+             "params": "wAEBqgMFaGVsbG-6AwoI0JeUwcyL-4BhugMLCOLK6Zibt-yOigG6AwoImY_flJH8xLguugMKCPH5gO2G0uXCdroDCwi2gO-y3KbjuZgBugMLCOqty5qIkoX58QG6AwsItem56KrF84iHAboDCgi8vuiZuuuo91i6AwsIxb3ruL2G6OStAboDCgjRpsjas8qx8we6AwsI9prc6MPEx7vUAboDCgjUg7CpiLSjvia6Aw8SDVJEWVFIc1hNZ2xDOUG6AwsIvcDCnKqSmZa6AboDCgiejPuip7yslW26AwoIwJut5-mz0vYsugMKCIvy_M-plZ3bU7oDCgjs9IOzgomz1n3yAwUNk32fPrgFAQ%3D%3D",
+             "playerParams": "ygUFaGVsbG-gBwE%3D"
+            }
+           },
+           "badges": [
+            {
+             "metadataBadgeRenderer": {
+              "style": "BADGE_STYLE_TYPE_SIMPLE",
+              "label": "CC"
+             }
+            }
+           ],
+           "ownerBadges": [
+            {
+             "metadataBadgeRenderer": {
+              "icon": {
+               "iconType": "CHECK_CIRCLE_THICK"
+              },
+              "style": "BADGE_STYLE_TYPE_VERIFIED",
+              "tooltip": "Verified"
+             }
+            }
+           ],
+           "ownerText": {
+            "runs": [
+             {
+              "text": "Kontor.TV",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCb3tJ5NKw7mDxyaQ73mwbRg",
+                "canonicalBaseUrl": "/@kontorrecords"
+               }
+              }
+             }
+            ]
+           },
+           "shortBylineText": {
+            "runs": [
+             {
+              "text": "Kontor.TV",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UCb3tJ5NKw7mDxyaQ73mwbRg",
+                "canonicalBaseUrl": "/@kontorrecords"
+               }
+              }
+             }
+            ]
+           },
+           "showActionMenu": false,
+           "shortViewCountText": {
+            "simpleText": "136M views"
+           },
+           "channelThumbnailSupportedRenderers": {
+            "channelThumbnailWithLinkRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/qC8-d_KikP-g-z4qnHBDkHdS7vqokQet13K6JgqQYhARF8kjlMylGci_V8_fuY2o6cNFVemPew=s68-c-k-c0x00ffffff-no-rj",
+                "width": 68,
+                "height": 68
+               }
+              ]
+             },
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UCb3tJ5NKw7mDxyaQ73mwbRg",
+               "canonicalBaseUrl": "/@kontorrecords"
+              }
+             }
+            }
+           },
+           "detailedMetadataSnippets": [
+            {
+             "snippetText": {
+              "runs": [
+               {
+                "text": "Listen on Spotify: http://spoti.fi/185JtMp Buy the single \"Martin Solveig & Dragonette - "
+               },
+               {
+                "text": "Hello",
+                "bold": true
+               },
+               {
+                "text": "\" here: http://bit.ly/awdh8Y Also\u00a0..."
+               }
+              ]
+             },
+             "snippetHoverText": {
+              "runs": [
+               {
+                "text": "From the video description"
+               }
+              ]
+             },
+             "maxOneLine": false
+            }
+           ],
+           "avatar": {
+            "decoratedAvatarViewModel": {
+             "avatar": {
+              "avatarViewModel": {
+               "image": {
+                "sources": [
+                 {
+                  "url": "https://yt3.ggpht.com/qC8-d_KikP-g-z4qnHBDkHdS7vqokQet13K6JgqQYhARF8kjlMylGci_V8_fuY2o6cNFVemPew=s68-c-k-c0x00ffffff-no-rj",
+                  "width": 68,
+                  "height": 68
+                 }
+                ]
+               },
+               "avatarImageSize": "AVATAR_SIZE_M"
+              }
+             },
+             "a11yLabel": "Go to channel Kontor.TV",
+             "rendererContext": {
+              "commandContext": {
+               "onTap": {
+                "innertubeCommand": {
+                 "browseEndpoint": {
+                  "browseId": "UCb3tJ5NKw7mDxyaQ73mwbRg",
+                  "canonicalBaseUrl": "/@kontorrecords"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         },
+         {
+          "videoRenderer": {
+           "videoId": "ih2xubMaZWI",
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://i.ytimg.com/vi/ih2xubMaZWI/hq720.jpg?sqp=-oaymwEjCOgCEMoBSFryq4qpAxUIARUAAAAAGAElAADIQj0AgKJDeAE=&rs=AOn4CLBM9mDeghCt0WxCNvQ5qVPjghw6kg",
+              "width": 360,
+              "height": 202
+             },
+             {
+              "url": "https://i.ytimg.com/vi/ih2xubMaZWI/hq720.jpg?sqp=-oaymwEXCNAFEJQDSFryq4qpAwkIARUAAIhCGAE=&rs=AOn4CLDD8finxTp0_vXokjYP0XDSTJz2Yw",
+              "width": 720,
+              "height": 404
+             }
+            ]
+           },
+           "title": {
+            "runs": [
+             {
+              "text": "OMFG - Hello"
+             }
+            ]
+           },
+           "longBylineText": {
+            "runs": [
+             {
+              "text": "MrSuicideSheep",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UC5nc_ZtjKW1htCVZVRxlQAQ",
+                "canonicalBaseUrl": "/@MrSuicideSheep"
+               }
+              }
+             }
+            ]
+           },
+           "publishedTimeText": {
+            "simpleText": "11 years ago"
+           },
+           "lengthText": {
+            "simpleText": "3:46"
+           },
+           "viewCountText": {
+            "simpleText": "278,948,530 views"
+           },
+           "navigationEndpoint": {
+            "watchEndpoint": {
+             "videoId": "ih2xubMaZWI",
+             "playlistId": "RDih2xubMaZWI",
+             "params": "wAEBqgMFaGVsbG-6AwoI0JeUwcyL-4BhugMLCICmu9TZxY3XkAG6AwoImY_flJH8xLguugMKCPH5gO2G0uXCdroDCwi2gO-y3KbjuZgBugMLCOqty5qIkoX58QG6AwsItem56KrF84iHAboDCgi8vuiZuuuo91i6AwsIxb3ruL2G6OStAboDCgjRpsjas8qx8we6AwsI9prc6MPEx7vUAboDCgjUg7CpiLSjvia6Aw8SDVJEWVFIc1hNZ2xDOUG6AwsIvcDCnKqSmZa6AboDCgiejPuip7yslW26AwoIwJut5-mz0vYsugMKCIvy_M-plZ3bU7oDCgjs9IOzgomz1n3yAwUNk32fPrgFAQ%3D%3D",
+             "playerParams": "ygUFaGVsbG-gBwHSBwkJNwwBhyohjO8%3D"
+            }
+           },
+           "ownerBadges": [
+            {
+             "metadataBadgeRenderer": {
+              "icon": {
+               "iconType": "CHECK_CIRCLE_THICK"
+              },
+              "style": "BADGE_STYLE_TYPE_VERIFIED",
+              "tooltip": "Verified"
+             }
+            }
+           ],
+           "ownerText": {
+            "runs": [
+             {
+              "text": "MrSuicideSheep",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UC5nc_ZtjKW1htCVZVRxlQAQ",
+                "canonicalBaseUrl": "/@MrSuicideSheep"
+               }
+              }
+             }
+            ]
+           },
+           "shortBylineText": {
+            "runs": [
+             {
+              "text": "MrSuicideSheep",
+              "navigationEndpoint": {
+               "browseEndpoint": {
+                "browseId": "UC5nc_ZtjKW1htCVZVRxlQAQ",
+                "canonicalBaseUrl": "/@MrSuicideSheep"
+               }
+              }
+             }
+            ]
+           },
+           "showActionMenu": false,
+           "shortViewCountText": {
+            "simpleText": "278M views"
+           },
+           "channelThumbnailSupportedRenderers": {
+            "channelThumbnailWithLinkRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://yt3.ggpht.com/7sMIH26nZxRM29-g9iU7IZzkk3Djn_0Jvo5frzDYxXCnKVnHdZps_grnOYKIe4nmw8TgLCrq=s68-c-k-c0x00ffffff-no-rj",
+                "width": 68,
+                "height": 68
+               }
+              ]
+             },
+             "navigationEndpoint": {
+              "browseEndpoint": {
+               "browseId": "UC5nc_ZtjKW1htCVZVRxlQAQ",
+               "canonicalBaseUrl": "/@MrSuicideSheep"
+              }
+             }
+            }
+           },
+           "detailedMetadataSnippets": [
+            {
+             "snippetText": {
+              "runs": [
+               {
+                "text": "OMFG - "
+               },
+               {
+                "text": "Hello",
+                "bold": true
+               },
+               {
+                "text": " \u2b19 FAVOURITES ON SPOTIFY \u2b19 \u21e5 http://mrsuicidesheep.com/favourites MERRY CHRISTMAS!!!! Download..."
+               }
+              ]
+             },
+             "snippetHoverText": {
+              "runs": [
+               {
+                "text": "From the video description"
+               }
+              ]
+             },
+             "maxOneLine": false
+            }
+           ],
+           "avatar": {
+            "decoratedAvatarViewModel": {
+             "avatar": {
+              "avatarViewModel": {
+               "image": {
+                "sources": [
+                 {
+                  "url": "https://yt3.ggpht.com/7sMIH26nZxRM29-g9iU7IZzkk3Djn_0Jvo5frzDYxXCnKVnHdZps_grnOYKIe4nmw8TgLCrq=s68-c-k-c0x00ffffff-no-rj",
+                  "width": 68,
+                  "height": 68
+                 }
+                ]
+               },
+               "avatarImageSize": "AVATAR_SIZE_M"
+              }
+             },
+             "a11yLabel": "Go to channel MrSuicideSheep",
+             "rendererContext": {
+              "commandContext": {
+               "onTap": {
+                "innertubeCommand": {
+                 "browseEndpoint": {
+                  "browseId": "UC5nc_ZtjKW1htCVZVRxlQAQ",
+                  "canonicalBaseUrl": "/@MrSuicideSheep"
+                 }
+                }
+               }
+              }
+             }
+            }
+           }
+          }
+         }
+        ]
+       }
+      },
+      {
+       "continuationItemRenderer": {
+        "trigger": "CONTINUATION_TRIGGER_ON_ITEM_SHOWN",
+        "continuationEndpoint": {
+         "continuationCommand": {
+          "token": "ErIDEgVoZWxsbxqoA1NCU0NBUXRaVVVoeldFMW5iRU01UVlJQkMydExOREpNV25GUE1IZEJnZ0VMYVdneWVIVmlUV0ZhVjBtQ0FRdE1ia1ZVTkZKTFdIZzFhNElCQzJSdlYxZHJSekpuVUZCRmdnRUxiVWhQVGs1aldtSjNSRm1DQVFzNFprbFZhMGxPVXpGMWI0SUJDMmg0U0U5TGNUQlBaRXhWZ2dFTFYwODJhbGMyVFRaSWVuZUNBUXR5WTIxblRUbGpZVE56VllJQkMwSXRZa2RWZW5SVFJURkZnZ0VMTVVoalpVcEVNRmhFV0ZtQ0FSaFZRemhzYm0xVVFUVjFPWE5tY1dKSWRFUmxUa05zUVZHQ0FRdEtibmxPYjBsVmMwRmtVWUlCRFZKRVdWRkljMWhOWjJ4RE9VR0NBUXQxYVhocmEzRlBVVzlFTUlJQkMySlRjWGcwYmxKbGVHZzBnZ0VMVEU4eFNtNXdlbkpVWTBHQ0FRdFZOMW93Y1hCdVgwOVJjNElCQzJaaGVrMVRRMXBuTFcxM3NnRUdDZ1FJRmhBQzZnRUVDQUlRR1ElM0QlM0QYgeDoGCILc2VhcmNoLWZlZWQ%3D",
+          "request": "CONTINUATION_REQUEST_TYPE_SEARCH"
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

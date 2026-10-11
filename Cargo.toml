@@ -1,0 +1,42 @@
+[workspace]
+resolver = "3"
+members = ["crates/yt-core", "crates/yt-app"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.90"
+
+[workspace.dependencies]
+yt-core = { path = "crates/yt-core" }
+
+anyhow = "1"
+base64 = "0.23"
+directories = "6"
+gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
+adw = { package = "libadwaita", version = "0.9", features = ["v1_7"] }
+gdk-wayland = { package = "gdk4-wayland", version = "0.11" }
+libc = "0.2"
+libloading = "0.9"
+mlua = { version = "0.12", features = ["luajit", "serialize"] }
+rand = "0.10"
+regex = "1"
+# QuickJS, for the stream URL challenges (see yt-core's solver).
+rquickjs = "0.14"
+reqwest = { version = "0.13", default-features = false, features = ["native-tls", "http2", "json", "form", "gzip", "brotli", "system-proxy"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.11"
+thiserror = "2"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "time", "macros", "fs"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+url = "2"
+
+[profile.dev.package."*"]
+# Optimize dependencies even in debug builds, so the UI stays smooth.
+opt-level = 2
+
+[profile.release]
+lto = "thin"
+codegen-units = 4

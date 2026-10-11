@@ -1,0 +1,339 @@
+//! The sidebar: the registered navigation entries, in full or as icons
+//! only, then the channels the user subscribes to
+//! (`sidebar_subscriptions`).
+
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+
+use adw::prelude::*;
+use serde_json::{Value, json};
+use yt_core::channel::ChannelRef;
+
+use super::{attach, avatar, follow};
+use crate::app::app;
+use crate::ext::pages::NavItem;
+
+const NAME: &str = "sidebar";
+const SUBSCRIPTIONS: &str = "sidebar-subscriptions";
+/// Channels shown before "Show more".
+const FOLDED: usize = 7;
+
+pub fn build(_props: &Value) -> gtk::Widget {
+    let app = app();
+    let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    sidebar.set_widget_name(NAME);
+    sidebar.add_css_class("sidebar");
+
+    let items = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    sidebar.append(
+        &app.ext
+            .slots
+            .create("sidebar.top", gtk::Orientation::Vertical, 2),
+    );
+    let subscriptions = app
+        .ext
+        .components
+        .build("sidebar_subscriptions", &Value::Null);
+    subscriptions.set_widget_name(SUBSCRIPTIONS);
+    let column = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    column.append(&items);
+    column.append(&subscriptions);
+    // Scrolls, so a long subscriptions list can't make the window taller.
+    let scroller = gtk::ScrolledWindow::builder()
+        .child(&column)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vexpand(true)
+        .build();
+    sidebar.append(&scroller);
+    sidebar.append(
+        &app.ext
+            .slots
+            .create("sidebar.bottom", gtk::Orientation::Vertical, 2),
+    );
+
+    fill(&items, sidebar.has_css_class("mini"));
+    let weak = items.downgrade();
+    app.ext.pages.on_nav_change(move || {
+        if let Some(items) = weak.upgrade() {
+            let mini = items.parent().is_some_and(|p| p.has_css_class("mini"));
+            fill(&items, mini);
+        }
+    });
+    let weak = items.downgrade();
+    app.ext.events.on("page.changed", move |payload| {
+        let page = payload
+            .get("page")
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        if let Some(items) = weak.upgrade() {
+            highlight(&items, page);
+        }
+    });
+
+    // Collapse to icons when the window is narrow.
+    sidebar.connect_realize(|sidebar| {
+        let Some(window) = sidebar.root().and_downcast::<adw::ApplicationWindow>() else {
+            return;
+        };
+        let condition = adw::BreakpointCondition::new_length(
+            adw::BreakpointConditionLengthType::MaxWidth,
+            1100.0,
+            adw::LengthUnit::Sp,
+        );
+        let breakpoint = adw::Breakpoint::new(condition);
+        breakpoint.connect_apply(|_| set_mini(true));
+        breakpoint.connect_unapply(|_| set_mini(false));
+        window.add_breakpoint(breakpoint);
+    });
+    sidebar.upcast()
+}
+
+/// Switches between the full sidebar and icons only.
+pub fn toggle() {
+    let mini = find().is_some_and(|s| !s.has_css_class("mini"));
+    set_mini(mini);
+}
+
+fn set_mini(mini: bool) {
+    let Some(sidebar) = find() else { return };
+    if mini {
+        sidebar.add_css_class("mini");
+    } else {
+        sidebar.remove_css_class("mini");
+    }
+    if let Some(items) = super::find_widget(&sidebar, "sidebar-items").and_downcast::<gtk::Box>() {
+        fill(&items, mini);
+    }
+    if let Some(subscriptions) = super::find_widget(&sidebar, SUBSCRIPTIONS) {
+        subscriptions.set_visible(!mini);
+    }
+    app()
+        .ext
+        .events
+        .emit("sidebar.toggled", &json!({ "mini": mini }));
+}
+
+fn find() -> Option<gtk::Widget> {
+    super::find_widget(app().window()?.upcast_ref(), NAME)
+}
+
+fn fill(items: &gtk::Box, mini: bool) {
+    items.set_widget_name("sidebar-items");
+    while let Some(child) = items.first_child() {
+        items.remove(&child);
+    }
+    let nav = app().ext.pages.nav();
+    let mut section = String::new();
+    for item in &nav {
+        if item.section != section {
+            if !section.is_empty() {
+                items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+            }
+            if item.section == "library" && !mini {
+                let title = gtk::Label::new(Some("You"));
+                title.set_xalign(0.0);
+                title.add_css_class("section-title");
+                items.append(&title);
+            }
+            section = item.section.clone();
+        }
+        items.append(&nav_button(item, mini));
+    }
+    if let Some(page) = app().current_page() {
+        highlight(items, &page);
+    }
+}
+
+fn nav_button(item: &NavItem, mini: bool) -> gtk::Button {
+    let icon = gtk::Image::from_icon_name(if item.icon.is_empty() {
+        "application-x-executable-symbolic"
+    } else {
+        &item.icon
+    });
+    icon.set_pixel_size(22);
+    let label = gtk::Label::new(Some(&item.title));
+    label.add_css_class("nav-title");
+    label.set_xalign(0.0);
+    let content = gtk::Box::new(
+        if mini {
+            gtk::Orientation::Vertical
+        } else {
+            gtk::Orientation::Horizontal
+        },
+        0,
+    );
+    content.append(&icon);
+    content.append(&label);
+    if mini {
+        content.set_halign(gtk::Align::Center);
+    }
+    let button = gtk::Button::builder()
+        .child(&content)
+        .css_classes(["nav-item"])
+        .build();
+    button.set_widget_name(&format!("nav:{}", item.id));
+    button.set_tooltip_text(mini.then_some(item.title.as_str()));
+    let (page, args) = (item.page.clone(), item.args.clone());
+    button.connect_clicked(move |_| {
+        if let Err(e) = app()
+            .ext
+            .commands
+            .run("app.navigate", json!({ "page": page, "args": args }))
+        {
+            app().toast(&e);
+        }
+    });
+    button
+}
+
+fn highlight(items: &gtk::Box, page: &str) {
+    let nav = app().ext.pages.nav();
+    let mut child = items.first_child();
+    while let Some(w) = child {
+        if let Some(id) = w.widget_name().strip_prefix("nav:") {
+            let current = nav.iter().any(|i| i.id == id && i.page == page);
+            if current {
+                w.add_css_class("current");
+            } else {
+                w.remove_css_class("current");
+            }
+        }
+        child = w.next_sibling();
+    }
+}
+
+struct Subscriptions {
+    list: gtk::Box,
+    more: gtk::Button,
+    expanded: Cell<bool>,
+    channels: RefCell<Vec<ChannelRef>>,
+}
+
+/// The `sidebar_subscriptions` component: subscribed channels with their
+/// avatars, from the channel directory, kept up to date by
+/// `channels.updated`.
+pub fn build_subscriptions(_props: &Value) -> gtk::Widget {
+    let title = gtk::Label::new(Some("Subscriptions"));
+    title.set_xalign(0.0);
+    title.add_css_class("section-title");
+    let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    let more = gtk::Button::new();
+    more.add_css_class("nav-item");
+    let root = gtk::Box::new(gtk::Orientation::Vertical, 2);
+    root.add_css_class("subscriptions");
+    root.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+    root.append(&title);
+    root.append(&list);
+    root.append(&more);
+
+    let this = Rc::new(Subscriptions {
+        list,
+        more: more.clone(),
+        expanded: Cell::new(false),
+        channels: RefCell::new(app().channels.subscriptions()),
+    });
+    attach(&root, this.clone());
+    show_subscriptions(&this);
+    let weak = Rc::downgrade(&this);
+    more.connect_clicked(move |_| {
+        if let Some(this) = weak.upgrade() {
+            this.expanded.set(!this.expanded.get());
+            show_subscriptions(&this);
+        }
+    });
+    let weak = Rc::downgrade(&this);
+    follow(&root, "channels.updated", move |_| {
+        if let Some(this) = weak.upgrade() {
+            *this.channels.borrow_mut() = app().channels.subscriptions();
+            show_subscriptions(&this);
+        }
+    });
+    let weak = Rc::downgrade(&this);
+    follow(&root, "page.changed", move |payload| {
+        if let Some(this) = weak.upgrade() {
+            highlight_channel(&this.list, payload);
+        }
+    });
+    root.upcast()
+}
+
+fn show_subscriptions(this: &Subscriptions) {
+    while let Some(child) = this.list.first_child() {
+        this.list.remove(&child);
+    }
+    let channels = this.channels.borrow();
+    let shown = if this.expanded.get() {
+        channels.len()
+    } else {
+        channels.len().min(FOLDED)
+    };
+    for channel in &channels[..shown] {
+        this.list.append(&channel_button(channel));
+    }
+    let mini = find().is_some_and(|s| s.has_css_class("mini"));
+    if let Some(root) = this.list.parent() {
+        root.set_visible(!channels.is_empty() && !mini);
+    }
+    let hidden = channels.len() - shown;
+    this.more.set_visible(channels.len() > FOLDED);
+    let (icon, label) = if this.expanded.get() {
+        ("yt-collapse-symbolic", "Show fewer".to_owned())
+    } else {
+        ("yt-expand-symbolic", format!("Show {hidden} more"))
+    };
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    let image = gtk::Image::from_icon_name(icon);
+    image.set_pixel_size(22);
+    let text = gtk::Label::new(Some(&label));
+    text.add_css_class("nav-title");
+    content.append(&image);
+    content.append(&text);
+    this.more.set_child(Some(&content));
+}
+
+fn channel_button(channel: &ChannelRef) -> gtk::Button {
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    content.append(&avatar::new(24, &channel.name, channel.avatar.as_deref()));
+    let name = gtk::Label::new(Some(&channel.name));
+    name.add_css_class("nav-title");
+    name.set_xalign(0.0);
+    name.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    content.append(&name);
+    let button = gtk::Button::builder()
+        .child(&content)
+        .css_classes(["nav-item", "channel-item"])
+        .build();
+    button.set_widget_name(&format!(
+        "channel:{}",
+        channel.id.as_deref().unwrap_or_default()
+    ));
+    button.set_tooltip_text(Some(&channel.name));
+    let id = channel.id.clone();
+    button.connect_clicked(move |_| {
+        if let Err(e) = app()
+            .ext
+            .commands
+            .run("channel.open", json!({ "channel_id": id }))
+        {
+            app().toast(&e);
+        }
+    });
+    button
+}
+
+fn highlight_channel(list: &gtk::Box, payload: &Value) {
+    let on_channel = payload.get("page").and_then(Value::as_str) == Some("channel");
+    let id = payload
+        .pointer("/args/channel_id")
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let mut child = list.first_child();
+    while let Some(w) = child {
+        if on_channel && !id.is_empty() && w.widget_name().strip_prefix("channel:") == Some(id) {
+            w.add_css_class("current");
+        } else {
+            w.remove_css_class("current");
+        }
+        child = w.next_sibling();
+    }
+}

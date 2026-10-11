@@ -1,0 +1,240 @@
+{
+ "responseContext": {
+  "visitorData": "CgtHR3FrSWZuaFVpSSjSkKrWBjIoCgJOTBIiEh4SHAsMDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicgXA%3D%3D",
+  "serviceTrackingParams": [
+   {
+    "service": "GFEEDBACK",
+    "params": [
+     {
+      "key": "browse_id",
+      "value": "FEchannels"
+     },
+     {
+      "key": "browse_id_prefix",
+      "value": ""
+     },
+     {
+      "key": "logged_in",
+      "value": "1"
+     }
+    ]
+   }
+  ],
+  "maxAgeSeconds": 0,
+  "responseId": "IhMItpDztI6wlwMVbOZCBR1I7xX4",
+  "webResponseContextExtensionData": {
+   "webResponseContextPreloadData": {
+    "preloadMessageNames": [
+     "tvBrowseRenderer",
+     "tvSecondaryNavRenderer",
+     "tvSecondaryNavSectionRenderer",
+     "tabRenderer",
+     "tvSurfaceContentRenderer",
+     "sectionListRenderer",
+     "shelfRenderer",
+     "horizontalListRenderer",
+     "tileRenderer",
+     "tileHeaderRenderer",
+     "tileMetadataRenderer",
+     "lineRenderer",
+     "lineItemRenderer"
+    ]
+   },
+   "hasDecorated": true
+  }
+ },
+ "contents": {
+  "tvBrowseRenderer": {
+   "content": {
+    "tvSecondaryNavRenderer": {
+     "sections": [
+      {
+       "tvSecondaryNavSectionRenderer": {
+        "tabs": [
+         {
+          "tabRenderer": {
+           "selected": true,
+           "content": {
+            "tvSurfaceContentRenderer": {
+             "content": {
+              "sectionListRenderer": {
+               "contents": [
+                {
+                 "shelfRenderer": {
+                  "content": {
+                   "horizontalListRenderer": {
+                    "items": [
+                     {
+                      "tileRenderer": {
+                       "style": "TILE_STYLE_YTLR_ROUND",
+                       "header": {
+                        "tileHeaderRenderer": {
+                         "thumbnail": {
+                          "thumbnails": [
+                           {
+                            "url": "//yt3.ggpht.com/ch1=s88",
+                            "width": 88,
+                            "height": 88
+                           },
+                           {
+                            "url": "//yt3.ggpht.com/ch1=s176",
+                            "width": 176,
+                            "height": 176
+                           }
+                          ]
+                         }
+                        }
+                       },
+                       "metadata": {
+                        "tileMetadataRenderer": {
+                         "title": {
+                          "simpleText": "Channel 1"
+                         },
+                         "lines": []
+                        }
+                       },
+                       "onSelectCommand": {
+                        "browseEndpoint": {
+                         "browseId": "UCchannel01"
+                        }
+                       },
+                       "contentId": "UCXzw-OdotBUcNA9yhuYQBwA",
+                       "contentType": "TILE_CONTENT_TYPE_CHANNEL",
+                       "onLongPressCommand": {
+                        "showEngagementPanelEndpoint": {
+                         "identifier": {
+                          "tag": "PAcontext_menu"
+                         },
+                         "globalConfiguration": {
+                          "params": "-gohEhhVQ1h6dy1PZG90QlVjTkE5eWh1WVFCd0EgxwVCAggC"
+                         }
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "tileRenderer": {
+                       "style": "TILE_STYLE_YTLR_ROUND",
+                       "header": {
+                        "tileHeaderRenderer": {
+                         "thumbnail": {
+                          "thumbnails": [
+                           {
+                            "url": "//yt3.ggpht.com/ch2=s88",
+                            "width": 88,
+                            "height": 88
+                           },
+                           {
+                            "url": "//yt3.ggpht.com/ch2=s176",
+                            "width": 176,
+                            "height": 176
+                           }
+                          ]
+                         }
+                        }
+                       },
+                       "metadata": {
+                        "tileMetadataRenderer": {
+                         "title": {
+                          "simpleText": "Channel 2"
+                         },
+                         "lines": []
+                        }
+                       },
+                       "onSelectCommand": {
+                        "browseEndpoint": {
+                         "browseId": "UCchannel02"
+                        }
+                       },
+                       "onFocusCommand": {
+                        "showHintCommand": {
+                         "shouldShowHint": true
+                        }
+                       },
+                       "contentId": "UCa_SOEXD5pGMaLpj9dILMBQ",
+                       "contentType": "TILE_CONTENT_TYPE_CHANNEL",
+                       "onLongPressCommand": {
+                        "showEngagementPanelEndpoint": {
+                         "identifier": {
+                          "tag": "PAcontext_menu"
+                         },
+                         "globalConfiguration": {
+                          "params": "-gohEhhVQ2FfU09FWEQ1cEdNYUxwajlkSUxNQlEgxwVCAggC"
+                         }
+                        }
+                       }
+                      }
+                     },
+                     {
+                      "tileRenderer": {
+                       "style": "TILE_STYLE_YTLR_ROUND",
+                       "header": {
+                        "tileHeaderRenderer": {
+                         "thumbnail": {
+                          "thumbnails": [
+                           {
+                            "url": "//yt3.ggpht.com/ch3=s88",
+                            "width": 88,
+                            "height": 88
+                           },
+                           {
+                            "url": "//yt3.ggpht.com/ch3=s176",
+                            "width": 176,
+                            "height": 176
+                           }
+                          ]
+                         }
+                        }
+                       },
+                       "metadata": {
+                        "tileMetadataRenderer": {
+                         "title": {
+                          "simpleText": "Channel 3"
+                         },
+                         "lines": []
+                        }
+                       },
+                       "onSelectCommand": {
+                        "browseEndpoint": {
+                         "browseId": "UCchannel03"
+                        }
+                       },
+                       "contentId": "UCZhbLTgI9n5YN48y2xvCi5w",
+                       "contentType": "TILE_CONTENT_TYPE_CHANNEL",
+                       "onLongPressCommand": {
+                        "showEngagementPanelEndpoint": {
+                         "identifier": {
+                          "tag": "PAcontext_menu"
+                         },
+                         "globalConfiguration": {
+                          "params": "-gohEhhVQ1poYkxUZ0k5bjVZTjQ4eTJ4dkNpNXcgxwVCAggC"
+                         }
+                        }
+                       }
+                      }
+                     }
+                    ],
+                    "collapsedItemCount": 19,
+                    "visibleItemCount": 19
+                   }
+                  }
+                 }
+                }
+               ]
+              }
+             },
+             "targetId": "browse-feedFEchannels"
+            }
+           },
+           "tabIdentifier": "FEchannels"
+          }
+         }
+        ]
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

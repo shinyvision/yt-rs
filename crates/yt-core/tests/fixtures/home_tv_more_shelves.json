@@ -1,0 +1,366 @@
+{
+ "continuationContents": {
+  "sectionListContinuation": {
+   "contents": [
+    {
+     "shelfRenderer": {
+      "content": {
+       "horizontalListRenderer": {
+        "items": [
+         {
+          "tileRenderer": {
+           "style": "TILE_STYLE_YTLR_DEFAULT",
+           "header": {
+            "tileHeaderRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/show-tile-id/default.jpg",
+                "width": 120,
+                "height": 90
+               },
+               {
+                "url": "https://i.ytimg.com/vi/show-tile-id/hq720_custom_1.jpg",
+                "width": 640,
+                "height": 360
+               },
+               {
+                "url": "https://i.ytimg.com/vi/show-tile-id/maxresdefault.jpg",
+                "width": 1280,
+                "height": 720
+               }
+              ]
+             },
+             "thumbnailOverlays": [
+              {
+               "thumbnailOverlayTimeStatusRenderer": {
+                "text": {
+                 "runs": [
+                  {
+                   "text": "22"
+                  },
+                  {
+                   "text": " seasons"
+                  }
+                 ]
+                },
+                "style": "DEFAULT"
+               }
+              },
+              {
+               "thumbnailOverlayStackingEffectRenderer": {
+                "upperStackColor": 4284502857,
+                "lowerStackColor": 4287857526
+               }
+              }
+             ]
+            }
+           },
+           "metadata": {
+            "tileMetadataRenderer": {
+             "title": {
+              "simpleText": "A Show"
+             },
+             "lines": [
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "runs": [
+                     {
+                      "text": "Season 1, Episode 1"
+                     }
+                    ]
+                   }
+                  }
+                 }
+                ]
+               }
+              },
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "A Show"
+                   }
+                  }
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           "onSelectCommand": {
+            "browseEndpoint": {
+             "browseId": "VLPLshowplaylist"
+            }
+           },
+           "contentId": "show-tile-id",
+           "contentType": "TILE_CONTENT_TYPE_VIDEO"
+          }
+         },
+         {
+          "tileRenderer": {
+           "style": "TILE_STYLE_YTLR_DEFAULT",
+           "header": {
+            "tileHeaderRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/video-F-id/default.jpg",
+                "width": 120,
+                "height": 90
+               },
+               {
+                "url": "https://i.ytimg.com/vi/video-F-id/hq720_custom_1.jpg",
+                "width": 640,
+                "height": 360
+               },
+               {
+                "url": "https://i.ytimg.com/vi/video-F-id/maxresdefault.jpg",
+                "width": 1280,
+                "height": 720
+               }
+              ]
+             },
+             "thumbnailOverlays": [
+              {
+               "thumbnailOverlayTimeStatusRenderer": {
+                "text": {
+                 "simpleText": "1:04:53"
+                },
+                "style": "DEFAULT"
+               }
+              }
+             ]
+            }
+           },
+           "metadata": {
+            "tileMetadataRenderer": {
+             "title": {
+              "simpleText": "Video F"
+             },
+             "lines": [
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "runs": [
+                     {
+                      "text": "Channel F"
+                     }
+                    ]
+                   }
+                  }
+                 }
+                ]
+               }
+              },
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "2.6M views"
+                   }
+                  }
+                 },
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "•"
+                   }
+                  }
+                 },
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "10 months ago"
+                   }
+                  }
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           "onSelectCommand": {
+            "watchEndpoint": {
+             "videoId": "video-F-id"
+            }
+           },
+           "contentId": "video-F-id",
+           "contentType": "TILE_CONTENT_TYPE_VIDEO"
+          }
+         }
+        ],
+        "continuations": [
+         {
+          "nextContinuationData": {
+           "continuation": "MORE_SHOWS"
+          }
+         }
+        ],
+        "collapsedItemCount": 3,
+        "visibleItemCount": 3
+       }
+      },
+      "headerRenderer": {
+       "shelfHeaderRenderer": {
+        "avatarLockup": {
+         "avatarLockupRenderer": {
+          "title": {
+           "simpleText": "Recommended shows"
+          },
+          "size": "AVATAR_LOCKUP_SIZE_SMALL"
+         }
+        }
+       }
+      },
+      "tvhtml5Style": {
+       "effects": {
+        "enlarge": true
+       }
+      }
+     }
+    },
+    {
+     "shelfRenderer": {
+      "content": {
+       "horizontalListRenderer": {
+        "items": [
+         {
+          "tileRenderer": {
+           "style": "TILE_STYLE_YTLR_DEFAULT",
+           "header": {
+            "tileHeaderRenderer": {
+             "thumbnail": {
+              "thumbnails": [
+               {
+                "url": "https://i.ytimg.com/vi/video-G-id/default.jpg",
+                "width": 120,
+                "height": 90
+               },
+               {
+                "url": "https://i.ytimg.com/vi/video-G-id/hq720_custom_1.jpg",
+                "width": 640,
+                "height": 360
+               },
+               {
+                "url": "https://i.ytimg.com/vi/video-G-id/maxresdefault.jpg",
+                "width": 1280,
+                "height": 720
+               }
+              ]
+             },
+             "thumbnailOverlays": [
+              {
+               "thumbnailOverlayTimeStatusRenderer": {
+                "text": {
+                 "simpleText": "1:04:53"
+                },
+                "style": "DEFAULT"
+               }
+              }
+             ]
+            }
+           },
+           "metadata": {
+            "tileMetadataRenderer": {
+             "title": {
+              "simpleText": "Video G"
+             },
+             "lines": [
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "runs": [
+                     {
+                      "text": "Channel G"
+                     }
+                    ]
+                   }
+                  }
+                 }
+                ]
+               }
+              },
+              {
+               "lineRenderer": {
+                "items": [
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "2.6M views"
+                   }
+                  }
+                 },
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "•"
+                   }
+                  }
+                 },
+                 {
+                  "lineItemRenderer": {
+                   "text": {
+                    "simpleText": "10 months ago"
+                   }
+                  }
+                 }
+                ]
+               }
+              }
+             ]
+            }
+           },
+           "onSelectCommand": {
+            "watchEndpoint": {
+             "videoId": "video-G-id"
+            }
+           },
+           "contentId": "video-G-id",
+           "contentType": "TILE_CONTENT_TYPE_VIDEO"
+          }
+         }
+        ],
+        "collapsedItemCount": 3,
+        "visibleItemCount": 3
+       }
+      },
+      "headerRenderer": {
+       "shelfHeaderRenderer": {
+        "avatarLockup": {
+         "avatarLockupRenderer": {
+          "title": {
+           "simpleText": "Nature and more"
+          },
+          "size": "AVATAR_LOCKUP_SIZE_SMALL"
+         }
+        }
+       }
+      },
+      "tvhtml5Style": {
+       "effects": {
+        "enlarge": true
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

@@ -1,0 +1,349 @@
+{
+ "responseContext": {
+  "visitorData": "CgtZbktXT3ZOTlVDTSi_g6rWBjIoCgJOTBIiEh4SHAsMDg8QERITFBUWFxgZGhscHR4fICEiIyQlJicgMg%3D%3D",
+  "serviceTrackingParams": [
+   {
+    "service": "GFEEDBACK",
+    "params": [
+     {
+      "key": "logged_in",
+      "value": "1"
+     }
+    ]
+   }
+  ],
+  "responseId": "IhMI7MmOkoiwlwMV10R6BR1PHCsm",
+  "webResponseContextExtensionData": {
+   "webResponseContextPreloadData": {
+    "preloadMessageNames": [
+     "itemSectionContinuation",
+     "handoffInstructionRenderer",
+     "commentThreadRenderer",
+     "commentRenderer",
+     "engagementPanelSectionListRenderer",
+     "engagementPanelTitleHeaderRenderer",
+     "sectionListRenderer",
+     "itemSectionRenderer"
+    ]
+   },
+   "hasDecorated": true
+  }
+ },
+ "continuationContents": {
+  "itemSectionContinuation": {
+   "contents": [
+    {
+     "handoffInstructionRenderer": {
+      "avatar": {
+       "thumbnails": [
+        {
+         "url": "https://yt3.ggpht.com/me=s48",
+         "width": 48,
+         "height": 48
+        },
+        {
+         "url": "https://yt3.ggpht.com/me=s88",
+         "width": 88,
+         "height": 88
+        }
+       ]
+      },
+      "text": {
+       "runs": [
+        {
+         "text": "Open the YouTube mobile app to add comments and replies."
+        }
+       ]
+      },
+      "secondaryIcon": {
+       "iconType": "YOUTUBE_LINKED_TV"
+      },
+      "onSelectCommand": {
+       "openHandoffInstructionCommand": {}
+      }
+     }
+    },
+    {
+     "commentThreadRenderer": {
+      "comment": {
+       "commentRenderer": {
+        "authorText": {
+         "simpleText": "@commenter0"
+        },
+        "authorThumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://yt3.ggpht.com/author0=s48",
+           "width": 48,
+           "height": 48
+          },
+          {
+           "url": "https://yt3.ggpht.com/author0=s88",
+           "width": 88,
+           "height": 88
+          }
+         ]
+        },
+        "contentText": {
+         "runs": [
+          {
+           "text": "Comment 0 at 1:23, see https://example.org/0"
+          }
+         ]
+        },
+        "publishedTimeText": {
+         "simpleText": "10 months ago"
+        },
+        "isLiked": false,
+        "commentId": "UgzhoFBb6JaUgo8GWtx4AaABAg",
+        "voteStatus": "INDIFFERENT",
+        "voteCount": {
+         "simpleText": "172"
+        },
+        "detailViewEndpoint": {
+         "showEngagementPanelEndpoint": {
+          "engagementPanel": {
+           "engagementPanelSectionListRenderer": {
+            "header": {
+             "engagementPanelTitleHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Replies"
+                }
+               ]
+              }
+             }
+            },
+            "content": {
+             "sectionListRenderer": {
+              "contents": [
+               {
+                "itemSectionRenderer": {
+                 "continuations": [
+                  {
+                   "reloadContinuationData": {
+                    "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyVwoAGlESGlVnemhvRkJiNkphVWdvOEdXdHg0QWFBQkFnIgIIACoYVUN3bVppQ2hTcnlvV1FDWk1JUWV6Z1RnMgtWZDdpdVBWX0FGMEgKggECCAGQAQIoAA%3D%3D"
+                   }
+                  }
+                 ],
+                 "sectionIdentifier": "comment-item-section",
+                 "targetId": "comment-replies-item-section-target-UgzhoFBb6JaUgo8GWtx4AaABAg"
+                }
+               }
+              ]
+             }
+            },
+            "veType": 159422
+           }
+          },
+          "identifier": {
+           "surface": "ENGAGEMENT_PANEL_SURFACE_WATCH",
+           "tag": "comment-replies-item-section-UgzhoFBb6JaUgo8GWtx4AaABAg"
+          }
+         }
+        },
+        "replyCount": 3,
+        "repliesCount": {
+         "simpleText": "3"
+        },
+        "targetId": "main-comment-view-UgzhoFBb6JaUgo8GWtx4AaABAg"
+       }
+      },
+      "renderingPriority": "RENDERING_PRIORITY_UNKNOWN",
+      "isModeratedElqComment": false,
+      "targetId": "comment-item-UgzhoFBb6JaUgo8GWtx4AaABAg"
+     }
+    },
+    {
+     "commentThreadRenderer": {
+      "comment": {
+       "commentRenderer": {
+        "authorText": {
+         "simpleText": "@commenter1"
+        },
+        "authorThumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://yt3.ggpht.com/author1=s48",
+           "width": 48,
+           "height": 48
+          },
+          {
+           "url": "https://yt3.ggpht.com/author1=s88",
+           "width": 88,
+           "height": 88
+          }
+         ]
+        },
+        "contentText": {
+         "runs": [
+          {
+           "text": "Comment 1 at 1:23, see https://example.org/1"
+          }
+         ]
+        },
+        "publishedTimeText": {
+         "simpleText": "4 months ago"
+        },
+        "isLiked": false,
+        "commentId": "Ugw4D46VtZmcXHnLsIx4AaABAg",
+        "voteStatus": "INDIFFERENT",
+        "voteCount": {
+         "simpleText": "21"
+        },
+        "detailViewEndpoint": {
+         "showEngagementPanelEndpoint": {
+          "engagementPanel": {
+           "engagementPanelSectionListRenderer": {
+            "header": {
+             "engagementPanelTitleHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Replies"
+                }
+               ]
+              }
+             }
+            },
+            "content": {
+             "sectionListRenderer": {
+              "contents": [
+               {
+                "itemSectionRenderer": {
+                 "continuations": [
+                  {
+                   "reloadContinuationData": {
+                    "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyVwoAGlESGlVndzRENDZWdFptY1hIbkxzSXg0QWFBQkFnIgIIACoYVUN3bVppQ2hTcnlvV1FDWk1JUWV6Z1RnMgtWZDdpdVBWX0FGMEgKggECCAGQAQIoAA%3D%3D"
+                   }
+                  }
+                 ],
+                 "sectionIdentifier": "comment-item-section",
+                 "targetId": "comment-replies-item-section-target-Ugw4D46VtZmcXHnLsIx4AaABAg"
+                }
+               }
+              ]
+             }
+            },
+            "veType": 159422
+           }
+          },
+          "identifier": {
+           "surface": "ENGAGEMENT_PANEL_SURFACE_WATCH",
+           "tag": "comment-replies-item-section-Ugw4D46VtZmcXHnLsIx4AaABAg"
+          }
+         }
+        },
+        "targetId": "main-comment-view-Ugw4D46VtZmcXHnLsIx4AaABAg"
+       }
+      },
+      "renderingPriority": "RENDERING_PRIORITY_UNKNOWN",
+      "isModeratedElqComment": false,
+      "targetId": "comment-item-Ugw4D46VtZmcXHnLsIx4AaABAg"
+     }
+    },
+    {
+     "commentThreadRenderer": {
+      "comment": {
+       "commentRenderer": {
+        "authorText": {
+         "simpleText": "@commenter2"
+        },
+        "authorThumbnail": {
+         "thumbnails": [
+          {
+           "url": "https://yt3.ggpht.com/author2=s48",
+           "width": 48,
+           "height": 48
+          },
+          {
+           "url": "https://yt3.ggpht.com/author2=s88",
+           "width": 88,
+           "height": 88
+          }
+         ]
+        },
+        "contentText": {
+         "runs": [
+          {
+           "text": "Comment 2 at 1:23, see https://example.org/2"
+          }
+         ]
+        },
+        "publishedTimeText": {
+         "simpleText": "10 months ago"
+        },
+        "isLiked": false,
+        "commentId": "UgxZdp306igeDq1a8s94AaABAg",
+        "voteStatus": "INDIFFERENT",
+        "voteCount": {
+         "simpleText": "151"
+        },
+        "detailViewEndpoint": {
+         "showEngagementPanelEndpoint": {
+          "engagementPanel": {
+           "engagementPanelSectionListRenderer": {
+            "header": {
+             "engagementPanelTitleHeaderRenderer": {
+              "title": {
+               "runs": [
+                {
+                 "text": "Replies"
+                }
+               ]
+              }
+             }
+            },
+            "content": {
+             "sectionListRenderer": {
+              "contents": [
+               {
+                "itemSectionRenderer": {
+                 "continuations": [
+                  {
+                   "reloadContinuationData": {
+                    "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYyVwoAGlESGlVneFpkcDMwNmlnZURxMWE4czk0QWFBQkFnIgIIACoYVUN3bVppQ2hTcnlvV1FDWk1JUWV6Z1RnMgtWZDdpdVBWX0FGMEgKggECCAGQAQIoAA%3D%3D"
+                   }
+                  }
+                 ],
+                 "sectionIdentifier": "comment-item-section",
+                 "targetId": "comment-replies-item-section-target-UgxZdp306igeDq1a8s94AaABAg"
+                }
+               }
+              ]
+             }
+            },
+            "veType": 159422
+           }
+          },
+          "identifier": {
+           "surface": "ENGAGEMENT_PANEL_SURFACE_WATCH",
+           "tag": "comment-replies-item-section-UgxZdp306igeDq1a8s94AaABAg"
+          }
+         }
+        },
+        "replyCount": 5,
+        "repliesCount": {
+         "simpleText": "5"
+        },
+        "targetId": "main-comment-view-UgxZdp306igeDq1a8s94AaABAg"
+       }
+      },
+      "renderingPriority": "RENDERING_PRIORITY_UNKNOWN",
+      "isModeratedElqComment": false,
+      "targetId": "comment-item-UgxZdp306igeDq1a8s94AaABAg"
+     }
+    }
+   ],
+   "continuations": [
+    {
+     "nextContinuationData": {
+      "continuation": "Eg0SC1ZkN2l1UFZfQUYwGAYy4gIKygJnZXRfcmFua2VkX3N0cmVhbXMtLUNxVUJDSUFFRlJlMzBUZ2FtZ0VLbFFFSTJGOFFnQVFZQnlLS0FYc1p3d19FSkh1eW9Dd0xUdzl2TEpZOUF1cFVXejgwRGszNXJWUE1oVmlPTUFUNTU5MVRjRGJ0ZWxfVnp2dHpacG1zc3ZUTjBkV3lsSHVBbDN0TzEtRWRiRTFCcm15Sjd2TWNpbXlmYkw2UDVOT3NhM3lUaHE3aEtPNlY5bVNRUXdJOVdJNHFLb1dSYWJYWUZpSjVJUk02bEs1ZnJlWlJGNDFvU2xjQUtRUjh4WkVLUjkwUEg1aWdBeEFVRWdVSWhpQVlBQklIQ0lrZ0VBRVlBQklGQ0lnZ0dBQVNCUWlvSUJnQUVnVUl3Q0FZQUJJSENJVWdFQlFZQVJJRkNJY2dHQUFTQlFpN0lCZ0FVQUJZQVEiESILVmQ3aXVQVl9BRjAwAHgBKBQ%3D"
+     }
+    }
+   ],
+   "sectionIdentifier": "comment-item-section"
+  }
+ }
+}
