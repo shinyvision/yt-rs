@@ -77,14 +77,18 @@ pub(crate) mod ffi {
     pub const ERROR_UNSUPPORTED: c_int = -18;
     pub const ERROR_GENERIC: c_int = -20;
 
-    /// `LC_NUMERIC` in glibc.
+    /// `LC_NUMERIC`: 1 in glibc and musl, 4 in the BSDs' libc (macOS) and
+    /// Windows' C runtime.
+    #[cfg(any(target_os = "macos", target_os = "windows"))]
+    pub const LC_NUMERIC: c_int = 4;
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     pub const LC_NUMERIC: c_int = 1;
 
     unsafe extern "C" {
         pub fn setlocale(category: c_int, locale: *const c_char) -> *mut c_char;
     }
 
-    #[link(name = "mpv")]
+    // libmpv itself is linked by the build script, through pkg-config.
     unsafe extern "C" {
         pub fn mpv_client_api_version() -> std::ffi::c_ulong;
         pub fn mpv_error_string(error: c_int) -> *const c_char;
