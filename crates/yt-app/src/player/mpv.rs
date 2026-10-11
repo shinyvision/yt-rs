@@ -74,6 +74,8 @@ pub(crate) mod ffi {
         unsafe extern "C" fn(*mut c_void, *mut c_char, *mut mpv_stream_cb_info) -> c_int;
 
     pub const ERROR_LOADING_FAILED: c_int = -13;
+    pub const ERROR_UNSUPPORTED: c_int = -18;
+    pub const ERROR_GENERIC: c_int = -20;
 
     /// `LC_NUMERIC` in glibc.
     pub const LC_NUMERIC: c_int = 1;

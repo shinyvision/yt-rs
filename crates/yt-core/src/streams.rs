@@ -17,6 +17,7 @@
 //! same video share one result, and [`Resolver::prefetch`] lets the UI look a
 //! video up before it is clicked. Clicks jump ahead of queued prefetches.
 
+pub mod chunked;
 pub mod live;
 
 use std::collections::{BTreeMap, HashMap, HashSet};
@@ -78,15 +79,44 @@ pub struct Stream {
     pub height: Option<u32>,
     #[serde(default)]
     pub fps: Option<f64>,
+    /// YouTube's name for the quality ("1080p60"), which goes by the
+    /// width class too: a 1920×800 video is "1080p".
+    #[serde(default)]
+    pub label: Option<String>,
     /// A live stream's segment length, in seconds: it is read segment by
     /// segment (see [`live::LiveReader`]).
     #[serde(default)]
     pub segment_duration: Option<f64>,
 }
 
+impl StreamSet {
+    /// The stream of this format (`itag`), among the video, audio and
+    /// qualities.
+    pub fn by_itag(&self, itag: u32) -> Option<&Stream> {
+        std::iter::once(&self.video)
+            .chain(&self.audio)
+            .chain(&self.qualities)
+            .find(|s| s.itag() == Some(itag))
+    }
+}
+
 impl Stream {
+    /// YouTube's number for the stream's format, from its URL.
+    pub fn itag(&self) -> Option<u32> {
+        url::Url::parse(&self.url)
+            .ok()?
+            .query_pairs()
+            .find(|(key, _)| key == "itag")?
+            .1
+            .parse()
+            .ok()
+    }
+
     /// As YouTube names qualities: "1080p60", "720p".
     pub fn quality_label(&self) -> Option<String> {
+        if let Some(label) = &self.label {
+            return Some(label.clone());
+        }
         let height = self.height?;
         let fps = self.fps.filter(|f| *f > 30.0).map(|f| f.round() as u32);
         Some(match fps {
@@ -634,6 +664,7 @@ struct Format {
     audio_codec: Option<String>,
     height: Option<u32>,
     fps: Option<f64>,
+    label: Option<String>,
     bitrate: u64,
     hdr: bool,
     /// For a dubbed video's audio: whether this is its original language.
@@ -702,6 +733,10 @@ fn format(f: &Value) -> Option<Format> {
         audio_codec: audio_codec.map(str::to_owned),
         height: f.get("height").and_then(Value::as_u64).map(|h| h as u32),
         fps: f.get("fps").and_then(Value::as_f64),
+        // Without "HDR" and the like: those streams aren't picked.
+        label: str_at(f, "/qualityLabel")
+            .and_then(|l| l.split_whitespace().next())
+            .map(str::to_owned),
         bitrate: f.get("bitrate").and_then(Value::as_u64).unwrap_or(0),
         hdr: transfer.contains("SMPTEST2084") || transfer.contains("ARIB_STD_B67"),
         original: f.get("audioTrack").map(|track| {
@@ -903,6 +938,7 @@ fn solved(f: &Format, solutions: &Solutions) -> Result<Stream> {
         acodec: f.audio_codec.clone(),
         height: f.height,
         fps: f.fps,
+        label: f.label.clone(),
         segment_duration: f.segment_duration,
     })
 }
@@ -1059,6 +1095,25 @@ mod tests {
     }
 
     #[test]
+    fn finds_streams_by_format() {
+        let stream = |itag: u32| Stream {
+            url: format!("https://r1.googlevideo.com/videoplayback?expire=1&itag={itag}&clen=5"),
+            ..Stream::default()
+        };
+        let set = StreamSet {
+            video: stream(248),
+            audio: Some(stream(251)),
+            qualities: vec![stream(248), stream(247), stream(244)],
+            ..StreamSet::default()
+        };
+        assert_eq!(set.video.itag(), Some(248));
+        assert_eq!(set.by_itag(251).and_then(Stream::itag), Some(251));
+        assert_eq!(set.by_itag(244).and_then(Stream::itag), Some(244));
+        assert!(set.by_itag(18).is_none());
+        assert_eq!(Stream::default().itag(), None);
+    }
+
+    #[test]
     fn solved_urls_carry_the_answers() {
         let mut f = video(248, "vp9", 1080, 30.0, 1);
         f.url = "https://r1.googlevideo.com/videoplayback?expire=1&n=abc&sparams=n%2Cexpire".into();
@@ -1201,5 +1256,11 @@ mod tests {
         assert_eq!(q(1080, 60.0).quality_label().as_deref(), Some("1080p60"));
         assert_eq!(q(720, 30.0).quality_label().as_deref(), Some("720p"));
         assert_eq!(q(480, 25.0).quality_label().as_deref(), Some("480p"));
+        // YouTube's own name wins: this one is 1920×1072.
+        let named = Stream {
+            label: Some("1080p".into()),
+            ..q(1072, 25.0)
+        };
+        assert_eq!(named.quality_label().as_deref(), Some("1080p"));
     }
 }

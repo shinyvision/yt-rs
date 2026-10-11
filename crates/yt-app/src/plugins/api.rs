@@ -481,6 +481,17 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
 
     // Timers.
     t.set(
+        "now",
+        lua.create_function(|_, ()| {
+            // Seconds on a clock that only goes forward, for measuring time.
+            static START: std::sync::OnceLock<std::time::Instant> = std::sync::OnceLock::new();
+            Ok(START
+                .get_or_init(std::time::Instant::now)
+                .elapsed()
+                .as_secs_f64())
+        })?,
+    )?;
+    t.set(
         "timer",
         lua.create_function(|lua, (ms, f, repeat): (u64, Function, Option<bool>)| {
             let handle = Rc::new(Cell::new(None));

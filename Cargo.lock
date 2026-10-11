@@ -2551,6 +2551,7 @@ name = "yt-core"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "bytes",
  "directories",
  "rand",
  "regex",

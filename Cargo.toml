@@ -11,6 +11,7 @@ rust-version = "1.90"
 yt-core = { path = "crates/yt-core" }
 
 anyhow = "1"
+bytes = "1"
 base64 = "0.23"
 directories = "6"
 gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }

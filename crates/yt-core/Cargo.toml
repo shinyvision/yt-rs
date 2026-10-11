@@ -7,6 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 base64.workspace = true
+bytes.workspace = true
 regex.workspace = true
 directories.workspace = true
 rand.workspace = true

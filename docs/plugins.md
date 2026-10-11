@@ -470,6 +470,7 @@ and `slot:<name>` for slots.
 | `app.youtube.suggestions(text, fn(suggestions, err))` | what YouTube suggests while typing |
 | `app.http({ url, method?, headers?, body? }, fn(response, err))` | `response = { status, headers, body }`. A table `body` is sent as JSON |
 | `app.timer(ms, fn, repeat?)` → `t:cancel()` | `fn` returning `false` stops a repeating timer |
+| `app.now()` | seconds, with fractions, on a clock that only goes forward: for measuring how long something takes |
 | `app.idle(fn)` | |
 | `app.toast(message)`, `app.log(...)` | |
 | `app.screenshot(path)` | |

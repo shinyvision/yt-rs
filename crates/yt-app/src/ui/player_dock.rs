@@ -54,10 +54,10 @@ pub fn init() {
 /// Frees the video's renderer, which must go before mpv does.
 pub fn shut_down() {
     let player = DOCK.with(|d| d.player.get().cloned());
-    if let Some(video) = player.as_ref().and_then(|p| super::find_widget(p, "video")) {
-        if let Some(video) = video.downcast_ref::<super::video::VideoView>() {
-            video.stop();
-        }
+    if let Some(video) = player.as_ref().and_then(|p| super::find_widget(p, "video"))
+        && let Some(video) = video.downcast_ref::<super::video::VideoView>()
+    {
+        video.stop();
     }
 }
 

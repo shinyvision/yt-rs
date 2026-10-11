@@ -27,7 +27,7 @@ to YouTube is testable without a display. `yt-app` puts a UI on top.
 | `account` | The signed-in user's name, handle and photo. |
 | `tracking` | The watch-time protocol as a pure state machine (`WatchSession`): it is told what the player does and when, and returns the report URLs to send. It is tested without a network. |
 | `captions` | Caption tracks: YouTube's json3 format converted to SRT for mpv (YouTube's VTT for automatic captions repeats every line). |
-| `streams` | Stream lookup from the TV app's own `player` request, signed in (`InnerTube::player_streams`), so YouTube treats it as the user watching and asks no "are you a bot" questions; age-restricted videos play too. The response's formats are picked here: the best video up to 1080p (VP9, then H.264, then AV1, which many GPUs can't decode in hardware), the best audio in the video's original language (dubbed videos list one audio stream per language), and a video stream per height and frame rate to switch to. Their URLs' challenges go to `solver`. The response also has the caption tracks (json3) and the storyboard spec (the grids of frames the seek bar previews). With a pre-roll ad, YouTube refuses the streams until the ad could have been skipped; the set says when (`available_at`), and `Resolver::until_served` checks every 400 ms from then, since YouTube lets go a little early. (Asking the way an ad-free playback does, `adPlaybackContext.pyv`, gets streams of a limited tier, `ctier=L`, which YouTube refuses past their first minutes.) Lookups are cached until the URLs expire, shared between concurrent callers, and prioritised: clicks go ahead of hover prefetches. `streams::live` reads live streams, which come as numbered two-second segments: it fetches them in order and drops each segment's repeated file header, so they make one continuous file. |
+| `streams` | Stream lookup from the TV app's own `player` request, signed in (`InnerTube::player_streams`), so YouTube treats it as the user watching and asks no "are you a bot" questions; age-restricted videos play too. The response's formats are picked here: the best video up to 1080p (VP9, then H.264, then AV1, which many GPUs can't decode in hardware), the best audio in the video's original language (dubbed videos list one audio stream per language), and a video stream per height and frame rate to switch to. Their URLs' challenges go to `solver`. The response also has the caption tracks (json3) and the storyboard spec (the grids of frames the seek bar previews). With a pre-roll ad, YouTube refuses the streams until the ad could have been skipped; the set says when (`available_at`), and `Resolver::until_served` checks every 400 ms from then, since YouTube lets go a little early. (Asking the way an ad-free playback does, `adPlaybackContext.pyv`, gets streams of a limited tier, `ctier=L`, which YouTube refuses past their first minutes.) Lookups are cached until the URLs expire, shared between concurrent callers, and prioritised: clicks go ahead of hover prefetches. `streams::chunked` reads a stream in bounded 10 MB ranges: googlevideo throttles an open-ended request (`Range: bytes=N-`) to about twice the stream's bitrate, and a very low-bitrate one (a 16 MB audio track for 10 hours) sends nothing for minutes, while a bounded range comes at full speed. It asks again from where it was after a lost connection, and for a refused URL gets a new one from its `refresh` (the player's: the video looked up again, the same format). `streams::live` reads live streams, which come as numbered two-second segments: it fetches them in order and drops each segment's repeated file header, so they make one continuous file. |
 | `solver` | The stream URLs' challenges: the `n` parameter, and for some videos a scrambled signature, which only YouTube's player script turns into what its servers accept. This runs yt-dlp's challenge solver ([yt-dlp/ejs](https://github.com/yt-dlp/ejs), public domain, bundled in `solver/`) in QuickJS (`rquickjs`) on its own thread. Finding the functions in a new player version takes about three seconds, so the result (the "preprocessed player") is kept on disk per version and its functions stay loaded; a video's challenges then take milliseconds. The player script's version and `signatureTimestamp` come together (`InnerTube::player_script`): the streams a `player` request returns are solved by the script whose timestamp it sent. |
 | `paths` | XDG locations, overridable with `YT_RS_CONFIG_DIR` and `YT_RS_CACHE_DIR`. |
 
@@ -63,8 +63,8 @@ GTK owns the main thread; all UI, the registries and Lua run there. Network
 and disk work run on a small tokio runtime. `runtime::background(fut)` runs
 a future on tokio and resolves on the main loop. The challenge solver has a
 thread of its own (QuickJS isn't thread-safe). mpv wakes the main loop from
-its own threads, and the main loop then drains mpv's events; mpv reads live
-streams through `player/live.rs` on its own threads.
+its own threads, and the main loop then drains mpv's events; mpv reads the
+streams through `player/protocol.rs` on its own threads.
 
 ### Startup
 
@@ -188,9 +188,13 @@ destroyed, so handlers don't pile up as lists scroll and pages change.
   (`Resolver::resolve_fresh`: fresh URLs, and a newer player script if
   YouTube has one) and reloads at the same position, once. While a pre-roll
   ad holds the streams back, the player counts it down (`player.waiting`).
-- **Live streams:** mpv opens them as `ytlive://` URLs through libmpv's
-  stream callbacks (`player/live.rs`), which read them with
-  `yt_core::streams::live`. Every segment's answer says which is the newest
+- **Reading the streams:** mpv opens every stream as a `ytstream://` URL
+  through libmpv's stream callbacks (`player/protocol.rs`), which read it
+  with `yt_core::streams::chunked` (seekable, sized from the URL's `clen`)
+  or, live, with `yt_core::streams::live`. A stream that can't be read
+  ends like one at its end, so the reader notes why it gave up and the
+  player reports an error instead of the video ending (no "Up next").
+- **Live streams:** read segment by segment (`yt_core::streams::live`). Every segment's answer says which is the newest
   and where it starts in the stream's time, so the player knows the live
   edge and the window YouTube keeps (`maxDvrDurationSec`, up to 12 hours)
   and shows positions in the stream's own time (`rebase-start-time=no`).

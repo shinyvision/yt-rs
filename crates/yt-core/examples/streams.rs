@@ -57,6 +57,14 @@ async fn main() -> yt_core::Result<()> {
                     set.captions.len(),
                     set.storyboard.as_ref().map_or(0, |s| s.fragments.len()),
                 );
+                println!(
+                    "  YouTube's quality names: {}",
+                    if set.video.label.is_some() {
+                        "yes"
+                    } else {
+                        "no"
+                    }
+                );
                 if std::env::var("SHOW_URL").is_ok() {
                     println!("URL {}", set.video.url);
                     if let Some(audio) = &set.audio {

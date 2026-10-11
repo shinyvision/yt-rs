@@ -3,11 +3,12 @@
 //! [`Player`] owns the mpv instance and lives on the GTK main thread. mpv
 //! wakes it up from its own threads; the player then drains mpv's events on
 //! the main loop, keeps [`PlayerState`] current and tells its listeners.
-//! [`render::RenderContext`] draws the video into textures (`ui::video`).
+//! [`render::RenderContext`] draws the video into textures (`ui::video`);
+//! [`protocol`] reads the streams for mpv.
 
 pub mod gl;
-pub mod live;
 pub mod mpv;
+pub mod protocol;
 pub mod render;
 
 use std::cell::{Cell, RefCell};
@@ -17,8 +18,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use gtk::glib;
 use serde::Serialize;
+use yt_core::streams::chunked::Refresh;
 use yt_core::streams::live::SharedHead;
-use yt_core::streams::{Stream, StreamSet};
+use yt_core::streams::{Resolver, Stream, StreamSet};
 
 use mpv::{EndReason, Event, Format, Mpv, MpvError, PropertyValue, quote};
 
@@ -123,6 +125,8 @@ type Listener = Rc<dyn Fn(&PlayerEvent, &PlayerState)>;
 
 pub struct Player {
     mpv: Arc<Mpv>,
+    /// Looks streams up again when YouTube refuses their URLs.
+    resolver: Arc<Resolver>,
     state: RefCell<PlayerState>,
     /// The streams of the loaded video.
     streams: RefCell<Option<StreamSet>>,
@@ -160,8 +164,8 @@ const EOF_REACHED: u64 = 8;
 const SPEED: u64 = 9;
 
 impl Player {
-    /// `http` fetches live streams' segments.
-    pub fn new(http: reqwest::Client) -> Result<Rc<Self>, MpvError> {
+    /// `http` fetches the streams; `resolver` gets new URLs for them.
+    pub fn new(http: reqwest::Client, resolver: Arc<Resolver>) -> Result<Rc<Self>, MpvError> {
         let mpv = Mpv::create()?;
         for (name, value) in [
             ("vo", "libmpv"),
@@ -195,7 +199,7 @@ impl Player {
             mpv.set_option(name, value)?;
         }
         mpv.initialize()?;
-        live::install(&mpv, http)?;
+        protocol::install(&mpv, http)?;
         // More of mpv's log for looking into a problem: YT_RS_MPV_LOG=v
         // (or debug, trace), shown with YT_RS_LOG=mpv=debug.
         let level = std::env::var("YT_RS_MPV_LOG").unwrap_or_else(|_| "warn".into());
@@ -216,6 +220,7 @@ impl Player {
 
         let player = Rc::new(Self {
             mpv: Arc::new(mpv),
+            resolver,
             state: RefCell::new(PlayerState {
                 volume: 100.0,
                 speed: 1.0,
@@ -290,6 +295,7 @@ impl Player {
             dvr: streams.dvr.unwrap_or(0.0),
         });
         self.captions.borrow_mut().clear();
+        protocol::clear_failure();
         let _ = self.mpv.set_option("loop-file", "no");
         self.emit(PlayerEvent::Loading {
             video_id: video_id.to_owned(),
@@ -314,9 +320,17 @@ impl Player {
             let head = (*l.head.lock().unwrap())?;
             (start > 0.0).then(|| head.segment_at(start, l.segment))
         });
-        let url = |stream: &Stream| match (&session, stream.segment_duration) {
-            (Some(l), Some(_)) => live::url_for(stream, first, l.head.clone()),
-            _ => stream.url.clone(),
+        let url = |stream: &Stream| {
+            let source = match (&session, stream.segment_duration) {
+                (Some(l), Some(_)) => protocol::Source::Live {
+                    start: first,
+                    head: l.head.clone(),
+                },
+                _ => protocol::Source::Chunked {
+                    refresh: self.refresh(stream),
+                },
+            };
+            protocol::url_for(stream, source)
         };
         let mut options = Vec::new();
         if session.is_some() {
@@ -339,6 +353,22 @@ impl Player {
         self.mpv
             .command(&["loadfile", &url(video), "replace", "-1", &options.join(",")])?;
         self.mpv.set_flag("pause", paused)
+    }
+
+    /// Gets a new URL for `stream` of the loaded video: its streams looked
+    /// up again, once YouTube serves them.
+    fn refresh(&self, stream: &Stream) -> Option<Refresh> {
+        let video_id = self.state.borrow().video_id.clone()?;
+        let itag = stream.itag()?;
+        let resolver = self.resolver.clone();
+        Some(Arc::new(move || {
+            let (resolver, video_id) = (resolver.clone(), video_id.clone());
+            Box::pin(async move {
+                let fresh = resolver.resolve_fresh(&video_id).await.ok()?;
+                resolver.until_served(&fresh).await;
+                Some(fresh.by_itag(itag)?.url.clone())
+            })
+        }))
     }
 
     /// The streams of the loaded video.
@@ -764,7 +794,11 @@ impl Player {
                     if !ended {
                         return;
                     }
-                    PlayerEvent::Ended
+                    // A stream that can't be read ends like one at its end.
+                    match protocol::take_failure() {
+                        Some(error) => PlayerEvent::Error(error),
+                        None => PlayerEvent::Ended,
+                    }
                 }
                 _ => return,
             }

@@ -95,8 +95,8 @@ impl App {
         ));
         let images = Images::new(http.clone(), yt_core::paths::cache_dir().join("images"));
         step("services");
-        let player =
-            Player::new(http.clone()).map_err(|e| anyhow::anyhow!("could not start mpv: {e}"))?;
+        let player = Player::new(http.clone(), streams.clone())
+            .map_err(|e| anyhow::anyhow!("could not start mpv: {e}"))?;
         step("mpv");
         let tracker = WatchTracker::new(youtube.clone(), http.clone());
 
