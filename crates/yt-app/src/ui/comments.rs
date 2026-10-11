@@ -248,14 +248,18 @@ fn connect_scrolling(root: &gtk::Box, section: &Rc<Section>) {
         else {
             return;
         };
-        if attached::<Hooked>(&scroller).is_some() {
+        // The page that scrolls outlives its comments (the watch page stays
+        // from one video to the next): its handler loads into whichever
+        // section shows now.
+        if let Some(hooked) = attached::<Hooked>(&scroller) {
+            *hooked.0.borrow_mut() = weak.clone();
             return;
         }
-        attach(&scroller, Rc::new(Hooked));
-        let weak = weak.clone();
+        let hooked = Rc::new(Hooked(RefCell::new(weak.clone())));
+        attach(&scroller, hooked.clone());
         scroller.vadjustment().connect_value_changed(move |adj| {
             if adj.value() + adj.page_size() > adj.upper() - PRELOAD_DISTANCE
-                && let Some(section) = weak.upgrade()
+                && let Some(section) = hooked.0.borrow().upgrade()
             {
                 load_more(&section);
             }
@@ -263,8 +267,8 @@ fn connect_scrolling(root: &gtk::Box, section: &Rc<Section>) {
     });
 }
 
-/// Marks a scrolled window that already loads more comments.
-struct Hooked;
+/// On a scrolled window: the comments section it loads more of.
+struct Hooked(RefCell<Weak<Section>>);
 
 fn reload(section: &Rc<Section>) {
     section.generation.set(section.generation.get() + 1);
