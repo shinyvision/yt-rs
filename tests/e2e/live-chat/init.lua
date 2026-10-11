@@ -44,7 +44,8 @@ local steps = {
       _G.before = shown
       shot("chat")
     end },
-  { 9000, function()
+  -- Top chat leaves much out: a quiet stretch can last a while.
+  { 1000, wait = function() return shown > _G.before end, function()
       check("new messages come in", shown > _G.before, (shown - _G.before) .. " more")
       app.run("chat.set_view", { view = "live" })
     end },
@@ -100,10 +101,19 @@ app.on("app.ready", function()
     i = i + 1
     local step = steps[i]
     if not step then return end
-    app.timer(step[1], function()
+    local function run()
       local ok, err = pcall(step[2])
       if not ok then log("STEP FAILED", i, err) end
       next_step()
+    end
+    app.timer(step[1], function()
+      if not step.wait then return run() end
+      local started = app.now()
+      local function poll()
+        if step.wait() or app.now() - started > 25 then return run() end
+        app.timer(200, poll)
+      end
+      poll()
     end)
   end
   next_step()

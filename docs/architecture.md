@@ -113,6 +113,15 @@ A widget that follows events for as long as it exists (a card, a comment)
 subscribes with `ui::follow`, which unsubscribes when the widget is
 destroyed, so handlers don't pile up as lists scroll and pages change.
 
+A component's state lives on its widget (`ui::attach`) and never holds that
+widget strongly (a `glib::WeakRef`, or just its children): the widget owns
+the state, and a state owning the widget back is a cycle, so the widget
+would never be destroyed and its `follow` handlers would stay. Closures
+that outlive a call (`follow`, signal handlers, timers) hold weak
+references too. `app.stats` counts the handlers per event and the pages
+still alive after the window let them go; `tests/e2e/memory` fails on
+either growing.
+
 - **Grid:** a `GtkGridView`, which only creates cards for what is on screen and
   reuses them while scrolling. More videos load when the end comes near, or
   when the content doesn't fill the view yet.
@@ -174,14 +183,19 @@ destroyed, so handlers don't pile up as lists scroll and pages change.
   Pango links; each link runs the `link.open` command.
 - **Icons** (`icons.rs`): the app ships its own symbolic icons (thumbs, reply,
   pin, ...), since icon themes differ between systems.
-- **Memory:** thumbnails are decoded at display size and the in-memory image
-  cache has a byte budget. On glibc, freed memory is handed back to the
-  system a few seconds after a page change or when playback stops
-  (`runtime::release_memory_soon`).
-- **Player:** mpv draws into a `GtkGLArea` through libmpv's render API
-  (`player/render.rs`). Hardware decoding uses VA-API, with frames shared with
-  OpenGL through the Wayland display. GTK uses its OpenGL renderer, so video
-  frames need no conversion.
+- **Memory:** thumbnails are decoded at the size shown (a card's layout says
+  which) and the in-memory image cache has a byte budget. On glibc, malloc
+  keeps two arenas (set before any thread starts), and freed memory is handed
+  back to the system a few seconds after a page change or when playback
+  stops (`runtime::release_memory_soon`). `tests/e2e/memory` measures it.
+- **Player:** mpv draws through libmpv's render API (`player/render.rs`) into
+  frame buffers of a GL context the app keeps for it, and the `VideoView`
+  widget (`ui/video.rs`) shows the frames as GL textures (`GdkGLTexture`,
+  with fences), so the video moves between the watch page, theater mode and
+  the mini player without its GL context changing. Hardware decoding uses
+  VA-API, with frames shared with OpenGL through the Wayland display. GTK
+  uses its OpenGL renderer, so the frames need no conversion. The renderer
+  goes before mpv when the window closes (`player_dock::shut_down`).
 - **Refused streams:** when the player loads a video but can't open its
   audio, or the video fails to open (YouTube answering 403, say, after a
   player script change), `playback.rs` looks the video up again

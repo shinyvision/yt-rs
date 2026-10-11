@@ -54,7 +54,7 @@ pub fn register(this: &Rc<App>) {
     for (name, hide) in [("chat.hide", true), ("chat.show", false)] {
         c.register(name, move |_| {
             let chat = live_chat::on_screen().ok_or("no live chat on screen")?;
-            live_chat::hide(&chat, hide);
+            live_chat::set_hidden(&chat, hide);
             Ok(Value::Null)
         });
     }

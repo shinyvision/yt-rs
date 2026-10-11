@@ -370,7 +370,8 @@ fn show_hidden(chat: &Chat) {
     chat.show_button.set_visible(hidden);
 }
 
-fn set_hidden(chat: &Rc<Chat>, hide: bool) {
+/// Folds the chat away ("Hide chat") or brings it back, remembered.
+pub fn set_hidden(chat: &Rc<Chat>, hide: bool) {
     app().settings.update(|s| s.live_chat_hidden = hide);
     show_hidden(chat);
     if hide {
@@ -1017,8 +1018,4 @@ pub fn set_height(panel: &gtk::Widget, height: Option<i32>) {
             chat.frame.set_size_request(-1, height);
         }
     }
-}
-
-pub fn hide(chat: &Rc<Chat>, hide: bool) {
-    set_hidden(chat, hide);
 }
