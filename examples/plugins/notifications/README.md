@@ -1,6 +1,6 @@
 # YouTube notifications
 
-The real youtube.com inbox in yt-rs's top bar: uploads, replies, mentions
+The real youtube.com inbox in yt-rs's top bar: likes, uploads, replies, mentions
 and posts returned by YouTube, with an unseen badge, avatars, thumbnails,
 read indicators, more pages and YouTube's own notification actions.
 
@@ -67,9 +67,20 @@ the `SecretStorage` Python dependency in `requirements.txt`.
 ## Behaviour
 
 The inbox belongs to the browser's selected YouTube account, which can
-differ from the account signed into yt-rs. The panel identifies the source
-browser. The helper fetches YouTube's current web-client configuration and
-account context rather than using a fixed client version or the TV token.
+differ from the account signed into yt-rs. While loading, a centered spinner
+shows “Checking your default browser” and then “Fetching notifications from
+<browser>”. The loaded panel has no browser subtitle. The helper fetches
+YouTube's current web-client configuration and account context, then browses
+`FEnotifications_inbox`, the same feed as the website's bell. The older
+`notification/get_notification_menu` inbox can return a different feed.
+
+The panel follows YouTube's 480×642 layout (clamped to smaller windows),
+with its outlined bell, header, row spacing, six-line messages, 48-pixel
+avatars and 86×48 thumbnails. Scrolling to the bottom loads the next page.
+Roboto is bundled under the [SIL Open Font License](fonts/OFL.txt), from
+[Google Fonts](https://github.com/google/fonts/tree/main/ofl/roboto), and
+loaded into the panel's own Pango font map (Pango 1.56+). The icon paths and
+layout measurements follow youtube.com's notification panel.
 
 The unseen count is checked at startup and every three minutes while the
 window is active, with a check on return after that interval. Opening the
@@ -107,6 +118,7 @@ These are registered by the plugin, through the same registries as the app:
 | Event | `notifications.unseen` | `{ count }` |
 | Event | `notifications.read` | `{ id }` |
 | Event | `notifications.failed` | `{ status, message }`, sanitized and safe to display |
+| Event | `notifications.progress` | `{ message }`, browser detection or fetching progress |
 
 Tests: `python3 -m unittest discover -s tests/plugins -v` and the
 `tests/e2e/notifications` plugin; see the [test guide](../../../tests/e2e/README.md).

@@ -126,6 +126,30 @@ class BrowserTests(unittest.TestCase):
 
 
 class ProtocolTests(unittest.TestCase):
+    def test_menu_uses_current_bell_feed_and_reports_progress(self):
+        events = []
+        with patch.dict(browser.os.environ, YT_RS_DRY_RUN="0"), \
+                patch.object(browser, "default_browser", return_value="firefox.desktop"), \
+                patch.object(browser, "browser_cookies"), patch.object(browser, "YouTube") as youtube:
+            youtube.return_value.call.return_value = {"multiPageMenuRenderer": {"sections": []}}
+            result = browser.run({"operation": "menu"}, events.append)
+            self.assertEqual(result["status"], "ok")
+            youtube.return_value.call.assert_called_once_with("browse", {"browseId": "FEnotifications_inbox"})
+        self.assertEqual([event["stage"] for event in events], ["checking_browser", "fetching"])
+        self.assertEqual(events[-1]["browser"], "firefox")
+
+    def test_current_inbox_continuation_stays_on_browse(self):
+        endpoint = {"commandMetadata": {"webCommandMetadata": {"apiUrl": "/youtubei/v1/browse"}},
+                    "continuationCommand": {"token": "new-feed-token", "request": "CONTINUATION_REQUEST_TYPE_BROWSE"}}
+        continuation = browser.action(endpoint)
+        self.assertEqual(continuation, {"endpoint": "browse", "body": {"continuation": "new-feed-token"}})
+        with patch.dict(browser.os.environ, YT_RS_DRY_RUN="0"), \
+                patch.object(browser, "default_browser", return_value="firefox.desktop"), \
+                patch.object(browser, "browser_cookies"), patch.object(browser, "YouTube") as youtube:
+            youtube.return_value.call.return_value = {"appendContinuationItemsAction": {"continuationItems": []}}
+            browser.run({"operation": "more", "action": continuation})
+            youtube.return_value.call.assert_called_once_with("browse", {"continuation": "new-feed-token"})
+
     def test_empty_menu_differs_from_unrecognized_response(self):
         self.assertEqual(browser.parse_menu({"multiPageMenuRenderer": {"sections": []}})["items"], [])
         with self.assertRaises(browser.Notice):

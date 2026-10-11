@@ -1,14 +1,21 @@
 -- Install beside examples/plugins/notifications, under notifications-test.
 -- All requests use a subprocess fixture; no browser/account data is read.
 local _, DIR = ...
+local Gtk = gi.require("Gtk", "4.0")
+local Gdk = gi.require("Gdk", "4.0")
+local original_image = ui.image
+ui.image = function(url, width)
+  if url and url:find("fixture://", 1, true) == 1 then return Gtk.Picture {} end
+  return original_image(url, width)
+end
 local backend = require("notifications.backend")
 local original_request = backend.request
 local mode, signed = "missing", true
 local requests, loaded, unseen, read, opened = {}, nil, nil, nil, nil
-backend.request = function(_, settings, request, done)
+backend.request = function(_, settings, request, done, progress)
   request.fixture_mode = mode
   table.insert(requests, request.operation)
-  return original_request(DIR, settings, request, done)
+  return original_request(DIR, settings, request, done, progress)
 end
 app.hook("social.signed_in", function() return signed end)
 app.api.mpv.set_property("ao", "null")
@@ -20,7 +27,7 @@ app.on("notifications.loaded", function(e) loaded = e end)
 app.on("notifications.unseen", function(e) unseen = e.count end)
 app.on("notifications.read", function(e) read = e.id end)
 app.filter("notifications.page", function(page)
-  for _, item in ipairs(page.items) do item.message = "[filtered] " .. item.message end
+  for _, item in ipairs(page.items) do item.filtered = true end
   return page
 end)
 local passed, failed = 0, 0
@@ -33,6 +40,9 @@ local function pop() return app.find("notifications-popover") end
 local steps = {
   { 800, function()
     check("bell beside account", app.find("notifications-button").visible)
+    local icons = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+    check("YouTube icons available", icons:has_icon("notifications-bell-symbolic") and
+      icons:has_icon("notifications-settings-symbolic") and icons:has_icon("notifications-more-symbolic"))
     check("startup polls count only", #requests == 1 and requests[1] == "count")
     check("sign-in notice badge", app.find(".notification-badge").label == "!")
     app.run("notifications.open")
@@ -43,10 +53,26 @@ local steps = {
     check("opens YouTube in default browser", opened == "https://www.youtube.com/")
     shot("01-sign-in")
   end },
-  { 100, function() mode = "ok"; app.find("notifications-retry"):emit("clicked") end },
+  { 100, function()
+    mode = "ok"; app.find("notifications-retry"):emit("clicked")
+    check("centered loading view", app.find("notifications-loading"):get_mapped())
+    check("checking browser message", app.find("notifications-loading-message").label == "Checking your default browser")
+    shot("loading-browser")
+  end },
+  { 150, function()
+    check("fetching browser message", app.find("notifications-loading-message").label == "Fetching notifications from Firefox")
+    local spinner = app.find("notifications-spinner")
+    check("visible centered spinner", spinner:get_mapped() and spinner:get_width() == 32 and spinner.halign == "center")
+    shot("loading-notifications")
+  end },
   { 500, function()
     check("real menu rows protocol", loaded and #loaded.items == 2)
-    check("plugin filter applies", loaded and loaded.items[1].message:find("[filtered]", 1, true))
+    check("plugin filter applies", loaded and loaded.items[1].filtered)
+    check("loaded content hides loading status", not app.find("notifications-loading"):get_mapped())
+    local label = app.find("notification-upload"):find(".notification-message")
+    check("six-line message limit", label.lines == 6)
+    local panel = pop():get_child()
+    check("YouTube panel dimensions", panel:get_width() == 480 and panel:get_height() == 642)
     check("opening clears unseen badge", unseen == 0 and not app.find(".notification-badge").visible)
     check("unread dot", app.find("notification-upload"):find(".notification-dot").opacity == 1)
     check("read row has no dot", app.find("notification-reply"):find(".notification-dot").opacity == 0)
@@ -101,6 +127,23 @@ local steps = {
   end },
   { 600, function()
     check("context action re-reads inbox", requests[#requests] == "menu" and requests[#requests - 1] == "interact")
+    mode = "geometry"; app.run("notifications.refresh")
+  end },
+  { 500, function()
+    local row = app.find("notification-upload")
+    local message = row:find(".notification-message")
+    local thumb = row:find(".notification-thumbnail")
+    local avatar = row:find(".notification-avatar")
+    local scroll = app.find(".notifications-scroll")
+    check("scrollbar preserves message width", scroll:get_vscrollbar():get_width() == 8 and message:get_width() == 234)
+    check("reference message wraps into five 20px lines", message:get_height() == 100)
+    check("reference row height", row:get_height() == 158)
+    check("reference image sizes", avatar:get_width() == 48 and avatar:get_height() == 48 and
+      thumb:get_width() == 86 and thumb:get_height() == 48)
+    scroll.vadjustment.value = scroll.vadjustment.upper - scroll.vadjustment.page_size
+  end },
+  { 500, function()
+    check("scrolling to bottom fetches continuation", requests[#requests] == "more" and loaded and #loaded.items == 9)
     app.log("[notifications]", string.format("SUMMARY %d passed, %d failed", passed, failed))
     app.quit()
   end },

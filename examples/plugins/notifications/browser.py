@@ -1,7 +1,8 @@
 """The notifications plugin's browser session, isolated from the Rust app.
 
-One JSON request on stdin, one JSON result on stdout. Cookies, page config,
-authorization headers and upstream errors never cross this boundary.
+One JSON request on stdin, progress lines and one JSON result on stdout.
+Cookies, page config, authorization headers and upstream errors never cross
+this boundary.
 """
 
 import contextlib
@@ -313,6 +314,8 @@ def action(endpoint):
         return {"endpoint": "notification/record_interactions", "body": {
             "serializedInteractionsRequest": endpoint["recordNotificationInteractionsEndpoint"]["serializedInteractionsRequest"]}}
     if "continuationCommand" in endpoint:
+        if api == "/youtubei/v1/browse" or endpoint["continuationCommand"].get("request") == "CONTINUATION_REQUEST_TYPE_BROWSE":
+            return {"endpoint": "browse", "body": {"continuation": endpoint["continuationCommand"]["token"]}}
         return {"endpoint": "notification/get_notification_menu", "body": {
             "ctoken": endpoint["continuationCommand"]["token"], "notificationsMenuRequestType": MENU_TYPE}}
     if "getNotificationMenuEndpoint" in endpoint:
@@ -373,17 +376,16 @@ def parse_menu(response):
     if not continuation:
         token = next((item.get("continuation") for item in nodes(response, "nextContinuationData")), None)
         if token:
-            continuation = {"endpoint": "notification/get_notification_menu", "body": {
-                "ctoken": token, "notificationsMenuRequestType": MENU_TYPE}}
+            continuation = {"endpoint": "browse", "body": {"continuation": token}}
     return {"items": items, "continuation": continuation}
 
 
-def run(request):
+def run(request, progress=None):
     operation = request.get("operation", "count")
     if operation not in ("count", "menu", "more", "interact"):
         raise Notice("invalid_request", "Unknown notification request.")
     command = request.get("action") or {}
-    if operation == "more" and command.get("endpoint") != "notification/get_notification_menu":
+    if operation == "more" and command.get("endpoint") not in ("browse", "notification/get_notification_menu"):
         raise Notice("invalid_request", "Invalid notification continuation.")
     if operation == "interact" and command.get("endpoint") not in (
             "notification/record_interactions", "notification/modify_channel_preference"):
@@ -394,7 +396,11 @@ def run(request):
         if operation == "interact":
             return {"status": "ok", "dry_run": True}
         return {"status": "dry_run", "message": "Notification menus are disabled in dry-run mode because opening them marks notifications seen."}
+    if progress:
+        progress({"status": "progress", "stage": "checking_browser"})
     browser = browser_name(default_browser(request.get("desktop", "")))
+    if progress:
+        progress({"status": "progress", "stage": "fetching", "browser": browser})
     youtube = YouTube(browser_cookies(browser, request.get("profile")))
     if operation == "count":
         response = youtube.call("notification/get_unseen_count", {})
@@ -405,7 +411,9 @@ def run(request):
             raise Notice("service_error", "YouTube didn't return a notification count. Try again in a moment.")
         result = {"count": max(0, int(count))}
     elif operation == "menu":
-        result = parse_menu(youtube.call("notification/get_notification_menu", {"notificationsMenuRequestType": MENU_TYPE}))
+        # The current top-bar signal GET_NOTIFICATIONS_INBOX browses this
+        # feed. get_notification_menu's INBOX mode is the old, separate inbox.
+        result = parse_menu(youtube.call("browse", {"browseId": "FEnotifications_inbox"}))
     elif operation == "more":
         result = parse_menu(youtube.call(command["endpoint"], command["body"]))
     else:
@@ -416,14 +424,14 @@ def run(request):
 
 def main():
     try:
-        result = run(json.load(sys.stdin))
+        result = run(json.load(sys.stdin), lambda event: print(json.dumps(event), flush=True))
     except Notice as notice:
         result = {"status": notice.status, "message": notice.message}
     except Exception:
         # No tracebacks here: urllib exceptions can contain authenticated URLs
         # and cookie-reader exceptions can include decrypted data.
         result = {"status": "service_error", "message": "Couldn't load notifications. Update the notifications plugin and yt-dlp, then try again."}
-    print(json.dumps(result))
+    print(json.dumps(result), flush=True)
 
 
 if __name__ == "__main__":
