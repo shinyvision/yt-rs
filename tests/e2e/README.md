@@ -86,12 +86,17 @@ only.
 
 ## Live chat
 
-`live-chat` plays a live stream by its ID alone (`E2E_VIDEO`; pick one live
-now, with its chat on, e.g. from a signed-out search filtered to Live) and
-checks the chat: it shows and fills, new messages come in, Live chat, hide
+`live-chat` plays a live stream by its ID alone (`E2E_VIDEO`: one live now,
+with a busy chat) and checks the chat: it shows and fills, new messages come in, Live chat, hide
 and show, theater mode, nothing asked for off screen (the mini player plays)
 and a fresh start back on the watch page, and the `chat.messages` filter.
 Reads only.
+
+Live streams end within hours, so no fixture lasts: `find-live` (run it
+signed out, `SIGNED_OUT=1`, so its searches stay out of the account's
+history) searches a few topics filtered to Live and prints the streams
+with the fastest chats, in messages a minute. A chat of a few messages a
+minute is too slow for "new messages come in".
 
 ## Memory
 
