@@ -146,7 +146,7 @@ app.command("notifications.activate", function(args)
   if popover then popover:popdown() end
   local target = item.destination or {}
   if target.link then app.run("link.open", { link = target.link })
-  elseif target.url then open_url(target.url) end
+  elseif target.url then app.run("link.open", { link = { kind = "url", url = target.url } }) end
 end)
 app.command("notifications.action", function(args)
   if not args.action then return end

@@ -21,7 +21,10 @@ app.hook("social.signed_in", function() return signed end)
 app.api.mpv.set_property("ao", "null")
 app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
-app.command("link.open", function(args) opened = args.link end)
+-- Exercise the real link router; stop at playback so no video/network starts.
+app.command("video.play", function(args)
+  opened = { kind = "video", video_id = args.video.id, start = args.start }
+end)
 app.command("app.open_url", function(args) opened = args.url end)
 app.on("notifications.loaded", function(e) loaded = e end)
 app.on("notifications.unseen", function(e) unseen = e.count end)
@@ -82,6 +85,7 @@ local steps = {
   { 500, function()
     check("continuation appends and deduplicates", loaded and #loaded.items == 3 and not loaded.first)
     check("last page removes Show more", app.find("notifications-more") == nil)
+    opened = nil
     app.find("notification-upload"):find(".notification-open"):emit("clicked")
     check("upload opens native video", type(opened) == "table" and opened.video_id == "abcdefghijk")
   end },
@@ -90,8 +94,25 @@ local steps = {
     app.run("notifications.open")
   end },
   { 500, function()
+    opened = nil
     app.find("notification-reply"):find(".notification-open"):emit("clicked")
-    check("comment preserves thread URL", type(opened) == "string" and opened:find("lc=comment", 1, true))
+    check("comment notification opens native video", type(opened) == "table" and opened.video_id == "abcdefghijk")
+  end },
+  { 500, function()
+    for _, url in ipairs({
+      "https://www.youtube.com/watch?v=abcdefghijk&lc=comment&t=90",
+      "https://youtu.be/abcdefghijk?t=90",
+      "https://www.youtube.com/shorts/abcdefghijk?t=90",
+      "https://www.youtube.com/live/abcdefghijk?t=90",
+    }) do
+      opened = nil
+      app.run("notifications.activate", { item = { destination = { url = url } } })
+      check("video URL opens native player with timestamp", type(opened) == "table" and
+        opened.video_id == "abcdefghijk" and opened.start == 90)
+    end
+    opened = nil
+    app.run("notifications.activate", { item = { destination = { url = "https://www.youtube.com/post/example" } } })
+    check("unsupported destination retains browser fallback", opened == "https://www.youtube.com/post/example")
   end },
   { 500, function() app.run("notifications.refresh") end },
   { 500, function()

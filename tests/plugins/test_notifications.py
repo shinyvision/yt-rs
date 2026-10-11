@@ -168,7 +168,7 @@ class ProtocolTests(unittest.TestCase):
         self.assertFalse(item["read"])
         self.assertEqual(menu["continuation"]["body"]["ctoken"], "next")
 
-    def test_comments_and_posts_preserve_browser_url(self):
+    def test_comment_and_post_urls_are_preserved_for_link_router(self):
         for url in ("/watch?v=abcdefghijk&lc=comment-id", "/post/post-id"):
             target = browser.destination({"watchEndpoint": {"videoId": "abcdefghijk"},
                                           "commandMetadata": {"webCommandMetadata": {"url": url}}})

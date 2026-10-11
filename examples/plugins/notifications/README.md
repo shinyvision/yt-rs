@@ -85,9 +85,10 @@ layout measurements follow youtube.com's notification panel.
 The unseen count is checked at startup and every three minutes while the
 window is active, with a check on return after that interval. Opening the
 bell fetches the menu and marks notifications seen, as on youtube.com.
-Clicking records the interaction. Video notifications play in yt-rs;
-comment replies and community posts open their exact browser URL because
-the app does not yet display a particular comment thread or community post.
+Clicking records the interaction and uses the app's link router. Video
+notifications, including comment likes and replies, open the video in yt-rs.
+Comment links don't yet scroll to the particular thread. Destinations the
+app doesn't support, such as community posts, open in the browser.
 The gear opens YouTube's notification settings. YouTube's context actions
 are sent only when selected. Sign-out cancels pending work and clears the
 panel; failures have an explicit retry action.

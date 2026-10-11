@@ -334,8 +334,8 @@ def destination(endpoint):
     if not url:
         url = endpoint.get("urlEndpoint", {}).get("url")
     watch = endpoint.get("watchEndpoint", {})
-    # Keep comment IDs and posts in their original URLs: the native watch page
-    # doesn't yet scroll to a particular comment or display community posts.
+    # Preserve comment IDs and post URLs for the app's link router, which
+    # opens supported YouTube destinations in the app.
     if watch.get("videoId") and not watch.get("params") and not (url and ("lc=" in url or "/post/" in url)):
         return {"link": {"kind": "video", "video_id": watch["videoId"], "start": watch.get("startTimeSeconds")}}
     if not url and watch.get("videoId"):
