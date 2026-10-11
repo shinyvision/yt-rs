@@ -289,7 +289,8 @@ label.channel-link:hover { color: var(--yt-text); }
   color: white;
 }
 .player-controls .controls-row { min-height: 48px; }
-.player-controls button {
+.player-controls button.control,
+.player-controls menubutton.control > button {
   color: white;
   background: none;
   min-width: 48px;
@@ -299,7 +300,8 @@ label.channel-link:hover { color: var(--yt-text); }
   box-shadow: none;
   -gtk-icon-size: 24px;
 }
-.player-controls button:hover { background: rgba(255, 255, 255, 0.12); }
+.player-controls button.control:hover,
+.player-controls menubutton.control > button:hover { background: rgba(255, 255, 255, 0.12); }
 .player-controls button.captions.on image { border-bottom: 3px solid var(--yt-accent); padding-bottom: 2px; }
 .player-controls .time { font-size: 13px; font-feature-settings: "tnum"; margin: 0 8px; }
 .player-controls .chapter { font-size: 13px; color: #eee; }
@@ -308,7 +310,8 @@ label.channel-link:hover { color: var(--yt-text); }
 .player-controls .live-dot { min-width: 8px; min-height: 8px; border-radius: 999px; background: #ff0000; }
 .player-controls button.live-button.behind .live-dot { background: #909090; }
 .player-controls button.live-button:not(.behind) { color: white; }
-.player.fullscreen .player-controls button { min-width: 60px; min-height: 60px; -gtk-icon-size: 32px; }
+.player.fullscreen .player-controls button.control,
+.player.fullscreen .player-controls menubutton.control > button { min-width: 60px; min-height: 60px; -gtk-icon-size: 32px; }
 .player.fullscreen .player-controls .time, .player.fullscreen .player-controls .chapter { font-size: 16px; }
 switch.autoplay { margin: 0 8px; min-height: 14px; min-width: 34px; background: rgba(255, 255, 255, 0.3); border-radius: 999px; }
 switch.autoplay:checked { background: rgba(255, 255, 255, 0.85); }

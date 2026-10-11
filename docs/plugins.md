@@ -578,6 +578,8 @@ a playlist page's details), `library.bottom` (the end of the "You" page),
 `halign`, `valign` and margins put it (`halign = "end", valign = "end",
 margin_bottom = 76` is above the controls on the right), and clicks and the
 pointer pass through the rest to the video. Every other slot is a box.
+A button (or menu button) in `player.controls.start` or `.end` with the
+`control` CSS class looks like the player's own.
 
 [SponsorBlock](../examples/plugins/sponsorblock) is a complete plugin using
 most of this: segments on the seek bar, widgets over the video, settings,

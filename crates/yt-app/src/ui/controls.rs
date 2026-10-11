@@ -61,8 +61,11 @@ struct Controls {
 
 pub fn build(_props: &Value) -> gtk::Widget {
     let app = app();
+    // The bar's buttons have the `control` class (as plugins' own can):
+    // the bar's look is for them, not for the buttons in its popovers.
     let button = |icon: &str, tooltip: &str, command: &'static str| {
         let b = gtk::Button::from_icon_name(icon);
+        b.add_css_class("control");
         b.set_tooltip_text(Some(tooltip));
         b.connect_clicked(move |_| run(command, Value::Null));
         b
@@ -116,7 +119,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     live_content.append(&gtk::Label::new(Some("LIVE")));
     let live = gtk::Button::builder()
         .child(&live_content)
-        .css_classes(["live-button"])
+        .css_classes(["control", "live-button"])
         .tooltip_text("Skip ahead to live broadcast")
         .visible(false)
         .build();
@@ -142,7 +145,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let settings = gtk::MenuButton::builder()
         .icon_name("yt-settings-symbolic")
         .tooltip_text("Settings")
-        .css_classes(["player-settings-button"])
+        .css_classes(["control", "player-settings-button"])
         .build();
     settings.set_direction(gtk::ArrowType::Up);
     settings.set_create_popup_func(|button| {
