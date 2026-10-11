@@ -111,6 +111,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         root.add_css_class("compact");
         thumb.set_size_request(COMPACT_WIDTH, -1);
         thumb.set_natural_width(COMPACT_WIDTH);
+        thumb.set_max_width(COMPACT_WIDTH);
         thumb.set_valign(gtk::Align::Start);
         avatar.set_visible(false);
         title.set_lines(2);
@@ -120,6 +121,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         root.add_css_class("list");
         thumb.set_size_request(SHELF_WIDTH, -1);
         thumb.set_natural_width(SHELF_WIDTH);
+        thumb.set_max_width(SHELF_WIDTH);
         thumb.set_valign(gtk::Align::Start);
         avatar.set_visible(false);
         title.set_lines(2);
@@ -127,6 +129,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         root.add_css_class("shelf");
         root.set_size_request(SHELF_WIDTH, -1);
         thumb.set_natural_width(SHELF_WIDTH);
+        thumb.set_max_width(SHELF_WIDTH);
     } else {
         root.set_size_request(320, -1);
     }

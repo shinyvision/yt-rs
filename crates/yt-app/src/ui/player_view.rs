@@ -125,6 +125,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     up_next_picture.set_can_shrink(true);
     let up_next_thumb = super::aspect::AspectBin::new(9.0 / 16.0, &up_next_picture);
     up_next_thumb.set_natural_width(256);
+    up_next_thumb.set_max_width(256);
     up_next_thumb.set_size_request(256, -1);
     up_next_thumb.set_overflow(gtk::Overflow::Hidden);
     up_next_thumb.add_css_class("up-next-picture");

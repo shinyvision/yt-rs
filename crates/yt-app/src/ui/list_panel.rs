@@ -223,6 +223,7 @@ fn factory() -> gtk::SignalListItemFactory {
         thumb.add_css_class("thumb");
         thumb.set_overflow(gtk::Overflow::Hidden);
         thumb.set_natural_width(100);
+        thumb.set_max_width(100);
         thumb.set_size_request(100, -1);
         // Its own height for its width, not the row's.
         thumb.set_valign(gtk::Align::Center);

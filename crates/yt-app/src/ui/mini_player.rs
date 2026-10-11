@@ -39,6 +39,7 @@ struct Mini {
 pub fn build(_props: &Value) -> gtk::Widget {
     let frame = AspectBin::empty(9.0 / 16.0);
     frame.set_natural_width(WIDTH);
+    frame.set_max_width(WIDTH);
     frame.set_size_request(WIDTH, -1);
     super::player_dock::register("mini", &frame);
 
@@ -185,6 +186,7 @@ fn connect(mini: &Rc<Mini>, root: &gtk::Box) {
             let narrow = payload.get("size").and_then(Value::as_str) == Some("narrow");
             let width = if narrow { NARROW_WIDTH } else { WIDTH };
             mini.frame.set_natural_width(width);
+            mini.frame.set_max_width(width);
             mini.frame.set_size_request(width, -1);
         }
     });

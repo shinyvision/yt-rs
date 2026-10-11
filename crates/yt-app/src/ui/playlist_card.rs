@@ -108,6 +108,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         root.add_css_class("shelf");
         root.set_size_request(SHELF_WIDTH, -1);
         thumb.set_natural_width(SHELF_WIDTH);
+        thumb.set_max_width(SHELF_WIDTH);
         // Held to its width in a row (see the video card).
         adw::Clamp::builder()
             .child(&root)

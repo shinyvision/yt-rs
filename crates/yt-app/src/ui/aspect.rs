@@ -135,8 +135,10 @@ impl AspectBin {
     }
 
     /// Asks for no more height than at `width` (0 for no cap): for a bin
-    /// that is never wider than that, so measuring it wider (as boxes do
-    /// when sharing out room) doesn't make it ask for more.
+    /// that is never wider than that (a thumbnail beside text), so being
+    /// measured wider, as a box does while sharing out room, doesn't make
+    /// it ask for more height than its width gives. Without it the box's
+    /// minimum and natural heights disagree and GTK complains every frame.
     pub fn set_max_width(&self, width: i32) {
         if self.imp().max_width.replace(width) != width {
             self.queue_resize();

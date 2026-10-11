@@ -160,6 +160,7 @@ fn row(download: &Download) -> gtk::Widget {
     thumb.add_css_class("thumb");
     thumb.set_overflow(gtk::Overflow::Hidden);
     thumb.set_natural_width(240);
+    thumb.set_max_width(240);
     thumb.set_size_request(240, -1);
     thumb.set_valign(gtk::Align::Start);
 

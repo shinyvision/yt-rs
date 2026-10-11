@@ -252,6 +252,7 @@ fn thumbnail() -> (
     overlay.add_overlay(&watched);
     let thumb = AspectBin::new(9.0 / 16.0, &overlay);
     thumb.set_natural_width(THUMBNAIL_WIDTH);
+    thumb.set_max_width(THUMBNAIL_WIDTH);
     thumb.add_css_class("thumb");
     thumb.add_css_class("search-thumb");
     thumb.set_overflow(gtk::Overflow::Hidden);
@@ -413,6 +414,7 @@ pub fn build_playlist(props: &Value) -> gtk::Widget {
     overlay.add_overlay(&badge);
     let thumb = AspectBin::new(9.0 / 16.0, &overlay);
     thumb.set_natural_width(THUMBNAIL_WIDTH);
+    thumb.set_max_width(THUMBNAIL_WIDTH);
     thumb.add_css_class("thumb");
     thumb.set_overflow(gtk::Overflow::Hidden);
     // The cards stacked behind it.
@@ -655,6 +657,7 @@ fn short_card(video: &SearchVideo) -> gtk::Widget {
     picture.set_can_shrink(true);
     let thumb = AspectBin::new(16.0 / 9.0, &picture);
     thumb.set_natural_width(SHORT_WIDTH);
+    thumb.set_max_width(SHORT_WIDTH);
     thumb.add_css_class("thumb");
     thumb.set_overflow(gtk::Overflow::Hidden);
     let title = text_label("short-title", 2);
