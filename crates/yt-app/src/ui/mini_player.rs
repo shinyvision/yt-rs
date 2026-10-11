@@ -23,7 +23,8 @@ const WIDTH: i32 = 400;
 const NARROW_WIDTH: i32 = 320;
 
 struct Mini {
-    root: gtk::Box,
+    /// The component itself, weakly: it owns this.
+    root: gtk::glib::WeakRef<gtk::Box>,
     previous: gtk::Button,
     balance: gtk::Box,
     list: gtk::Label,
@@ -155,7 +156,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     root.append(&info);
 
     let mini = Rc::new(Mini {
-        root: root.clone(),
+        root: root.downgrade(),
         previous,
         balance,
         list,
@@ -167,19 +168,19 @@ pub fn build(_props: &Value) -> gtk::Widget {
         progress,
     });
     super::attach(&root, mini.clone());
-    connect(&mini);
+    connect(&mini, &root);
     root.upcast()
 }
 
-fn connect(mini: &Rc<Mini>) {
+fn connect(mini: &Rc<Mini>, root: &gtk::Box) {
     let weak = Rc::downgrade(mini);
-    follow(&mini.root, "list.changed", move |_| {
+    follow(root, "list.changed", move |_| {
         if let Some(mini) = weak.upgrade() {
             show_list(&mini);
         }
     });
     let weak = Rc::downgrade(mini);
-    follow(&mini.root, "shell.layout", move |payload| {
+    follow(root, "shell.layout", move |payload| {
         if let Some(mini) = weak.upgrade() {
             let narrow = payload.get("size").and_then(Value::as_str) == Some("narrow");
             let width = if narrow { NARROW_WIDTH } else { WIDTH };
@@ -188,10 +189,12 @@ fn connect(mini: &Rc<Mini>) {
         }
     });
     let weak = Rc::downgrade(mini);
-    follow(&mini.root, "player.docked", move |payload| {
+    follow(root, "player.docked", move |payload| {
         if let Some(mini) = weak.upgrade() {
             let here = payload.get("slot").and_then(Value::as_str) == Some("mini");
-            mini.root.set_visible(here);
+            if let Some(root) = mini.root.upgrade() {
+                root.set_visible(here);
+            }
             if here {
                 show_state(&mini, &app().player.state());
                 show_list(&mini);
@@ -200,7 +203,7 @@ fn connect(mini: &Rc<Mini>) {
     });
     // The title and channel: the card's at first, then the watch page's.
     let weak = Rc::downgrade(mini);
-    follow(&mini.root, "video.opened", move |payload| {
+    follow(root, "video.opened", move |payload| {
         if let Some(mini) = weak.upgrade() {
             let text = |key: &str| {
                 payload
@@ -212,7 +215,7 @@ fn connect(mini: &Rc<Mini>) {
         }
     });
     let weak = Rc::downgrade(mini);
-    follow(&mini.root, "watch.loaded", move |payload| {
+    follow(root, "watch.loaded", move |payload| {
         let Some(mini) = weak.upgrade() else { return };
         if let Some(title) = payload.pointer("/page/title").and_then(Value::as_str) {
             mini.title.set_label(title);
@@ -226,7 +229,7 @@ fn connect(mini: &Rc<Mini>) {
     let weak = Rc::downgrade(mini);
     app().player.connect(move |event, state| {
         let Some(mini) = weak.upgrade() else { return };
-        if !mini.root.is_visible() {
+        if !mini.root.upgrade().is_some_and(|r| r.is_visible()) {
             return;
         }
         match event {

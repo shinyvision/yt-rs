@@ -46,6 +46,17 @@ impl Events {
         }
     }
 
+    /// How many handlers each event has, for finding handlers that outlive
+    /// their widgets.
+    pub fn counts(&self) -> std::collections::BTreeMap<String, usize> {
+        self.handlers
+            .borrow()
+            .iter()
+            .filter(|(_, h)| !h.is_empty())
+            .map(|(name, h)| (name.clone(), h.len()))
+            .collect()
+    }
+
     pub fn has_handlers(&self, name: &str) -> bool {
         self.handlers
             .borrow()

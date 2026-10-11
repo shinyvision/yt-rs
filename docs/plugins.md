@@ -287,6 +287,7 @@ app.commands()                     -- all names
 | `seekbar.clear_ranges` | `{ owner }` |
 | `seekbar.ranges` | → everyone's marks |
 | `app.screenshot` | `{ path }`, a PNG of the window after the next frame, with the popovers open over it (menus, the player's settings) |
+| `app.stats` | → what the app holds, for finding leaks: `{ handlers = { [event] = n }, pages, images, image_bytes }` (each widget following an event has a handler, so counts that keep growing mean widgets that outlive their pages) |
 | `sidebar.toggle`, `window.toggle_fullscreen` | |
 | `window.fullscreen` | `{ fullscreen }` |
 | `feed.refresh` | |

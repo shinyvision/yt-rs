@@ -15,7 +15,8 @@ use crate::app::app;
 
 struct Page {
     list: gtk::Box,
-    stack: gtk::Stack,
+    /// The page itself, weakly: it owns this.
+    stack: gtk::glib::WeakRef<gtk::Stack>,
 }
 
 pub fn build(_props: &Value) -> gtk::Widget {
@@ -49,7 +50,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     stack.set_widget_name("page-downloads");
     let page = Rc::new(Page {
         list,
-        stack: stack.clone(),
+        stack: stack.downgrade(),
     });
     attach(&stack, page.clone());
     let weak = Rc::downgrade(&page);
@@ -79,11 +80,13 @@ fn fill(page: &Page) {
         page.list.remove(&child);
     }
     let downloads = crate::downloads::list();
-    page.stack.set_visible_child_name(if downloads.is_empty() {
-        "empty"
-    } else {
-        "list"
-    });
+    if let Some(stack) = page.stack.upgrade() {
+        stack.set_visible_child_name(if downloads.is_empty() {
+            "empty"
+        } else {
+            "list"
+        });
+    }
     for download in downloads {
         page.list.append(&row(&download));
     }

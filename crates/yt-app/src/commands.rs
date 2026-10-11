@@ -66,6 +66,19 @@ pub fn register(this: &Rc<App>) {
         live_chat::set_view(&chat, view);
         Ok(Value::Null)
     });
+    // What the app holds, for finding leaks: event handlers by event (each
+    // widget following an event has one), pages, images in memory.
+    c.register("app.stats", |_| {
+        let app = app();
+        let (images, image_bytes) = app.images.in_memory();
+        Ok(json!({
+            "handlers": app.ext.events.counts(),
+            "pages": app.pages_held(),
+            "leaked_pages": app.pages_alive(),
+            "images": images,
+            "image_bytes": image_bytes,
+        }))
+    });
     c.register("app.shortcuts", |_| {
         crate::ui::shortcuts::present();
         Ok(Value::Null)

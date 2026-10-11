@@ -26,7 +26,8 @@ const SIDEBAR_WIDTH: f64 = 240.0;
 
 struct Shell {
     /// The drawer, over everything.
-    drawer: adw::OverlaySplitView,
+    /// The shell itself, weakly: it owns this.
+    drawer: gtk::glib::WeakRef<adw::OverlaySplitView>,
     /// Dims the window while the drawer is open; a click closes it.
     scrim: gtk::Box,
     /// The full sidebar, docked beside the pages.
@@ -41,6 +42,13 @@ struct Shell {
     /// choice with ☰.
     full: Cell<bool>,
     fullscreen: Cell<bool>,
+}
+
+impl Shell {
+    /// The shell's own widget (gone only as the window closes).
+    fn drawer(&self) -> Option<adw::OverlaySplitView> {
+        self.drawer.upgrade()
+    }
 }
 
 pub fn build(_props: &Value) -> gtk::Widget {
@@ -101,7 +109,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     drawer.set_widget_name("shell");
 
     let shell = Rc::new(Shell {
-        drawer: drawer.clone(),
+        drawer: drawer.downgrade(),
         scrim,
         guide,
         rail,
@@ -117,7 +125,9 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let weak = Rc::downgrade(&shell);
     drawer.connect_show_sidebar_notify(move |_| {
         if let Some(shell) = weak.upgrade() {
-            shell.scrim.set_visible(shell.drawer.shows_sidebar());
+            shell
+                .scrim
+                .set_visible(shell.drawer().is_some_and(|d| d.shows_sidebar()));
         }
     });
 
@@ -164,7 +174,9 @@ pub fn build(_props: &Value) -> gtk::Widget {
         shell
             .watch
             .set(payload.get("page").and_then(Value::as_str) == Some("watch"));
-        shell.drawer.set_show_sidebar(false);
+        if let Some(drawer) = shell.drawer() {
+            drawer.set_show_sidebar(false);
+        }
         layout(&shell);
     });
     // In fullscreen only the page (the video) is shown.
@@ -177,7 +189,9 @@ pub fn build(_props: &Value) -> gtk::Widget {
                 .and_then(Value::as_bool)
                 .unwrap_or(false),
         );
-        shell.drawer.set_show_sidebar(false);
+        if let Some(drawer) = shell.drawer() {
+            drawer.set_show_sidebar(false);
+        }
         layout(&shell);
     });
     drawer.upcast()
@@ -191,7 +205,9 @@ pub fn toggle_sidebar() {
         shell.full.set(!shell.full.get());
         layout(&shell);
     } else {
-        shell.drawer.set_show_sidebar(!shell.drawer.shows_sidebar());
+        if let Some(drawer) = shell.drawer() {
+            drawer.set_show_sidebar(!shell.drawer().is_some_and(|d| d.shows_sidebar()));
+        }
     }
     announce(&shell);
 }
@@ -199,9 +215,11 @@ pub fn toggle_sidebar() {
 /// Closes the drawer; false if it wasn't open.
 pub fn close_drawer() -> bool {
     let Some(shell) = find() else { return false };
-    let open = shell.drawer.shows_sidebar();
+    let open = shell.drawer().is_some_and(|d| d.shows_sidebar());
     if open {
-        shell.drawer.set_show_sidebar(false);
+        if let Some(drawer) = shell.drawer() {
+            drawer.set_show_sidebar(false);
+        }
         announce(&shell);
     }
     open
@@ -212,7 +230,7 @@ fn announce(shell: &Shell) {
         "sidebar.toggled",
         &json!({
             "mini": docked(shell) && !shell.full.get(),
-            "drawer": shell.drawer.shows_sidebar(),
+            "drawer": shell.drawer().is_some_and(|d| d.shows_sidebar()),
         }),
     );
 }
@@ -232,7 +250,9 @@ fn layout(shell: &Shell) {
     let fullscreen = shell.fullscreen.get();
     let docked = docked(shell);
     if docked {
-        shell.drawer.set_show_sidebar(false);
+        if let Some(drawer) = shell.drawer() {
+            drawer.set_show_sidebar(false);
+        }
     }
     shell.topbar.set_visible(!fullscreen);
     let full_docked = docked && shell.full.get();

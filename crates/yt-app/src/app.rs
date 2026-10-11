@@ -76,6 +76,9 @@ struct NavState {
     /// Where Forward goes after going back, most recent last.
     forward: Vec<(String, Value)>,
     kept: HashMap<String, gtk::Widget>,
+    /// Every page made, weakly, by name: one still alive after leaving the
+    /// window has leaked (see `pages_alive`).
+    built: Vec<(String, glib::WeakRef<gtk::Widget>)>,
 }
 
 impl App {
@@ -292,6 +295,11 @@ impl App {
                 }
                 let w = self.ext.components.build(component, &args);
                 self.page_host.add_named(&w, Some(page));
+                {
+                    let mut nav = self.nav.borrow_mut();
+                    nav.built.retain(|(_, weak)| weak.upgrade().is_some());
+                    nav.built.push((page.to_owned(), w.downgrade()));
+                }
                 if info.keep {
                     self.nav
                         .borrow_mut()
@@ -342,6 +350,42 @@ impl App {
                 self.page_host.remove(&w);
             }
         }
+    }
+
+    /// The pages still alive, by name, though the window no longer holds
+    /// them: leaked (something holds them strongly).
+    pub fn pages_alive(&self) -> Vec<String> {
+        let held: Vec<gtk::Widget> = {
+            let mut held = Vec::new();
+            let mut child = self.page_host.first_child();
+            while let Some(page) = child {
+                child = page.next_sibling();
+                held.push(page);
+            }
+            held
+        };
+        self.nav
+            .borrow()
+            .built
+            .iter()
+            .filter_map(|(name, weak)| {
+                weak.upgrade()
+                    .filter(|w| !held.contains(w))
+                    .map(|_| name.clone())
+            })
+            .collect()
+    }
+
+    /// The pages the window holds (the one on screen, kept ones, and one
+    /// fading out).
+    pub fn pages_held(&self) -> usize {
+        let mut count = 0;
+        let mut child = self.page_host.first_child();
+        while let Some(page) = child {
+            count += 1;
+            child = page.next_sibling();
+        }
+        count
     }
 
     pub fn back(&self) -> bool {

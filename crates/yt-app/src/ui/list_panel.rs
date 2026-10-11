@@ -21,7 +21,8 @@ use crate::lists::List;
 const MAX_HEIGHT: i32 = 400;
 
 struct Panel {
-    root: gtk::Box,
+    /// The component itself, weakly: it owns this.
+    root: gtk::glib::WeakRef<gtk::Box>,
     title: gtk::Label,
     subtitle: gtk::Label,
     looping: gtk::ToggleButton,
@@ -105,7 +106,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     root.append(&body);
 
     let panel = Rc::new(Panel {
-        root: root.clone(),
+        root: root.downgrade(),
         title,
         subtitle,
         looping,
@@ -117,14 +118,14 @@ pub fn build(_props: &Value) -> gtk::Widget {
         showing: Cell::new(false),
     });
     attach(&root, panel.clone());
-    connect(&panel);
+    connect(&panel, &root);
     show(&panel, crate::lists::current().as_ref());
     root.upcast()
 }
 
-fn connect(panel: &Rc<Panel>) {
+fn connect(panel: &Rc<Panel>, root: &gtk::Box) {
     let weak = Rc::downgrade(panel);
-    follow(&panel.root, "list.changed", move |_| {
+    follow(root, "list.changed", move |_| {
         if let Some(panel) = weak.upgrade() {
             show(&panel, crate::lists::current().as_ref());
         }
@@ -161,10 +162,14 @@ fn connect(panel: &Rc<Panel>) {
 
 fn show(panel: &Panel, list: Option<&List>) {
     let Some(list) = list else {
-        panel.root.set_visible(false);
+        if let Some(root) = panel.root.upgrade() {
+            root.set_visible(false);
+        }
         return;
     };
-    panel.root.set_visible(true);
+    if let Some(root) = panel.root.upgrade() {
+        root.set_visible(true);
+    }
     panel.showing.set(true);
     panel.title.set_label(&list.title);
     let place = format!("{} / {}", list.position + 1, list.order.len());

@@ -23,7 +23,8 @@ struct ChannelView {
     key: RefCell<ChannelKey>,
     page: RefCell<Option<ChannelPage>>,
     generation: Cell<u64>,
-    content: gtk::Stack,
+    /// The page itself, weakly: it owns this view.
+    content: gtk::glib::WeakRef<gtk::Stack>,
     status: adw::StatusPage,
     banner: gtk::Picture,
     banner_frame: gtk::Revealer,
@@ -131,7 +132,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         key: RefCell::default(),
         page: RefCell::default(),
         generation: Cell::new(0),
-        content: content.clone(),
+        content: content.downgrade(),
         status,
         banner,
         banner_frame,
@@ -170,7 +171,12 @@ fn load(view: &Rc<ChannelView>, props: &Value) {
         key.id.is_some() && key.id == c.id || key.handle.is_some() && key.handle == c.handle
     });
     let loading = *view.key.borrow() == key
-        && view.content.visible_child_name().as_deref() == Some("loading");
+        && view
+            .content
+            .upgrade()
+            .and_then(|c| c.visible_child_name())
+            .as_deref()
+            == Some("loading");
     if same || loading {
         return;
     }
@@ -178,7 +184,7 @@ fn load(view: &Rc<ChannelView>, props: &Value) {
     view.page.borrow_mut().take();
     view.generation.set(view.generation.get() + 1);
     let generation = view.generation.get();
-    view.content.set_visible_child_name("loading");
+    show_content(view, "loading");
     let weak = Rc::downgrade(view);
     runtime::spawn_local(async move {
         let result = social::load_channel(key).await;
@@ -190,7 +196,7 @@ fn load(view: &Rc<ChannelView>, props: &Value) {
             Err(e) => {
                 view.status.set_title("Couldn't load the channel");
                 view.status.set_description(Some(&e));
-                view.content.set_visible_child_name("status");
+                show_content(&view, "status");
             }
         }
     });
@@ -291,7 +297,7 @@ fn fill(view: &Rc<ChannelView>, page: ChannelPage) {
     *view.page.borrow_mut() = Some(page);
     // Shown first: the feed must be on screen when it fills, or the grid
     // keeps a stale scroll position.
-    view.content.set_visible_child_name("channel");
+    show_content(view, "channel");
     show_tab(view, &channel_id, &tabs[0]);
 }
 
@@ -336,6 +342,12 @@ fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
         }
     }
     set_folded(view, false);
+}
+
+fn show_content(view: &ChannelView, name: &str) {
+    if let Some(content) = view.content.upgrade() {
+        content.set_visible_child_name(name);
+    }
 }
 
 /// Folds the banner and description away when the user scrolls the videos

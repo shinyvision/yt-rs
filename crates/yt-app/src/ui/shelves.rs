@@ -24,7 +24,8 @@ const PRELOAD_DISTANCE: f64 = 600.0;
 struct Shelves {
     browse_id: RefCell<String>,
     column: gtk::Box,
-    scroller: gtk::ScrolledWindow,
+    /// The component itself, weakly: it owns this.
+    scroller: gtk::glib::WeakRef<gtk::ScrolledWindow>,
     on_channel: bool,
     continuation: RefCell<Option<String>>,
     loading: std::cell::Cell<bool>,
@@ -44,7 +45,7 @@ pub fn build(props: &Value) -> gtk::Widget {
     let shelves = Rc::new(Shelves {
         browse_id: RefCell::default(),
         column,
-        scroller: scroller.clone(),
+        scroller: scroller.downgrade(),
         on_channel: props.get("on_channel").and_then(Value::as_bool) == Some(true),
         continuation: RefCell::default(),
         loading: Default::default(),
@@ -75,7 +76,9 @@ fn fill(shelves: &Rc<Shelves>, props: &Value) {
     while let Some(row) = shelves.column.first_child() {
         shelves.column.remove(&row);
     }
-    shelves.scroller.vadjustment().set_value(0.0);
+    if let Some(scroller) = shelves.scroller.upgrade() {
+        scroller.vadjustment().set_value(0.0);
+    }
     *shelves.browse_id.borrow_mut() = props
         .get("browse_id")
         .and_then(Value::as_str)

@@ -156,6 +156,11 @@ impl Images {
         });
     }
 
+    /// The decoded images kept in memory: how many, and their bytes.
+    pub fn in_memory(&self) -> (usize, usize) {
+        (self.memory.borrow().len(), self.memory_bytes.get())
+    }
+
     fn cached(&self, key: &str) -> Option<gdk::Texture> {
         let tick = self.tick();
         let mut memory = self.memory.borrow_mut();

@@ -61,7 +61,8 @@ struct State {
 
 pub struct Chat {
     state: RefCell<State>,
-    root: gtk::Box,
+    /// The component itself, weakly: it owns this.
+    root: gtk::glib::WeakRef<gtk::Box>,
     frame: gtk::Box,
     show_button: gtk::Button,
     view_label: gtk::Label,
@@ -188,7 +189,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
             stick: true,
             ..State::default()
         }),
-        root: root.clone(),
+        root: root.downgrade(),
         frame,
         show_button: show_button.clone(),
         view_label,
@@ -280,7 +281,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
         }
     });
 
-    follow_video(&chat);
+    follow_video(&chat, &root);
     // The video playing when the page was made.
     if let Some(video) = crate::playback::current() {
         let mut state = chat.state.borrow_mut();
@@ -293,9 +294,9 @@ pub fn build(_props: &Value) -> gtk::Widget {
 
 /// Follows the video on screen: which it is, its channel, whether it is
 /// live.
-fn follow_video(chat: &Rc<Chat>) {
+fn follow_video(chat: &Rc<Chat>, root: &gtk::Box) {
     let weak = Rc::downgrade(chat);
-    follow(&chat.root, "video.opened", move |payload| {
+    follow(root, "video.opened", move |payload| {
         let Some(chat) = weak.upgrade() else { return };
         let video = payload.get("video").cloned().unwrap_or_default();
         let id = video.get("id").and_then(Value::as_str).unwrap_or_default();
@@ -316,7 +317,7 @@ fn follow_video(chat: &Rc<Chat>) {
         start(&chat);
     });
     let weak = Rc::downgrade(chat);
-    follow(&chat.root, "watch.loaded", move |payload| {
+    follow(root, "watch.loaded", move |payload| {
         let Some(chat) = weak.upgrade() else { return };
         if payload.get("video_id").and_then(Value::as_str)
             != Some(chat.state.borrow().video_id.as_str())
@@ -336,7 +337,7 @@ fn follow_video(chat: &Rc<Chat>) {
     for event in ["player.loaded", "player.upcoming"] {
         let weak = Rc::downgrade(chat);
         let upcoming = event == "player.upcoming";
-        follow(&chat.root, event, move |payload| {
+        follow(root, event, move |payload| {
             let Some(chat) = weak.upgrade() else { return };
             let ours = payload.get("video_id").and_then(Value::as_str)
                 == Some(chat.state.borrow().video_id.as_str());
@@ -354,7 +355,9 @@ fn follow_video(chat: &Rc<Chat>) {
 /// and mapping starts the chat.
 fn refresh_visible(chat: &Chat) {
     let live = chat.state.borrow().live;
-    chat.root.set_visible(live);
+    if let Some(root) = chat.root.upgrade() {
+        root.set_visible(live);
+    }
 }
 
 fn hidden() -> bool {
@@ -444,7 +447,11 @@ pub fn set_view(chat: &Rc<Chat>, view: ChatView) {
 fn start(chat: &Rc<Chat>) {
     let (token, generation) = {
         let mut state = chat.state.borrow_mut();
-        if state.running || !state.live || hidden() || !chat.root.is_mapped() {
+        if state.running
+            || !state.live
+            || hidden()
+            || !chat.root.upgrade().is_some_and(|r| r.is_mapped())
+        {
             return;
         }
         let Some(channel) = state.channel_id.clone() else {

@@ -92,3 +92,14 @@ checks the chat: it shows and fills, new messages come in, Live chat, hide
 and show, theater mode, nothing asked for off screen (the mini player plays)
 and a fresh start back on the watch page, and the `chat.messages` filter.
 Reads only.
+
+## Memory
+
+`memory` goes round the same pages (Home, a video, its channel, a search,
+Playlists, Home) `E2E_ROUNDS` times (10 by default) and logs, after each
+round, the RSS, the PSS (its share of shared pages: GPU drivers are mapped
+by every GL program) and the private dirty memory (what only the app wrote:
+heap, buffers, caches), with a breakdown by mapping at the start, after the
+first round and after the last. Private dirty memory that keeps growing
+round after round is a leak; caches stop growing at their limits. Run it
+signed out (`SIGNED_OUT=1`): it searches "hello" every round.

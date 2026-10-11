@@ -12,7 +12,8 @@ use super::{attach, follow};
 use crate::app::app;
 
 struct SubscribeButton {
-    button: gtk::Button,
+    /// The button itself, weakly: it owns this.
+    button: gtk::glib::WeakRef<gtk::Button>,
     subscription: RefCell<Subscription>,
     channel_name: String,
     busy: Cell<bool>,
@@ -28,7 +29,7 @@ pub fn build(props: &Value) -> gtk::Widget {
     button.add_css_class("subscribe-button");
     button.add_css_class("pill-button");
     let this = Rc::new(SubscribeButton {
-        button: button.clone(),
+        button: button.downgrade(),
         subscription: RefCell::new(subscription),
         channel_name: props
             .get("channel_name")
@@ -74,27 +75,32 @@ pub fn build(props: &Value) -> gtk::Widget {
 }
 
 fn show(this: &SubscribeButton) {
+    let Some(button) = this.button.upgrade() else {
+        return;
+    };
     if this.subscription.borrow().subscribed {
         let content = adw::ButtonContent::builder()
             .icon_name("yt-bell-symbolic")
             .label("Subscribed")
             .build();
-        this.button.set_child(Some(&content));
-        this.button.add_css_class("subscribed");
+        button.set_child(Some(&content));
+        button.add_css_class("subscribed");
     } else {
-        this.button.set_label("Subscribe");
-        this.button.remove_css_class("subscribed");
+        button.set_label("Subscribe");
+        button.remove_css_class("subscribed");
     }
-    this.button
-        .set_sensitive(!this.busy.get() && !this.subscription.borrow().channel_id.is_empty());
+    button.set_sensitive(!this.busy.get() && !this.subscription.borrow().channel_id.is_empty());
 }
 
 fn clicked(this: &Rc<SubscribeButton>) {
+    let Some(button) = this.button.upgrade() else {
+        return;
+    };
     if this.subscription.borrow().subscribed {
         // Unsubscribing asks first, as on youtube.com.
         let weak = Rc::downgrade(this);
         super::dialog::confirm(
-            &this.button,
+            &button,
             &json!({
                 "title": format!("Unsubscribe from {}?", this.channel_name),
                 "confirm": "Unsubscribe",
