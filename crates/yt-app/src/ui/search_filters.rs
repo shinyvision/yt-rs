@@ -127,11 +127,18 @@ pub fn build(props: &Value) -> gtk::Widget {
         columns.append(&build_section(section, &query, &filters));
     }
 
+    // Taller than a small window, the sections scroll under the header.
+    let scroller = gtk::ScrolledWindow::builder()
+        .child(&columns)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .propagate_natural_height(true)
+        .vexpand(true)
+        .build();
     let root = gtk::Box::new(gtk::Orientation::Vertical, 16);
     root.add_css_class("yt-dialog-content");
     root.add_css_class("search-filters");
     root.append(&header);
-    root.append(&columns);
+    root.append(&scroller);
     root.upcast()
 }
 

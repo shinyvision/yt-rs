@@ -263,7 +263,9 @@ fn connect(this: &Rc<SearchBox>, root: &gtk::Box, button: &gtk::Button) {
             .unwrap_or_default();
         let text = match page {
             "search" => payload.pointer("/args/query").and_then(Value::as_str),
-            "home" | "subscriptions" | "history" => Some(""),
+            "home" | "subscriptions" | "history" | "library" | "playlists" | "downloads" => {
+                Some("")
+            }
             _ => None,
         };
         if let Some(text) = text {

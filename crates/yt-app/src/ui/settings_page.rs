@@ -11,6 +11,10 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let page = adw::PreferencesPage::new();
     page.set_widget_name("page-settings");
     page.add_css_class("settings-page");
+    // The page's heading: a group with a title and no rows.
+    let heading = adw::PreferencesGroup::builder().title("Settings").build();
+    heading.add_css_class("settings-heading");
+    page.add(&heading);
     page.add(&playback());
     page.add(&downloads());
     let sections = app()
@@ -19,6 +23,10 @@ pub fn build(_props: &Value) -> gtk::Widget {
         .create("settings.sections", gtk::Orientation::Vertical, 24);
     let group = adw::PreferencesGroup::new();
     group.add(&sections);
+    // Without plugins' sections, no gap where they would be.
+    group.set_visible(sections.first_child().is_some());
+    let slot = group.clone();
+    page.connect_map(move |_| slot.set_visible(sections.first_child().is_some()));
     page.add(&group);
     page.add(&account());
     page.add(&about());
@@ -96,10 +104,10 @@ fn locale_language() -> String {
 
 /// The qualities offered for downloads: (name, the highest height).
 const DOWNLOAD_QUALITIES: &[(&str, Option<u32>)] = &[
-    ("Highest (up to 1080p)", None),
+    ("Best", None),
     ("720p", Some(720)),
     ("480p", Some(480)),
-    ("360p (least space)", Some(360)),
+    ("360p", Some(360)),
 ];
 
 fn downloads() -> adw::PreferencesGroup {
@@ -107,7 +115,7 @@ fn downloads() -> adw::PreferencesGroup {
     let names: Vec<&str> = DOWNLOAD_QUALITIES.iter().map(|(n, _)| *n).collect();
     let row = adw::ComboRow::builder()
         .title("Quality")
-        .subtitle("How sharp downloaded videos are; the sharper, the more space they take")
+        .subtitle("Sharper videos take more space")
         .model(&gtk::StringList::new(&names))
         .build();
     let current = app().settings.get().download_height;
@@ -173,11 +181,14 @@ fn about() -> adw::PreferencesGroup {
         ))
         .build();
     group.add(&version);
+    let key = gtk::Label::new(Some("?"));
+    key.add_css_class("keycap");
+    key.set_valign(gtk::Align::Center);
     let shortcuts = adw::ActionRow::builder()
         .title("Keyboard shortcuts")
-        .subtitle("?")
         .activatable(true)
         .build();
+    shortcuts.add_suffix(&key);
     shortcuts.add_suffix(&gtk::Image::from_icon_name("yt-chevron-right-symbolic"));
     shortcuts.connect_activated(|_| run("app.shortcuts", Value::Null));
     group.add(&shortcuts);

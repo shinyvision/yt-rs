@@ -38,24 +38,34 @@ pub fn present() {
     }
     let column = gtk::Box::new(gtk::Orientation::Vertical, 24);
     column.add_css_class("shortcuts");
-    for (_, (title, mut rows)) in scopes {
-        rows.sort();
-        rows.dedup();
+    for (_, (title, rows)) in scopes {
+        // One line for what a command does, with every key that does it.
+        let mut lines: BTreeMap<String, Vec<String>> = BTreeMap::new();
+        for (what, keys) in rows {
+            let line = lines.entry(what).or_default();
+            if !line.contains(&keys) {
+                line.push(keys);
+            }
+        }
         let group = gtk::Box::new(gtk::Orientation::Vertical, 4);
         let heading = gtk::Label::new(Some(&title));
         heading.add_css_class("shortcuts-heading");
         heading.set_xalign(0.0);
         group.append(&heading);
-        for (what, keys) in rows {
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 16);
+        for (what, keys) in lines {
+            let row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
             row.add_css_class("shortcut");
             let label = gtk::Label::new(Some(&what));
             label.set_xalign(0.0);
             label.set_hexpand(true);
-            let key = gtk::Label::new(Some(&keys));
-            key.add_css_class("keycap");
+            label.set_margin_end(10);
             row.append(&label);
-            row.append(&key);
+            for keys in keys {
+                let key = gtk::Label::new(Some(&keys));
+                key.add_css_class("keycap");
+                key.set_valign(gtk::Align::Center);
+                row.append(&key);
+            }
             group.append(&row);
         }
         column.append(&group);
@@ -108,7 +118,10 @@ fn key_name(accel: &str) -> String {
         Some("comma") => ",".to_owned(),
         Some("slash") => "/".to_owned(),
         Some("question") => "?".to_owned(),
-        Some(other) if other.chars().count() == 1 => other.to_uppercase(),
+        // A letter as on the key with a modifier ("Ctrl+Q"), as typed
+        // without one ("k"; "Shift+N" says Shift).
+        Some(other) if other.chars().count() == 1 && !parts.is_empty() => other.to_uppercase(),
+        Some(other) if other.chars().count() == 1 => other.to_lowercase(),
         Some(other) => other.to_owned(),
         None => accel.to_owned(),
     };

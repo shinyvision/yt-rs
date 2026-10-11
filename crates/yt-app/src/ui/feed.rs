@@ -125,13 +125,15 @@ pub fn build(props: &Value) -> gtk::Widget {
         heading.add_css_class("page-title");
         heading.add_css_class("feed-title");
         heading.set_xalign(0.0);
-        root.append(
-            &adw::Clamp::builder()
-                .child(&heading)
-                .maximum_size(1096)
-                .tightening_threshold(1096)
-                .build(),
-        );
+        // The margins outside the clamp, as the list's padding is.
+        let clamp = adw::Clamp::builder()
+            .child(&heading)
+            .maximum_size(1096)
+            .tightening_threshold(1096)
+            .margin_start(24)
+            .margin_end(24)
+            .build();
+        root.append(&clamp);
     }
     root.append(&chips);
     root.append(

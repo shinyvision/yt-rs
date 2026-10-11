@@ -692,4 +692,5 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .video-list > child { padding: 0 0 16px 0; }
 .video-card.list .title { font-size: 18px; font-weight: 400; }
 .video-card.list .meta { font-size: 12px; }
-.feed-title { margin: 24px 24px 8px 24px; }
+.feed-title { margin: 24px 0 8px 0; }
+.settings-heading label { font-size: 28px; font-weight: 700; }
