@@ -26,6 +26,10 @@ pub struct Settings {
     /// The captions language, while captions are on.
     pub captions: Option<String>,
     pub stable_volume: bool,
+    /// The highest a download is (720 for "720p"); `None` for as high as
+    /// the player goes.
+    #[serde(default)]
+    pub download_height: Option<u32>,
 }
 
 impl Default for Settings {
@@ -37,6 +41,7 @@ impl Default for Settings {
             theater: false,
             captions: None,
             stable_volume: false,
+            download_height: None,
         }
     }
 }

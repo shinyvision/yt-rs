@@ -169,6 +169,8 @@ fn start(video: Video, quality: Option<String>) {
             Ok(streams) => streams,
             Err(e) => return finish(&id, Err(format!("Couldn't download: {e}"))),
         };
+        // The quality asked for, or the best within the Settings' limit.
+        let limit = app.settings.get().download_height;
         let chosen = quality
             .as_deref()
             .and_then(|q| {
@@ -176,6 +178,13 @@ fn start(video: Video, quality: Option<String>) {
                     .qualities
                     .iter()
                     .find(|s| s.quality_label().as_deref() == Some(q))
+            })
+            .or_else(|| {
+                let limit = limit?;
+                streams
+                    .qualities
+                    .iter()
+                    .find(|s| s.height.is_some_and(|h| h <= limit))
             })
             .unwrap_or(&streams.video)
             .clone();

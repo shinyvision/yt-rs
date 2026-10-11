@@ -12,6 +12,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     page.set_widget_name("page-settings");
     page.add_css_class("settings-page");
     page.add(&playback());
+    page.add(&downloads());
     let sections = app()
         .ext
         .slots
@@ -91,6 +92,39 @@ fn locale_language() -> String {
         None if tag.is_empty() || tag == "POSIX" => "en".to_owned(),
         None => tag.to_owned(),
     }
+}
+
+/// The qualities offered for downloads: (name, the highest height).
+const DOWNLOAD_QUALITIES: &[(&str, Option<u32>)] = &[
+    ("Highest (up to 1080p)", None),
+    ("720p", Some(720)),
+    ("480p", Some(480)),
+    ("360p (least space)", Some(360)),
+];
+
+fn downloads() -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder().title("Downloads").build();
+    let names: Vec<&str> = DOWNLOAD_QUALITIES.iter().map(|(n, _)| *n).collect();
+    let row = adw::ComboRow::builder()
+        .title("Quality")
+        .subtitle("How sharp downloaded videos are; the sharper, the more space they take")
+        .model(&gtk::StringList::new(&names))
+        .build();
+    let current = app().settings.get().download_height;
+    row.set_selected(
+        DOWNLOAD_QUALITIES
+            .iter()
+            .position(|(_, h)| *h == current)
+            .unwrap_or(0) as u32,
+    );
+    row.connect_selected_notify(|row| {
+        let height = DOWNLOAD_QUALITIES
+            .get(row.selected() as usize)
+            .and_then(|(_, h)| *h);
+        app().settings.update(|s| s.download_height = height);
+    });
+    group.add(&row);
+    group
 }
 
 fn account() -> adw::PreferencesGroup {
