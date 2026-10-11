@@ -306,7 +306,7 @@ mod mpris {
                 (loaded && (state.duration > 0.0 || state.live.is_some())).to_variant()
             }
             (_, "CanControl") => true.to_variant(),
-            _ => Variant::from_none(&glib::VariantTy::VARIANT),
+            _ => Variant::from_none(glib::VariantTy::VARIANT),
         }
     }
 
