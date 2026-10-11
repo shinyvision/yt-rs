@@ -13,10 +13,11 @@ use gtk::prelude::*;
 use mlua::{Function, Lua, LuaSerdeExt, Table, UserData, UserDataMethods, UserDataRef, Variadic};
 use serde_json::Value;
 
-use super::cairo::LuaCairo;
-use super::convert::{json_to_lua, lua_to_glib, lua_to_json};
-use super::object::{LuaObject, find, from_ptr};
+use yt_gi::{LuaCairo, Object};
+
+use super::convert::{json_to_lua, lua_to_json};
 use super::report;
+use super::widgets::{find, widget, wrap};
 use crate::app::app;
 use crate::ext::components::Component;
 use crate::ext::keymap::GLOBAL;
@@ -36,7 +37,7 @@ pub fn install(lua: &Lua) -> mlua::Result<()> {
 
 fn widget_or_error(value: mlua::Result<mlua::Value>, context: &str) -> gtk::Widget {
     let widget = value.and_then(|v| match v {
-        mlua::Value::UserData(ud) => ud.borrow::<LuaObject>()?.widget(),
+        mlua::Value::UserData(ud) => widget(&*ud.borrow::<Object>()?),
         other => Err(mlua::Error::runtime(format!(
             "expected a widget, got {}",
             other.type_name()
@@ -62,7 +63,7 @@ fn props_to_lua(lua: &Lua, props: &Value) -> mlua::Result<mlua::Value> {
 
 fn lua_widget(lua: &Lua, widget: &gtk::Widget) -> mlua::Result<mlua::Value> {
     Ok(mlua::Value::UserData(
-        lua.create_userdata(LuaObject(widget.clone().upcast()))?,
+        lua.create_userdata(wrap(widget.clone()))?,
     ))
 }
 
@@ -402,8 +403,8 @@ fn component_table(lua: &Lua, component: Component) -> mlua::Result<Table> {
         t.set(
             "update",
             lua.create_function(
-                move |lua, (widget, props): (UserDataRef<LuaObject>, mlua::Value)| {
-                    update(&widget.widget()?, &lua_to_json(lua, props)?);
+                move |lua, (widget, props): (UserDataRef<Object>, mlua::Value)| {
+                    update(&super::widgets::widget(&widget)?, &lua_to_json(lua, props)?);
                     Ok(())
                 },
             )?,
@@ -466,7 +467,7 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
     t.set(
         "dialog",
         lua.create_function(
-            |_, (content, options): (UserDataRef<LuaObject>, Option<Table>)| {
+            |_, (content, options): (UserDataRef<Object>, Option<Table>)| {
                 let content = content
                     .0
                     .clone()
@@ -492,7 +493,7 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
                 if let Some(window) = app().window() {
                     dialog.present(Some(&window));
                 }
-                Ok(LuaObject(dialog.upcast()))
+                Ok(wrap(dialog))
             },
         )?,
     )?;
@@ -896,35 +897,14 @@ where
 
 fn ui_table(lua: &Lua) -> mlua::Result<Table> {
     let ui = lua.create_table()?;
-    // ui.new(type_name, props): any GObject type, e.g. "GtkButton".
+    // ui.new(type_name, props): any GObject type, e.g. "GtkButton"
+    // (the same as `Gtk.Button(props)` through `gi`).
     ui.set(
         "new",
-        lua.create_function(|_, (type_name, props): (String, Option<Table>)| {
-            let ty = resolve_type(&type_name)
-                .ok_or_else(|| mlua::Error::runtime(format!("unknown type {type_name:?}")))?;
-            let class = glib::object::ObjectClass::from_type(ty).ok_or_else(|| {
-                mlua::Error::runtime(format!("{type_name} is not an object type"))
-            })?;
-            let mut values: Vec<(String, glib::Value)> = Vec::new();
-            if let Some(props) = props {
-                for pair in props.pairs::<String, mlua::Value>() {
-                    let (key, value) = pair?;
-                    let name = key.replace('_', "-");
-                    let pspec = class.find_property(&name).ok_or_else(|| {
-                        mlua::Error::runtime(format!("{type_name} has no property {key:?}"))
-                    })?;
-                    values.push((
-                        name,
-                        lua_to_glib(&value, pspec.value_type())
-                            .map_err(|e| mlua::Error::runtime(format!("{key}: {e}")))?,
-                    ));
-                }
-            }
-            let mut refs: Vec<(&str, glib::Value)> = values
-                .iter()
-                .map(|(k, v)| (k.as_str(), v.clone()))
-                .collect();
-            Ok(LuaObject(glib::Object::with_mut_values(ty, &mut refs)))
+        lua.create_function(|lua, (type_name, props): (String, Option<Table>)| {
+            let ty = yt_gi::gtype_from_lua(&mlua::Value::String(lua.create_string(&type_name)?))
+                .map_err(|_| mlua::Error::runtime(format!("unknown type {type_name:?}")))?;
+            yt_gi::new_object(lua, ty, props.as_ref())
         })?,
     )?;
     // ui.wrap(pointer): a GObject from LuaJIT's FFI (lightuserdata or address).
@@ -942,7 +922,7 @@ fn ui_table(lua: &Lua) -> mlua::Result<Table> {
                     )));
                 }
             };
-            from_ptr(raw)
+            yt_gi::from_ptr(raw)
         })?,
     )?;
     // ui.image(url, width): a picture loaded through the app's image cache.
@@ -955,7 +935,7 @@ fn ui_table(lua: &Lua) -> mlua::Result<Table> {
             app()
                 .images
                 .load_into(&picture, url.as_deref(), width.unwrap_or(0));
-            Ok(LuaObject(picture.upcast()))
+            Ok(wrap(picture))
         })?,
     )?;
     // ui.drawing_area(function(cr, width, height) end): draws with Cairo.
@@ -968,52 +948,14 @@ fn ui_table(lua: &Lua) -> mlua::Result<Table> {
                     report("drawing", &e);
                 }
             });
-            Ok(LuaObject(area.upcast()))
+            Ok(wrap(area))
         })?,
     )?;
     ui.set(
         "type_exists",
-        lua.create_function(|_, name: String| Ok(resolve_type(&name).is_some()))?,
+        lua.create_function(|lua, name: String| {
+            Ok(yt_gi::gtype_from_lua(&mlua::Value::String(lua.create_string(&name)?)).is_ok())
+        })?,
     )?;
     Ok(ui)
-}
-
-/// Looks up a GObject type by name. GTK and libadwaita register their types
-/// lazily, so a miss registers them all and tries again.
-fn resolve_type(name: &str) -> Option<glib::Type> {
-    glib::Type::from_name(name).or_else(|| {
-        gtk::test_register_all_types();
-        register_adw_types();
-        glib::Type::from_name(name)
-    })
-}
-
-fn register_adw_types() {
-    let _ = [
-        adw::ActionRow::static_type(),
-        adw::Avatar::static_type(),
-        adw::Banner::static_type(),
-        adw::Bin::static_type(),
-        adw::ButtonContent::static_type(),
-        adw::Carousel::static_type(),
-        adw::Clamp::static_type(),
-        adw::ComboRow::static_type(),
-        adw::EntryRow::static_type(),
-        adw::ExpanderRow::static_type(),
-        adw::HeaderBar::static_type(),
-        adw::NavigationView::static_type(),
-        adw::OverlaySplitView::static_type(),
-        adw::PreferencesGroup::static_type(),
-        adw::PreferencesPage::static_type(),
-        adw::Spinner::static_type(),
-        adw::SplitButton::static_type(),
-        adw::StatusPage::static_type(),
-        adw::SwitchRow::static_type(),
-        adw::TabBar::static_type(),
-        adw::TabView::static_type(),
-        adw::ToolbarView::static_type(),
-        adw::ViewStack::static_type(),
-        adw::ViewSwitcher::static_type(),
-        adw::WrapBox::static_type(),
-    ];
 }

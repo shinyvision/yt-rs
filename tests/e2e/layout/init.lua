@@ -11,8 +11,8 @@ local steps = {
   { 100, function() app.run("sidebar.toggle") end },
   { 900, function()
       local drawer = app.find("sidebar-drawer")
-      log("toggled: rail", tostring(app.find("sidebar-mini"):mapped()), "| docked", tostring(app.find("sidebar"):mapped()),
-        "| drawer", tostring(drawer and drawer:mapped()))
+      log("toggled: rail", tostring(app.find("sidebar-mini"):get_mapped()), "| docked", tostring(app.find("sidebar"):get_mapped()),
+        "| drawer", tostring(drawer and drawer:get_mapped()))
       shot("home-toggled")
     end },
   { 100, function() app.run("sidebar.toggle") end },
@@ -30,7 +30,7 @@ local steps = {
   { 500, function() app.run("player.mini") end },
   { 2500, function()
       local s = app.player.state()
-      log("mini: page", app.current_page(), "| playing", tostring(not s.paused), "| position", s.position, "| docked visible", tostring(app.find("mini-player"):mapped()))
+      log("mini: page", app.current_page(), "| playing", tostring(not s.paused), "| position", s.position, "| docked visible", tostring(app.find("mini-player"):get_mapped()))
       shot("mini-player")
       local function walk(w)
         for _, c in ipairs(w:controllers()) do
@@ -43,7 +43,7 @@ local steps = {
   { 600, function() shot("mini-hovered"); app.run("player.toggle_pause") end },
   { 600, function() log("mini paused:", tostring(app.player.state().paused)); shot("mini-paused"); app.run("player.toggle_pause") end },
   { 100, function() app.run("app.navigate", { page = "subscriptions" }) end },
-  { 2500, function() log("mini on subscriptions:", tostring(app.find("mini-player"):mapped())); shot("mini-on-subscriptions") end },
+  { 2500, function() log("mini on subscriptions:", tostring(app.find("mini-player"):get_mapped())); shot("mini-on-subscriptions") end },
   { 100, function() app.run("player.expand") end },
   { 2500, function()
       local s = app.player.state()
@@ -52,7 +52,7 @@ local steps = {
     end },
   { 100, function() app.run("player.mini") end },
   { 1500, function() app.run("player.stop") end },
-  { 1500, function() log("closed: mini visible", tostring(app.find("mini-player"):mapped())); shot("mini-closed") end },
+  { 1500, function() log("closed: mini visible", tostring(app.find("mini-player"):get_mapped())); shot("mini-closed") end },
   { 100, function() app.quit() end },
 }
 app.on("app.ready", function()

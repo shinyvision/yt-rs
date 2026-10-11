@@ -8,13 +8,13 @@ local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%s%02d-%s.png", shots, prefix, n, name)) end
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function tab(label)
   for _, t in ipairs(find_all(app.window(), "channel-tab")) do
-    if t:mapped() and t.label == label then t:emit("clicked"); return true end
+    if t:get_mapped() and t.label == label then t:emit("clicked"); return true end
   end
   log("NO TAB", label)
 end
@@ -22,7 +22,7 @@ local steps = {
   { 3000, function() app.run("channel.open", { channel_id = channel }) end },
   { 5000, function()
       local shelves = app.find("shelves")
-      log("home: shelves", tostring(shelves and shelves:mapped()), "| rows", #find_all(app.window(), "shelf"))
+      log("home: shelves", tostring(shelves and shelves:get_mapped()), "| rows", #find_all(app.window(), "shelf"))
       shot("home")
       -- Card sizes in the first row, and what in a card is widest.
       local row = find_all(app.window(), "shelf-row")[1]
@@ -40,16 +40,16 @@ local steps = {
   { 100, function() local s = app.find("shelves"); if s then s.vadjustment.value = 700 end end },
   { 1500, function() shot("home-scrolled") end },
   { 100, function() tab("Videos") end },
-  { 4000, function() log("videos: grid", tostring(app.find("video-grid") and app.find("video-grid"):mapped())); shot("videos") end },
+  { 4000, function() log("videos: grid", tostring(app.find("video-grid") and app.find("video-grid"):get_mapped())); shot("videos") end },
   { 100, function() tab("Playlists") end },
   { 4000, function()
       local cards = 0
-      for _, w in ipairs(find_all(app.window(), "playlist-card")) do if w:mapped() then cards = cards + 1 end end
+      for _, w in ipairs(find_all(app.window(), "playlist-card")) do if w:get_mapped() then cards = cards + 1 end end
       log("playlists tab: cards", cards)
       shot("playlists")
     end },
   { 100, function() tab("Home") end },
-  { 2000, function() log("home again: shelves", tostring(app.find("shelves") and app.find("shelves"):mapped())); shot("home-again") end },
+  { 2000, function() log("home again: shelves", tostring(app.find("shelves") and app.find("shelves"):get_mapped())); shot("home-again") end },
   { 100, function() app.quit() end },
 }
 app.on("app.ready", function()

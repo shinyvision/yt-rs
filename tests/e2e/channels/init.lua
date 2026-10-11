@@ -75,7 +75,7 @@ local steps = {
         button and tostring(button.label))
       shot("unsubscribed")
       -- A click on its name opens the channel.
-      local text = row:find(".channels-name"):parent():parent()
+      local text = row:find(".channels-name"):get_parent():get_parent()
       for _, c in ipairs(text:controllers()) do
         if c:is_a("GtkGestureClick") then c:emit("released", 1, 5.0, 5.0) end
       end

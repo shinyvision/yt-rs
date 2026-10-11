@@ -16,7 +16,7 @@ local function check(label, ok, detail)
   if ok then results.pass = results.pass + 1 else results.fail = results.fail + 1 end
   log(ok and "PASS" or "FAIL", label, detail and ("| " .. tostring(detail)) or "")
 end
-local function visible(name) local w = app.find(name); return w ~= nil and w:mapped() end
+local function visible(name) local w = app.find(name); return w ~= nil and w:get_mapped() end
 local function position() return app.player.state().position or 0 end
 
 local loaded
@@ -47,7 +47,7 @@ local steps = {
       check("the sponsor is skipped", #leaked == 0, #leaked > 0 and ("played " .. leaked[1]) or "never played")
       check("the notice says so", visible("sb-notice"))
       local notice = app.find("sb-notice")
-      log("notice classes: sb-notice", tostring(notice and notice:has_class("sb-notice")), "type", notice and notice:type_name())
+      log("notice classes: sb-notice", tostring(notice and notice:has_css_class("sb-notice")), "type", notice and notice:type_name())
       shot("skipped")
       app.run("sponsorblock.vote", { up = true })
       app.run("sponsorblock.unskip")

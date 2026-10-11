@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/yt-core", "crates/yt-app"]
+members = ["crates/yt-core", "crates/yt-gi", "crates/yt-app"]
 
 [workspace.package]
 version = "0.1.0"
@@ -9,17 +9,21 @@ rust-version = "1.90"
 
 [workspace.dependencies]
 yt-core = { path = "crates/yt-core" }
+yt-gi = { path = "crates/yt-gi" }
 
 anyhow = "1"
 bytes = "1"
+cairo-rs = "0.22"
 base64 = "0.23"
 directories = "6"
+glib = "0.22"
 gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
 adw = { package = "libadwaita", version = "0.9", features = ["v1_7"] }
 gdk-wayland = { package = "gdk4-wayland", version = "0.11" }
 libc = "0.2"
 libloading = "0.9"
 mlua = { version = "0.12", features = ["luajit", "serialize"] }
+pkg-config = "0.3"
 rand = "0.10"
 regex = "1"
 # QuickJS, for the stream URL challenges (see yt-core's solver).

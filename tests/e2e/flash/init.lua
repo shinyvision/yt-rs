@@ -11,10 +11,10 @@ local function sizes(tag)
     local w = app.find(name)
     if w then
       local x, y = w:size()
-      table.insert(parts, name .. " " .. x .. "x" .. y .. (w:mapped() and "" or " (unmapped)") .. (w.visible == false and " (hidden)" or ""))
+      table.insert(parts, name .. " " .. x .. "x" .. y .. (w:get_mapped() and "" or " (unmapped)") .. (w.visible == false and " (hidden)" or ""))
     end
   end
-  local grid = app.find("watch-player") and app.find("watch-player"):parent()
+  local grid = app.find("watch-player") and app.find("watch-player"):get_parent()
   if grid then local x, y = grid:size(); table.insert(parts, "grid " .. x .. "x" .. y .. " margin " .. tostring(grid.margin_start)) end
   log(tag, table.concat(parts, " | "))
 end

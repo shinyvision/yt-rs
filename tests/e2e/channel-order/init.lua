@@ -16,13 +16,13 @@ local function check(label, ok, detail)
 end
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function click_label(class, label)
   for _, w in ipairs(find_all(app.window(), class)) do
-    if w.label == label and w:mapped() then w.active = true; return true end
+    if w.label == label and w:get_mapped() then w.active = true; return true end
   end
   log("NOT FOUND", class, label)
 end
@@ -43,7 +43,7 @@ local function channel_grid() return app.find("page-channel") and app.find("page
 local function chips()
   local labels = {}
   for _, w in ipairs(find_all(app.window(), "chip")) do
-    if w:mapped() then table.insert(labels, w.label .. (w.active and "*" or "")) end
+    if w:get_mapped() then table.insert(labels, w.label .. (w.active and "*" or "")) end
   end
   return table.concat(labels, " ")
 end
@@ -79,7 +79,7 @@ local steps = {
     end },
   { 500, function()
       local grid = channel_grid()
-      if grid then grid:parent().vadjustment.value = 100000 end
+      if grid then grid:get_parent().vadjustment.value = 100000 end
     end },
   { 5000, function()
       local p = last()
@@ -93,7 +93,7 @@ local steps = {
       check("Oldest: the first uploads first", p and p.ids ~= _G.popular and p.first.id ~= _G.latest
         and (p.first.published or ""):find("years ago"), p and p.first and (p.ids .. " " .. tostring(p.first.published)))
       local grid = channel_grid()
-      check("and from the top", grid and grid:parent().vadjustment.value == 0)
+      check("and from the top", grid and grid:get_parent().vadjustment.value == 0)
       shot("oldest")
     end },
   -- A screenshot shows the next frame: what is shot waits a step.

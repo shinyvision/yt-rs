@@ -11,6 +11,7 @@ path = "src/main.rs"
 
 [dependencies]
 yt-core.workspace = true
+yt-gi.workspace = true
 adw.workspace = true
 rand.workspace = true
 anyhow.workspace = true

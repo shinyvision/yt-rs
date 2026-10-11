@@ -76,19 +76,19 @@ end, 10)
 
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function first_visible(class)
   for _, w in ipairs(find_all(app.window(), class)) do
-    if w:mapped() then return w end
+    if w:get_mapped() then return w end
   end
 end
 local function shot(name) app.screenshot(shots .. "/" .. name .. ".png"); log("screenshot", name) end
 local function scroll_results(value)
   local list = app.find("search-results")
-  if list then list:parent().vadjustment.value = value end
+  if list then list:get_parent().vadjustment.value = value end
 end
 local function entry()
   return app.find("search-box"):find(".search-entry")
@@ -105,7 +105,7 @@ local function scroll_until(class, done, tries)
   tries = tries or 40
   if first_visible(class) or tries == 0 then return done(first_visible(class)) end
   local list = app.find("search-results")
-  list:parent().vadjustment.value = list:parent().vadjustment.value + 500
+  list:get_parent().vadjustment.value = list:get_parent().vadjustment.value + 500
   app.timer(250, function() scroll_until(class, done, tries - 1) end)
 end
 local function type_text(text)
@@ -117,13 +117,13 @@ end
 local function shoot_suggestions(name)
   local list = app.find("search-box"):find(".search-suggestions")
   local popover = list
-  while popover and not popover:is_a("GtkPopover") do popover = popover:parent() end
+  while popover and not popover:is_a("GtkPopover") do popover = popover:get_parent() end
   popover:set_child(nil)
   -- The slot below the chips of the page on screen.
   local slot
   for _, name in ipairs({ "slot:search.header", "slot:feed.header" }) do
     local s = app.find(name)
-    if s and s:parent():mapped() then slot = s end
+    if s and s:get_parent():get_mapped() then slot = s end
   end
   slot:append(list)
   slot:show() -- empty slots are hidden
@@ -147,7 +147,7 @@ local signed_in = {
   { 200, function()
       scroll_until("shorts", function(w)
         log("shorts shelf:", w and "shown" or "NOT FOUND")
-        local adj = app.find("search-results"):parent().vadjustment
+        local adj = app.find("search-results"):get_parent().vadjustment
         adj.value = adj.value + 520
       end)
     end },

@@ -313,7 +313,7 @@ end)
 -- A button with only an icon.
 local function icon_button(icon, tooltip, on_click)
   local b = ui.new("GtkButton", { icon_name = icon, tooltip_text = tooltip })
-  b:add_class("sb-notice-button")
+  b:add_css_class("sb-notice-button")
   b:on("clicked", on_click)
   return b
 end
@@ -372,7 +372,7 @@ end, -10)
 app.slot("player.controls.end", function()
   local button = ui.new("GtkMenuButton", { icon_name = "yt-not-interested-symbolic", tooltip_text = "SponsorBlock",
     name = "sb-menu" })
-  button:add_class("control")
+  button:add_css_class("control")
   button:on("notify::active", function(self)
     if not self.active then return end
     self.popover = ui.new("GtkPopover", { has_arrow = false, child = app.build("menu", { items = {
@@ -472,7 +472,7 @@ app.command("sponsorblock.submit", function()
     local choice = ui.new("GtkDropDown", { model = ui.new("GtkStringList", { strings = names }) })
     rows[i] = choice
     local remove = ui.new("GtkButton", { icon_name = "yt-delete-symbolic", tooltip_text = "Don't submit this one" })
-    remove:add_class("flat")
+    remove:add_css_class("flat")
     remove:on("clicked", function()
       table.remove(marks, i)
       show_marks()

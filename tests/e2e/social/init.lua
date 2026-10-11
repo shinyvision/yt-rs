@@ -51,13 +51,13 @@ app.command("channel.unsubscribe", function(a) later(function() app.emit("channe
 -- Widget helpers.
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function first_visible(class, root)
   for _, w in ipairs(find_all(root or app.window(), class)) do
-    if w:mapped() then return w end
+    if w:get_mapped() then return w end
   end
 end
 local function shot(name) app.screenshot(shots .. "/" .. name .. ".png"); log("screenshot", name) end
@@ -96,7 +96,7 @@ local steps = {
   { 200, function()
       -- Keep the subscription: press Cancel.
       local function cancel(w)
-        if w:is_a("GtkButton") and w.label == "Cancel" and w:mapped() then w:emit("clicked"); return true end
+        if w:is_a("GtkButton") and w.label == "Cancel" and w:get_mapped() then w:emit("clicked"); return true end
         for _, c in ipairs(w:children()) do if cancel(c) then return true end end
       end
       if not cancel(app.window()) then log("NOT FOUND", "Cancel") end
@@ -109,7 +109,7 @@ local steps = {
       end
     end },
   { 5000, function() shot("10-channel-videos") end },
-  { 200, function() local grid = first_visible("video-grid", app.find("page-channel")); grid:parent().vadjustment.value = 400 end },
+  { 200, function() local grid = first_visible("video-grid", app.find("page-channel")); grid:get_parent().vadjustment.value = 400 end },
   { 1500, function() shot("11-channel-scrolled") end },
   { 200, function() click("channel-item") end },
   { 6000, function() shot("12-sidebar-channel") end },

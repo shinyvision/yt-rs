@@ -2545,6 +2545,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "yt-core",
+ "yt-gi",
 ]
 
 [[package]]
@@ -2564,6 +2565,16 @@ dependencies = [
  "tokio",
  "tracing",
  "url",
+]
+
+[[package]]
+name = "yt-gi"
+version = "0.1.0"
+dependencies = [
+ "cairo-rs",
+ "glib",
+ "mlua",
+ "pkg-config",
 ]
 
 [[package]]

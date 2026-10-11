@@ -13,13 +13,13 @@ app.run("watch.set_tracking", { enabled = false })
 
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function first_visible(class)
   for _, w in ipairs(find_all(app.window(), class)) do
-    if w:mapped() then return w end
+    if w:get_mapped() then return w end
   end
 end
 local function click(class)
@@ -50,7 +50,7 @@ end
 local function scroll(name, value)
   local w = app.find(name)
   if not w then return log("NOT FOUND", name) end
-  local adj = w.vadjustment or w:parent().vadjustment
+  local adj = w.vadjustment or w:get_parent().vadjustment
   adj.value = value
 end
 -- Opens the first menu button of a class on screen; close_popover shuts it.
@@ -116,7 +116,7 @@ local steps = {
   { 6000, function() shot("channel-home") end },
   { 100, function()
       for _, t in ipairs(find_all(app.window(), "channel-tab")) do
-        if t:mapped() and t.label == "Videos" then t:emit("clicked") end
+        if t:get_mapped() and t.label == "Videos" then t:emit("clicked") end
       end
     end },
   { 4000, function() shot("channel-videos") end },
@@ -127,7 +127,7 @@ local steps = {
   { 100, function()
       local dialog = first_visible("search-filters-dialog")
       for _, b in ipairs(find_all(app.window(), "icon-button")) do
-        if b:mapped() and b.tooltip_text == "Close" then b:emit("clicked") end
+        if b:get_mapped() and b.tooltip_text == "Close" then b:emit("clicked") end
       end
     end },
   { 800, function() app.run("app.back") end },

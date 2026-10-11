@@ -19,13 +19,13 @@ for _, e in ipairs({ "playlist.changed", "playlist.changed.failed", "playlist.cr
 end
 local function find_all(root, class, out)
   out = out or {}
-  if root:has_class(class) then table.insert(out, root) end
+  if root:has_css_class(class) then table.insert(out, root) end
   for _, c in ipairs(root:children()) do find_all(c, class, out) end
   return out
 end
 local function mapped(class)
   local count = 0
-  for _, w in ipairs(find_all(app.window(), class)) do if w:mapped() then count = count + 1 end end
+  for _, w in ipairs(find_all(app.window(), class)) do if w:get_mapped() then count = count + 1 end end
   return count
 end
 local home_video
@@ -64,7 +64,7 @@ local steps = {
       local rows = mapped("playlist-row")
       check("Watch later's page lists its videos", rows >= 5 and events["playlist.loaded"] ~= nil, rows .. " rows")
       shot("watch-later")
-      local page = app.find("playlist-videos"):parent()
+      local page = app.find("playlist-videos"):get_parent()
       page.vadjustment.value = page.vadjustment.upper
     end },
   { 3000, function()
@@ -128,7 +128,7 @@ local steps = {
       check("the save dialog lists the playlists", options >= 2, options .. " options")
       shot("save-dialog")
       local first
-      for _, w in ipairs(find_all(app.window(), "save-option")) do if w:mapped() then first = first or w end end
+      for _, w in ipairs(find_all(app.window(), "save-option")) do if w:get_mapped() then first = first or w end end
       events["playlist.changed"] = nil
       if first then first.active = not first.active end
     end },

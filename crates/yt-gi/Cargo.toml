@@ -1,0 +1,18 @@
+[package]
+name = "yt-gi"
+description = "GObject Introspection for Lua: every introspected library (GTK, GLib, Gio, libadwaita, GStreamer...) from LuaJIT"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+cairo-rs.workspace = true
+glib.workspace = true
+mlua.workspace = true
+
+[build-dependencies]
+pkg-config.workspace = true
+
+[[test]]
+name = "lua"
+harness = false

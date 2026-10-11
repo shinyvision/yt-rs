@@ -27,7 +27,7 @@ function ui.build(spec)
   local widget = ui.new(spec[1] or "GtkBox", props)
   if spec.class then
     for class in tostring(spec.class):gmatch("%S+") do
-      widget:add_class(class)
+      widget:add_css_class(class)
     end
   end
   for signal, handler in pairs(spec.on or {}) do

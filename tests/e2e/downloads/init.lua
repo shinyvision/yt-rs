@@ -32,7 +32,7 @@ local function sizes(tag)
   local parts = {}
   for _, name in ipairs({ "shell", "content", "page-host", "sidebar", "page-downloads", "page-home" }) do
     local w = app.find(name)
-    if w then local x, y = w:size(); table.insert(parts, name .. " " .. x .. "x" .. y .. (w:mapped() and "" or " (unmapped)"))
+    if w then local x, y = w:size(); table.insert(parts, name .. " " .. x .. "x" .. y .. (w:get_mapped() and "" or " (unmapped)"))
     else table.insert(parts, name .. " missing") end
   end
   log(tag, table.concat(parts, " | "), "| page", app.current_page())

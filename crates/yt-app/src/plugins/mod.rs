@@ -7,15 +7,15 @@
 //! `app.on("app.ready", ...)` handler.
 //!
 //! Plugins are trusted code with full access, like Neovim plugins: they get
-//! the complete standard library, LuaJIT's `ffi` (to call any C library,
-//! e.g. to embed a terminal or a web view), and `require` for Lua and C
-//! modules from the plugins directory. Errors in plugins are logged and
-//! shown briefly; they never crash the app.
+//! the complete standard library, every introspected library through `gi`
+//! (GTK, GLib, Gio, libadwaita, GStreamer, WebKit...; see the `yt-gi`
+//! crate), LuaJIT's `ffi` for any other C library, and `require` for Lua
+//! and C modules from the plugins directory. Errors in plugins are logged
+//! and shown briefly; they never crash the app.
 
 mod api;
-mod cairo;
 mod convert;
-pub mod object;
+mod widgets;
 
 use std::cell::Cell;
 use std::path::Path;
@@ -39,7 +39,7 @@ impl PluginHost {
             lua,
             loaded: Vec::new(),
         };
-        if let Err(e) = api::install(&host.lua).and_then(|_| host.set_search_path()) {
+        if let Err(e) = install(&host.lua).and_then(|_| host.set_search_path()) {
             report("starting the plugin system", &e);
             return host;
         }
@@ -103,6 +103,17 @@ impl PluginHost {
             Err(e) => report(&format!("plugin {name}"), &e),
         }
     }
+}
+
+/// The Lua environment: `gi` with the toolkit loaded, the widget
+/// conveniences, then the `app` and `ui` tables.
+fn install(lua: &Lua) -> mlua::Result<()> {
+    yt_gi::set_reporter(report);
+    yt_gi::install(lua)?;
+    yt_gi::require(lua, "Gtk", "4.0")?;
+    yt_gi::require(lua, "Adw", "1")?;
+    widgets::install(lua)?;
+    api::install(lua)
 }
 
 /// Reports an error from plugin code: logged in full, and shown as a toast
