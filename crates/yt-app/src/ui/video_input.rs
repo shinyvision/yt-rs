@@ -100,12 +100,18 @@ pub fn attach_menu(menu: &gtk::MenuButton, video: impl Fn() -> Option<Value> + '
 /// Fetches YouTube's menu for a video whose menu comes on request (once),
 /// then calls `done` and emits `video.menu_loaded` `{ video_id }`.
 pub fn load_actions(video: &Value, done: impl FnOnce() + 'static) {
-    let (Some(id), Some(menu)) = (
-        video.get("id").and_then(Value::as_str),
-        video.get("menu").and_then(Value::as_str),
-    ) else {
+    let Some(id) = video
+        .get("id")
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+    else {
         return;
     };
+    // Videos that come without a menu ("Up next") get one asked for.
+    let menu = video
+        .get("menu")
+        .and_then(Value::as_str)
+        .map_or_else(|| yt_core::actions::menu_params_for(id), str::to_owned);
     if video
         .get("actions")
         .and_then(Value::as_array)
@@ -121,7 +127,7 @@ pub fn load_actions(video: &Value, done: impl FnOnce() + 'static) {
         }
         fetched.insert(id.to_owned(), None);
     });
-    let (id, menu) = (id.to_owned(), menu.to_owned());
+    let id = id.to_owned();
     crate::runtime::spawn_local(async move {
         let youtube = app().youtube.clone();
         let result =
@@ -173,7 +179,11 @@ pub fn menu_items(video: &Value) -> Value {
             "video_id": video.get("id"),
         } }),
     ]);
-    defaults.extend(youtube_items(video));
+    let youtube = youtube_items(video);
+    if !youtube.is_empty() {
+        defaults.push(json!({ "separator": true }));
+        defaults.extend(youtube);
+    }
     let result = app()
         .ext
         .filters
@@ -183,7 +193,7 @@ pub fn menu_items(video: &Value) -> Value {
         .and_then(Value::as_array)
         .cloned()
         .unwrap_or_default();
-    for item in &mut items {
+    for item in items.iter_mut().filter(|i| !super::menu::is_separator(i)) {
         if item.get("args").is_none_or(Value::is_null) {
             item["args"] = json!({});
         }

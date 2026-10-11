@@ -736,6 +736,22 @@ fn capture(path: &str) -> Result<(), String> {
     let paintable = gtk::WidgetPaintable::new(Some(&window));
     let snapshot = gtk::Snapshot::new();
     paintable.snapshot(&snapshot, width as f64, height as f64);
+    // Popovers (menus, the player's settings, suggestions) are surfaces of
+    // their own: drawn over the window where they show.
+    let origin = surface_origin(window.upcast_ref());
+    for popover in open_popovers(window.upcast_ref()) {
+        let Some((x, y)) = surface_origin(popover.upcast_ref())
+            .zip(origin)
+            .map(|((px, py), (wx, wy))| (px - wx, py - wy))
+        else {
+            continue;
+        };
+        let paintable = gtk::WidgetPaintable::new(Some(&popover));
+        snapshot.save();
+        snapshot.translate(&gtk::graphene::Point::new(x as f32, y as f32));
+        paintable.snapshot(&snapshot, popover.width() as f64, popover.height() as f64);
+        snapshot.restore();
+    }
     let node = snapshot.to_node().ok_or("nothing to draw")?;
     let renderer = window.renderer().ok_or("the window has no renderer")?;
     let viewport = gtk::graphene::Rect::new(0.0, 0.0, width, height);
@@ -743,6 +759,42 @@ fn capture(path: &str) -> Result<(), String> {
         .render_texture(&node, Some(&viewport))
         .save_to_png(path)
         .map_err(|e| e.to_string())
+}
+
+/// The popovers showing, in the order they are drawn (one opened from
+/// another after it).
+fn open_popovers(root: &gtk::Widget) -> Vec<gtk::Popover> {
+    let mut found = Vec::new();
+    let mut child = root.first_child();
+    while let Some(widget) = child {
+        if widget.is_mapped() {
+            if let Some(popover) = widget.downcast_ref::<gtk::Popover>() {
+                found.push(popover.clone());
+            }
+            found.extend(open_popovers(&widget));
+        }
+        child = widget.next_sibling();
+    }
+    found
+}
+
+/// Where a native widget's (0, 0) is, from the top-left of the window's
+/// surface: popups' positions added up their parents, plus the margins the
+/// surface keeps for shadows.
+fn surface_origin(native: &gtk::Widget) -> Option<(f64, f64)> {
+    let native = native
+        .clone()
+        .dynamic_cast::<gtk::Native>()
+        .ok()
+        .or_else(|| native.native())?;
+    let (mut x, mut y) = native.surface_transform();
+    let mut surface = native.surface()?;
+    while let Some(popup) = surface.downcast_ref::<gdk::Popup>() {
+        x += popup.position_x() as f64;
+        y += popup.position_y() as f64;
+        surface = popup.parent()?;
+    }
+    Some((x, y))
 }
 
 pub fn str_arg<'a>(args: &'a Value, key: &str) -> Result<&'a str, String> {

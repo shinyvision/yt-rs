@@ -214,7 +214,7 @@ app.filter("feed.page", function(data) ... return data end, order)
 |---|---|
 | `feed.page` | `{ browse_id, page }`: every feed page before it is shown |
 | `video.card` | a video, before it fills a card |
-| `video.menu` | `{ video, items }`: a card's menu items, `{ label, icon?, command, args?, confirm? }`, in youtube.com's order: Add to queue, Save to Watch later, Save to playlist, Copy link, Open in browser, Go to channel, then YouTube's own for the video ("Not interested", "Remove from Watch later", ...). The command runs with `{ video }` added to its arguments |
+| `video.menu` | `{ video, items }`: a card's menu items, `{ label, icon?, command, args?, confirm? }`, in youtube.com's order: Add to queue, Save to Watch later, Save to playlist, Download, Copy link, Open in browser, Go to channel, then a `{ separator = true }` and YouTube's own for the video ("Not interested", "Remove from Watch later", ...; asked for when the video came without them). The command runs with `{ video }` added to its arguments |
 | `watch.page` | a video's details, before they are shown (see `watch.loaded`) |
 | `comments.page` | `{ comments, next }`: each page of comments, before it is shown. Remove comments to hide them |
 | `comment` | a comment (plus `by_creator`), before it fills a `comment` component |
@@ -275,7 +275,7 @@ app.commands()                     -- all names
 | `seekbar.set_ranges` | `{ owner, ranges = { { start, end, color, label? } } }`: marks parts of the video on the seek bar, in place of `owner`'s earlier ones; a range too short to see is a mark, and `label` shows in the bubble over it. Cleared when another video loads |
 | `seekbar.clear_ranges` | `{ owner }` |
 | `seekbar.ranges` | → everyone's marks |
-| `app.screenshot` | `{ path }`, a PNG of the window after the next frame |
+| `app.screenshot` | `{ path }`, a PNG of the window after the next frame, with the popovers open over it (menus, the player's settings) |
 | `sidebar.toggle`, `window.toggle_fullscreen` | |
 | `window.fullscreen` | `{ fullscreen }` |
 | `feed.refresh` | |
@@ -415,7 +415,7 @@ app.components()
 | `subscribe_button` | `{ subscription, channel_name }` |
 | `sidebar_subscriptions` | the sidebar's list of subscribed channels |
 | `account_button` | the user's picture in the top bar, with its menu |
-| `menu` | `{ items }`: a menu's list. An item is `{ label, icon?, command, args?, confirm?, selected? }`; with `confirm` (a `confirm_dialog`'s properties) it asks first |
+| `menu` | `{ items }`: a menu's list. An item is `{ label, icon?, command, args?, confirm?, selected? }`; with `confirm` (a `confirm_dialog`'s properties) it asks first. `{ separator = true }` draws a line between groups |
 | `confirm_dialog` | `{ title, body?, confirm, cancel? }`: a dialog's content. A replacement needs buttons named `dialog-cancel` and `dialog-confirm` |
 | `player_settings` | `{ entries }`: the settings panel's pages |
 | `playlist_card` | a playlist (`{ id, title, thumbnail?, count?, details? }`), plus `layout? = "shelf"` |

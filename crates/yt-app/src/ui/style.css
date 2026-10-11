@@ -694,3 +694,4 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .video-card.list .meta { font-size: 12px; }
 .feed-title { margin: 24px 0 8px 0; }
 .settings-heading label { font-size: 28px; font-weight: 700; }
+.yt-menu-separator { margin: 8px 0; background: rgba(255, 255, 255, 0.1); }

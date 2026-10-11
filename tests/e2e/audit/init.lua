@@ -53,21 +53,14 @@ local function scroll(name, value)
   local adj = w.vadjustment or w:parent().vadjustment
   adj.value = value
 end
--- Shows a component's widget in a slot of the page on screen, for things
--- the test window can't show as popovers (menus, the settings panel).
-local inline
-local function show_inline(widget)
-  for _, name in ipairs({ "slot:watch.below_player", "slot:feed.header", "slot:search.header" }) do
-    local slot = app.find(name)
-    if slot and slot:parent():mapped() then
-      slot:append(widget); slot:show(); inline = { slot, widget }
-      return
-    end
-  end
-  log("NO SLOT for inline")
+-- Opens the first menu button of a class on screen; close_popover shuts it.
+local open
+local function open_popover(class)
+  open = first_visible(class)
+  if open then open.active = true else log("NOT FOUND", class) end
 end
-local function hide_inline()
-  if inline then inline[1]:remove(inline[2]); inline[1]:hide(); inline = nil end
+local function close_popover()
+  if open then open.active = false; open = nil end
 end
 
 local steps = {
@@ -82,6 +75,19 @@ local steps = {
   { 5000, function() shot("subscriptions") end },
   { 100, function() app.run("app.navigate", { page = "history" }) end },
   { 5000, function() shot("history") end },
+  { 100, function() app.run("app.navigate", { page = "library" }) end },
+  { 5000, function() shot("library") end },
+  { 100, function() app.run("app.navigate", { page = "playlists" }) end },
+  { 3000, function() shot("playlists") end },
+  { 100, function() app.run("playlist.open", { playlist_id = "WL" }) end },
+  { 3500, function() shot("playlist") end },
+  { 100, function() app.run("app.navigate", { page = "downloads" }) end },
+  { 1500, function() shot("downloads") end },
+  { 100, function() app.run("app.navigate", { page = "settings" }) end },
+  { 1500, function() shot("settings") end },
+  { 100, function() app.run("app.shortcuts") end },
+  { 1200, function() shot("shortcuts") end },
+  { 100, function() app.run("app.close_dialog") end },
   { 100, function() app.run("video.play", { video = { id = "dQw4w9WgXcQ" }, start = 30 }) end },
   { 10000, function() show_controls() end },
   { 400, function() shot("watch-playing-controls") end },
@@ -98,18 +104,14 @@ local steps = {
   { 1500, function() show_controls() end },
   { 400, function() shot("watch-theater") end },
   { 100, function() app.run("watch.toggle_theater") end },
-  { 500, function() show_inline(app.build("player_settings", app.run("player.settings"))) end },
-  { 800, function() shot("player-settings-inline") end },
-  { 100, function()
-      hide_inline()
-      show_inline(app.build("menu", { items = {
-        { label = "Play", icon = "yt-play-symbolic", command = "video.play" },
-        { label = "Go to channel", icon = "yt-person-symbolic", command = "channel.open" },
-        { label = "Copy link", icon = "yt-link-symbolic", command = "video.copy_link" },
-      } }))
-    end },
-  { 800, function() shot("menu-inline") end },
-  { 100, function() hide_inline(); app.run("player.play") end },
+  -- The real popovers: screenshots draw them over the window.
+  { 500, function() show_controls(); open_popover("player-settings-button") end },
+  { 800, function() shot("player-settings") end },
+  { 100, function() close_popover() end },
+  { 300, function() open_popover("menu-button") end },
+  { 2500, function() shot("video-menu") end },
+  { 100, function() close_popover() end },
+  { 100, function() app.run("player.play") end },
   { 100, function() app.run("channel.open", { channel_id = "UCuAXFkgsw1L7xaCfnd5JJOw" }) end },
   { 6000, function() shot("channel-home") end },
   { 100, function()

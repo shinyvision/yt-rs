@@ -2,9 +2,11 @@
 //! a label, in a popover without an arrow.
 //!
 //! The `menu` component builds the list from
-//! `{ items = [{ label, icon?, command, args?, confirm?, selected? }] }`.
-//! Choosing an item runs its command; with `confirm` (the properties of a
-//! [confirmation dialog](super::dialog)) it asks first.
+//! `{ items = [{ label, icon?, command, args?, confirm?, selected? }] }`,
+//! where `{ separator = true }` is a line between groups (none at the ends,
+//! nor two together). Choosing an item runs its command; with `confirm`
+//! (the properties of a [confirmation dialog](super::dialog)) it asks
+//! first.
 
 use gtk::prelude::*;
 use serde_json::{Value, json};
@@ -16,15 +18,29 @@ use crate::app::app;
 pub fn build(props: &Value) -> gtk::Widget {
     let list = gtk::Box::new(gtk::Orientation::Vertical, 0);
     list.add_css_class("yt-menu");
+    let mut line_due = false;
     for item in props
         .get("items")
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
     {
+        if is_separator(item) {
+            line_due = list.first_child().is_some();
+            continue;
+        }
+        if std::mem::take(&mut line_due) {
+            let line = gtk::Separator::new(gtk::Orientation::Horizontal);
+            line.add_css_class("yt-menu-separator");
+            list.append(&line);
+        }
         list.append(&item_button(item));
     }
     list.upcast()
+}
+
+pub fn is_separator(item: &Value) -> bool {
+    item.get("separator").and_then(Value::as_bool) == Some(true)
 }
 
 /// A popover showing the `menu` component with these items.

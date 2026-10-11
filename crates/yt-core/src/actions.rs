@@ -59,6 +59,19 @@ pub fn menu_params(tile: &Value) -> Option<String> {
         .flatten()
 }
 
+/// The `params` asking for any video's menu (`get_panel`), for the videos
+/// that come without one (the TV client's "Up next"): built as the Home
+/// tiles' own are, naming the video and the feed it is in.
+pub fn menu_params_for(video_id: &str) -> String {
+    use crate::proto::Message;
+    let feed = Message::new().varint(1, 2).string(2, "FEwhat_to_watch");
+    let menu = Message::new()
+        .string(1, video_id)
+        .varint(4, 158)
+        .message(8, feed);
+    Message::new().message(175, menu).to_token()
+}
+
 /// The actions in a menu sent on request (`get_panel`): a list of items,
 /// each with what a tap does.
 pub fn from_panel(resp: &Value) -> Vec<VideoAction> {
@@ -159,6 +172,15 @@ fn kind(endpoint: &Value) -> Option<ActionKind> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn builds_menu_params_as_youtube_does() {
+        // A Home tile's, from YouTube.
+        assert_eq!(
+            menu_params_for("EfDomtxxFtY"),
+            "-golCgtFZkRvbXR4eEZ0WSCeAUITCAISD0ZFd2hhdF90b193YXRjaA%3D%3D"
+        );
+    }
     use serde_json::json;
 
     fn tile(items: Value) -> Value {
