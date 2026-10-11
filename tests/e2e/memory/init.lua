@@ -3,7 +3,7 @@
 -- Memory that keeps growing round after round is a leak. Silent; no watch
 -- history; the only search is "hello". See ../README.md.
 local function log(...) app.log("[memory]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 local rounds = tonumber(os.getenv("E2E_ROUNDS") or "10")
 local function rss()

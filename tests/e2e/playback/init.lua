@@ -12,8 +12,8 @@ local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local feed_count = tonumber(os.getenv("E2E_FEED_VIDEOS") or "6")
 local function log(...) app.log("[playback]", ...) end
 
-app.player.set("ao", "null")
-app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null")
+app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 
 local errors = {}
@@ -46,9 +46,9 @@ local function check(label, settle, expect, done)
   errors = {}
   local function measure()
     if app.now() < held_until then return app.timer(500, measure) end
-    local a = app.player.state()
+    local a = app.api.player.state()
     app.timer(3000, function()
-      local b = app.player.state()
+      local b = app.api.player.state()
       local moved = (b.position or 0) - (a.position or 0)
       local ok = moved > 1.5 and not b.paused and #errors == 0 and (not expect or expect(b))
       if ok then results.pass = results.pass + 1 else results.fail = results.fail + 1 end
@@ -100,7 +100,7 @@ step(function(next)
     if not v then return next() end
     play(v.id, 0)
     check("home " .. i .. ": " .. (v.title or v.id):sub(1, 50), 8000, nil, function()
-      local d = app.player.state().duration or 0
+      local d = app.api.player.state().duration or 0
       if d <= 60 then return each() end
       app.run("player.seek", { position = d * 0.75 })
       check("home " .. i .. " at 75 %", 4000, function(s) return s.position > d * 0.7 end, each)
@@ -119,7 +119,7 @@ end)
 -- to the middle, and back to live.
 local window
 step(function(next)
-  window = app.player.state().live
+  window = app.api.player.state().live
   log("  live window:", string.format("%.0f s back, edge at %.0f", window.edge - window.start, window.edge))
   app.run("player.seek_by", { seconds = -60 })
   check("live: back a minute", 6000, function(s) return s.live.edge - s.position > 50 and s.live.edge - s.position < 100 end,

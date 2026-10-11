@@ -11,8 +11,8 @@ local mode = os.getenv("E2E_SEARCH") or "signed_in"
 local function log(...) app.log("[search]", ...) end
 
 -- Silent, and no watch history.
-app.player.set("ao", "null")
-app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null")
+app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 
 local function count(kind, page)

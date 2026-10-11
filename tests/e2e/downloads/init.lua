@@ -8,7 +8,7 @@
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local phase = os.getenv("E2E_PHASE") or "online"
 local function log(...) app.log("[downloads]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%s-%02d-%s.png", shots, phase, n, name)) end
@@ -27,7 +27,7 @@ local function get(id) return app.run("download.get", { video_id = id }) end
 local done, failed = {}, {}
 app.on("download.done", function(e) done[e.video_id] = true end)
 app.on("download.failed", function(e) failed[e.video_id] = e.error end)
-local function position() return app.player.state().position or 0 end
+local function position() return app.api.player.state().position or 0 end
 local function sizes(tag)
   local parts = {}
   for _, name in ipairs({ "shell", "content", "page-host", "sidebar", "page-downloads", "page-home" }) do
@@ -43,7 +43,7 @@ local online = {
   { 500, wait = function() return done[ZOO.id] or failed[ZOO.id] end, function()
       local d = get(ZOO.id)
       check("the download finishes", d and d.complete, failed[ZOO.id])
-      local dir = app.paths.config .. "/data/downloads/" .. ZOO.id .. "/"
+      local dir = app.api.paths.config_dir() .. "/data/downloads/" .. ZOO.id .. "/"
       check("its video and audio are there, whole", d and size(dir .. d.video_file) > 100000 and size(dir .. d.audio_file) > 10000
         and size(dir .. d.video_file) + size(dir .. d.audio_file) == d.total,
         d and (size(dir .. d.video_file) .. " + " .. size(dir .. d.audio_file) .. " of " .. d.total))
@@ -57,7 +57,7 @@ local online = {
   -- A screenshot shows the next frame: what is shot waits a step.
   { 500, function() app.run("video.play", { video = ZOO }) end },
   { 3000, function()
-      local path = app.player.get("path") or ""
+      local path = app.api.mpv.get_string("path") or ""
       check("it plays from its file", path:sub(1, 1) == "/", path)
       local a = position()
       app.timer(2000, function() check("and plays", position() > a + 1, a .. " -> " .. position()) end)
@@ -84,7 +84,7 @@ local online = {
     end },
   { 1500, function()
       check("deleting a running one stops and removes it", get(LONG.id) == nil
-        and size(app.paths.config .. "/data/downloads/" .. LONG.id .. "/video.webm") == 0)
+        and size(app.api.paths.config_dir() .. "/data/downloads/" .. LONG.id .. "/video.webm") == 0)
     end },
 }
 
@@ -98,7 +98,7 @@ local offline = {
   { 4000, function()
       local a = position()
       app.timer(2000, function()
-        check("offline, it plays from its files", position() > a + 1 and (app.player.get("path") or ""):sub(1, 1) == "/",
+        check("offline, it plays from its files", position() > a + 1 and (app.api.mpv.get_string("path") or ""):sub(1, 1) == "/",
           a .. " -> " .. position())
         shot("watch")
         app.run("player.stop")

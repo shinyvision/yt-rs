@@ -2,8 +2,8 @@
 -- contains E2E_MATCH) and logs the player's state every second, for
 -- looking into a video that won't play. Silent, no watch history.
 local function log(...) app.log("[probe]", ...) end
-app.player.set("ao", "null")
-app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null")
+app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 
 local id, match = os.getenv("E2E_VIDEO"), os.getenv("E2E_MATCH")
@@ -16,7 +16,7 @@ local function start(video)
   local n = 0
   local function tick()
     n = n + 1
-    local s = app.player.state()
+    local s = app.api.player.state()
     log(string.format("%2d s: position %.1f paused %s ended %s quality %s duration %.0f live %s", n, s.position or -1,
       tostring(s.paused), tostring(s.ended), s.quality or "-", s.duration or 0, tostring(s.live ~= nil)))
     -- E2E_SHOT_AT=N: a screenshot at N s, with the controls up.
@@ -44,7 +44,7 @@ local function start(video)
         local t0 = app.now()
         app.run("player.seek", { position = target })
         local function poll()
-          local s = app.player.state()
+          local s = app.api.player.state()
           if s.position >= target + 0.2 and not s.paused then
             log(string.format("seek to %d s: playing on after %.0f ms", target, (app.now() - t0) * 1000))
             return seek(i + 1)

@@ -7,8 +7,8 @@ local video = { id = "dQw4w9WgXcQ", title = "Rick Astley - Never Gonna Give You 
 local function log(...) app.log("[social]", ...) end
 
 -- Silent, and no watch history.
-app.player.set("ao", "null")
-app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null")
+app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 
 local account = nil

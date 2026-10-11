@@ -7,7 +7,7 @@
 -- output: muting is part of the test), no watch history.
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local function log(...) app.log("[sbtest]", ...) end
-app.player.set("ao", "null")
+app.api.mpv.set_property("ao", "null")
 app.run("watch.set_tracking", { enabled = false })
 local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%02d-%s.png", shots, n, name)) end
@@ -17,7 +17,7 @@ local function check(label, ok, detail)
   log(ok and "PASS" or "FAIL", label, detail and ("| " .. tostring(detail)) or "")
 end
 local function visible(name) local w = app.find(name); return w ~= nil and w:get_mapped() end
-local function position() return app.player.state().position or 0 end
+local function position() return app.api.player.state().position or 0 end
 
 local loaded
 app.on("sponsorblock.segments", function(e) loaded = e end)
@@ -69,10 +69,10 @@ local steps = {
       app.run("player.seek", { position = 73 })
     end },
   { 3500, function()
-      check("a segment to mute is muted", app.player.get("mute") == "yes", position())
+      check("a segment to mute is muted", app.api.mpv.get_string("mute") == "yes", position())
     end },
   { 5000, function()
-      check("and unmuted after", app.player.get("mute") == "no", position())
+      check("and unmuted after", app.api.mpv.get_string("mute") == "no", position())
       app.run("sponsorblock.jump_highlight")
     end },
   { 1500, function()
@@ -118,7 +118,7 @@ local steps = {
       row.selected = 3
     end },
   { 800, function()
-      local file = io.open(app.paths.config .. "/plugin-data/sponsorblock.json")
+      local file = io.open(app.api.paths.config_dir() .. "/plugin-data/sponsorblock.json")
       local saved = file and app.json.decode(file:read("*a")) or {}
       if file then file:close() end
       check("a choice there is kept", saved.actions and saved.actions.sponsor == "off",

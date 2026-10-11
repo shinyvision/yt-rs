@@ -7,7 +7,7 @@
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local video = os.getenv("E2E_VIDEO") or "jfKfPfyJRdk"
 local function log(...) app.log("[chat]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%02d-%s.png", shots, n, name)) end

@@ -4,7 +4,7 @@
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local prefix = os.getenv("E2E_PREFIX") or ""
 local function log(...) app.log("[playlists]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%s%02d-%s.png", shots, prefix, n, name)) end
@@ -100,7 +100,7 @@ local steps = {
     end },
   { 3000, function()
       local list = app.run("list.current")
-      local s = app.player.state()
+      local s = app.api.player.state()
       check("next plays the second video", list and list.position == 1 and s.video_id == list.videos[list.order[2] + 1].id, s.video_id or "-")
       app.run("list.set_shuffled", { shuffled = true })
     end },

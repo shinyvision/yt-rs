@@ -3,7 +3,7 @@
 -- at moments right after. Silent, no watch history.
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local function log(...) app.log("[flash]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 local function sizes(tag)
   local parts = {}

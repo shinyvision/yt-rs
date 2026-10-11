@@ -7,8 +7,8 @@ local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local prefix = os.getenv("E2E_PREFIX") or ""
 local function log(...) app.log("[audit]", ...) end
 
-app.player.set("ao", "null")
-app.player.set("mute", "yes")
+app.api.mpv.set_property("ao", "null")
+app.api.mpv.set_property("mute", "yes")
 app.run("watch.set_tracking", { enabled = false })
 
 local function find_all(root, class, out)

@@ -3,7 +3,7 @@
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local prefix = os.getenv("E2E_PREFIX") or ""
 local function log(...) app.log("[layout]", ...) end
-app.player.set("ao", "null"); app.player.set("mute", "yes"); app.run("watch.set_tracking", { enabled = false })
+app.api.mpv.set_property("ao", "null"); app.api.mpv.set_property("mute", "yes"); app.run("watch.set_tracking", { enabled = false })
 local n = 0
 local function shot(name) n = n + 1; app.screenshot(string.format("%s/%s%02d-%s.png", shots, prefix, n, name)) end
 local steps = {
@@ -29,7 +29,7 @@ local steps = {
   { 100, function() app.run("watch.toggle_theater") end },
   { 500, function() app.run("player.mini") end },
   { 2500, function()
-      local s = app.player.state()
+      local s = app.api.player.state()
       log("mini: page", app.current_page(), "| playing", tostring(not s.paused), "| position", s.position, "| docked visible", tostring(app.find("mini-player"):get_mapped()))
       shot("mini-player")
       local function walk(w)
@@ -41,12 +41,12 @@ local steps = {
       walk(app.find("mini-player"))
     end },
   { 600, function() shot("mini-hovered"); app.run("player.toggle_pause") end },
-  { 600, function() log("mini paused:", tostring(app.player.state().paused)); shot("mini-paused"); app.run("player.toggle_pause") end },
+  { 600, function() log("mini paused:", tostring(app.api.player.state().paused)); shot("mini-paused"); app.run("player.toggle_pause") end },
   { 100, function() app.run("app.navigate", { page = "subscriptions" }) end },
   { 2500, function() log("mini on subscriptions:", tostring(app.find("mini-player"):get_mapped())); shot("mini-on-subscriptions") end },
   { 100, function() app.run("player.expand") end },
   { 2500, function()
-      local s = app.player.state()
+      local s = app.api.player.state()
       log("expanded: page", app.current_page(), "| position", s.position, "(kept, not restarted)")
       shot("expanded")
     end },
