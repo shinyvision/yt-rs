@@ -6,7 +6,9 @@ of it.
 
 - **Your feed:** Home, Subscriptions and History from your own account, with
   the shelves YouTube recommends as chips, infinite scrolling, and the red
-  watched bar on videos you've started.
+  watched bar on videos you've started. Each video's menu has what
+  youtube.com's has, "Not interested" and "Don't recommend channel"
+  included.
 - **Search,** as on youtube.com: suggestions while you type and your earlier
   searches, results with big thumbnails, the query in bold in descriptions,
   channel and playlist results, "People also watched" and Shorts shelves,
@@ -14,7 +16,19 @@ of it.
   filters (type, length, upload date, features, popularity). Signed in, the
   results are your own, with watch progress; signed out, search still works.
 - **Playback** in mpv: hardware-accelerated (VA-API), up to 1080p, resuming
-  where you left off, with a scrub bar you can drag.
+  where you left off, with a scrub bar you can drag. Streams are read in
+  bounded chunks, which YouTube serves at full speed: a video starts in well
+  under a second and seeks in a few hundred milliseconds. Live streams can
+  be rewound over everything YouTube keeps (up to 12 hours).
+- **The mini player:** leave the watch page and the video carries on in the
+  corner, with play, pause, next, previous and a way back (`i`).
+- **Playlists:** your playlists, Watch later and Liked videos, each with its
+  page; the "You" page; "Save video to..." with new playlists; a channel's
+  playlists; playing a playlist in order, shuffled or looped, and the queue
+  ("Add to queue"), shown beside the video.
+- **Media keys and the desktop's player widget** (MPRIS): title, channel,
+  picture and position, and play, pause, seek, next, previous, volume, speed,
+  loop and shuffle.
 - **Watch history:** what you watch is reported to YouTube the way the
   official TV app reports it, so it lands in your history with a resume
   position and tunes your recommendations.
@@ -27,8 +41,8 @@ of it.
   working links and timestamps, "Up next", and the comments: sort them, read
   replies, like or dislike them, write comments and replies, and delete your
   own.
-- **Channels:** channel pages with banner, about, Home, Videos, Shorts and
-  Live, subscribe and unsubscribe, and your subscriptions in the sidebar.
+- **Channels:** channel pages with banner, about, Home (its shelves as rows),
+  Videos, Shorts, Live and Playlists, subscribe and unsubscribe, and your subscriptions in the sidebar.
   Channel pictures appear on every video, comment and channel.
 - **Plugins:** Lua (LuaJIT) plugins can replace or wrap any component, command,
   key, page or style, and add new ones. That includes widgets from C libraries,

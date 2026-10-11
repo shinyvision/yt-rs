@@ -420,7 +420,11 @@ fn set_subscribed(args: &Value, subscribe: bool) -> Result<Value, String> {
 fn open_link(link: &Link) -> Result<Value, String> {
     let app = app();
     match link {
-        Link::Url { url } => app.ext.commands.run("app.open_url", json!({ "url": url })),
+        // A link to YouTube opens here.
+        Link::Url { url } => match yt_core::text::parse_url(url) {
+            Some(link) => open_link(&link),
+            None => app.ext.commands.run("app.open_url", json!({ "url": url })),
+        },
         Link::Video { video_id, start } => {
             let playing = app.player.state().video_id.as_deref() == Some(video_id.as_str());
             match (playing, start) {
@@ -438,6 +442,10 @@ fn open_link(link: &Link) -> Result<Value, String> {
             "channel.open",
             json!({ "channel_id": channel_id, "handle": handle }),
         ),
+        Link::Playlist { playlist_id } => app
+            .ext
+            .commands
+            .run("playlist.open", json!({ "playlist_id": playlist_id })),
         Link::Search { query } => app
             .ext
             .commands

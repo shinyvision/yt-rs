@@ -150,6 +150,7 @@ impl App {
         app.tracker.attach(&app.player);
         crate::playback::init();
         ui::player_dock::init();
+        crate::media_controls::init();
         app.forward_player_events();
 
         // Plugins run before the window exists, so they can replace any

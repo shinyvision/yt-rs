@@ -6,6 +6,7 @@ mod commands;
 mod ext;
 mod images;
 mod lists;
+mod media_controls;
 mod playback;
 mod player;
 mod playlists;

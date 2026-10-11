@@ -35,3 +35,16 @@ other queries (an artist, a misspelling, a narrow window) anonymously.
 `playback` plays a video YouTube used to bot-check (with chapters), seeks,
 switches quality, turns captions on, plays a video with scrambled
 signatures, and a live stream, and logs what the player reports.
+
+## Media controls
+
+`mpris.sh` runs the app on a private D-Bus session (`dbus-run-session`), so
+the desktop's own media widget never sees the test player, and reads and
+drives it from outside with `gdbus` and `playerctl`: status, metadata,
+pause, play, seek, set position, volume, rate, loop, next, stop, and the
+`PropertiesChanged` signal. Give it the command that runs the `mpris`
+plugin, and `GTK_A11Y=none` (there is no accessibility bus there):
+
+```sh
+E2E="<run the mpris plugin as above> GTK_A11Y=none" LOG=/tmp/mpris.log tests/e2e/mpris.sh
+```

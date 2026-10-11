@@ -42,6 +42,102 @@ pub enum Link {
     Search {
         query: String,
     },
+    Playlist {
+        playlist_id: String,
+    },
+}
+
+/// What a YouTube link points at: a video (and a moment in it), a
+/// playlist, a channel or a search. `None` for other links.
+pub fn parse_url(url: &str) -> Option<Link> {
+    let parsed = url::Url::parse(url.trim()).ok()?;
+    let host = parsed
+        .host_str()?
+        .trim_start_matches("www.")
+        .trim_start_matches("m.");
+    let query = |key: &str| {
+        parsed
+            .query_pairs()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.into_owned())
+            .filter(|v| !v.is_empty())
+    };
+    let start = query("t")
+        .or_else(|| query("start"))
+        .and_then(|t| parse_offset(&t));
+    let mut segments = parsed.path_segments()?.filter(|s| !s.is_empty());
+    let first = segments.next();
+    let video = |id: &str| {
+        (id.len() == 11
+            && id
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_'))
+        .then(|| Link::Video {
+            video_id: id.to_owned(),
+            start,
+        })
+    };
+    match (host, first) {
+        ("youtu.be", Some(id)) => video(id),
+        ("youtube.com" | "youtube-nocookie.com", Some("watch")) => match query("v") {
+            Some(id) => video(&id),
+            None => query("list").map(|playlist_id| Link::Playlist { playlist_id }),
+        },
+        ("youtube.com" | "youtube-nocookie.com", Some("shorts" | "live" | "embed" | "v")) => {
+            video(segments.next()?)
+        }
+        ("youtube.com", Some("playlist")) => {
+            query("list").map(|playlist_id| Link::Playlist { playlist_id })
+        }
+        ("youtube.com", Some("channel")) => Some(Link::Channel {
+            channel_id: Some(segments.next()?.to_owned()).filter(|id| id.starts_with("UC")),
+            handle: None,
+        })
+        .filter(|l| {
+            matches!(
+                l,
+                Link::Channel {
+                    channel_id: Some(_),
+                    ..
+                }
+            )
+        }),
+        ("youtube.com", Some(handle)) if handle.starts_with('@') && handle.len() > 1 => {
+            Some(Link::Channel {
+                channel_id: None,
+                handle: Some(handle.to_owned()),
+            })
+        }
+        ("youtube.com", Some("results")) => {
+            query("search_query").map(|query| Link::Search { query })
+        }
+        _ => None,
+    }
+}
+
+/// A link's moment: "90", "90s", "1m30s", "1h2m3s".
+fn parse_offset(text: &str) -> Option<f64> {
+    if let Ok(seconds) = text.parse::<f64>() {
+        return Some(seconds);
+    }
+    let mut total = 0.0;
+    let mut number = String::new();
+    for c in text.chars() {
+        match c {
+            '0'..='9' => number.push(c),
+            'h' | 'm' | 's' => {
+                let n: f64 = number.parse().ok()?;
+                number.clear();
+                total += n * match c {
+                    'h' => 3600.0,
+                    'm' => 60.0,
+                    _ => 1.0,
+                };
+            }
+            _ => return None,
+        }
+    }
+    number.is_empty().then_some(total)
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
@@ -258,6 +354,91 @@ pub fn parse_timestamp(text: &str) -> Option<f64> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn reads_youtube_links() {
+        let video = |id: &str, start: Option<f64>| {
+            Some(Link::Video {
+                video_id: id.into(),
+                start,
+            })
+        };
+        assert_eq!(
+            parse_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ"),
+            video("dQw4w9WgXcQ", None)
+        );
+        assert_eq!(
+            parse_url("https://youtu.be/dQw4w9WgXcQ?t=90"),
+            video("dQw4w9WgXcQ", Some(90.0))
+        );
+        assert_eq!(
+            parse_url("https://m.youtube.com/watch?v=dQw4w9WgXcQ&t=1m30s"),
+            video("dQw4w9WgXcQ", Some(90.0))
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/watch?v=dQw4w9WgXcQ&t=1h2m3s&list=PL1"),
+            video("dQw4w9WgXcQ", Some(3723.0))
+        );
+        assert_eq!(
+            parse_url("https://youtube.com/shorts/abcdefghijk"),
+            video("abcdefghijk", None)
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/live/abcdefghijk?si=x"),
+            video("abcdefghijk", None)
+        );
+        assert_eq!(
+            parse_url("https://www.youtube-nocookie.com/embed/abcdefghijk"),
+            video("abcdefghijk", None)
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/playlist?list=PL2qCIlusf8"),
+            Some(Link::Playlist {
+                playlist_id: "PL2qCIlusf8".into()
+            })
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/@RickAstleyYT/videos"),
+            Some(Link::Channel {
+                channel_id: None,
+                handle: Some("@RickAstleyYT".into())
+            })
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw"),
+            Some(Link::Channel {
+                channel_id: Some("UCuAXFkgsw1L7xaCfnd5JJOw".into()),
+                handle: None
+            })
+        );
+        assert_eq!(
+            parse_url("https://www.youtube.com/results?search_query=hello+world"),
+            Some(Link::Search {
+                query: "hello world".into()
+            })
+        );
+        // Not YouTube's, or not something the app shows.
+        for url in [
+            "https://example.com/watch?v=dQw4w9WgXcQ",
+            "https://www.youtube.com/watch?v=short",
+            "https://www.youtube.com/",
+            "https://www.youtube.com/feed/trending",
+            "https://www.youtube.com/channel/notachannel",
+            "not a url",
+            "https://youtu.be/dQw4w9WgXcQ?t=bad",
+        ] {
+            let parsed = parse_url(url);
+            assert!(
+                parsed.is_none() || url.ends_with("t=bad"),
+                "{url}: {parsed:?}"
+            );
+        }
+        // A bad moment is no moment.
+        assert_eq!(
+            parse_url("https://youtu.be/dQw4w9WgXcQ?t=bad"),
+            video("dQw4w9WgXcQ", None)
+        );
+    }
+
     #[test]
     fn truncates_by_lines_and_length() {
         let text = RichText {

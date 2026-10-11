@@ -194,6 +194,11 @@ destroyed, so handlers don't pile up as lists scroll and pages change.
   or, live, with `yt_core::streams::live`. A stream that can't be read
   ends like one at its end, so the reader notes why it gave up and the
   player reports an error instead of the video ending (no "Up next").
+- **Media controls:** `media_controls.rs` puts the player on MPRIS (D-Bus) on
+  Linux, as `org.mpris.MediaPlayer2.yt_rs` (another app ID, a test say, gets
+  an `.instance<pid>` name, so it never takes the desktop's player). Its
+  methods run the app's commands; its properties are the player's state and
+  the list playing, announced as they change.
 - **Live streams:** read segment by segment (`yt_core::streams::live`). Every segment's answer says which is the newest
   and where it starts in the stream's time, so the player knows the live
   edge and the window YouTube keeps (`maxDvrDurationSec`, up to 12 hours)
