@@ -328,12 +328,16 @@ fn reload(feed: &Rc<Feed>) {
                 feed.state.borrow_mut().selected = 0;
                 show_selected(&feed);
                 if feed.state.borrow().sections.is_empty() {
-                    show_status(
-                        &feed,
-                        nudge.as_deref().unwrap_or("Nothing here yet"),
-                        "",
-                        false,
-                    );
+                    if browse_id == yt_core::innertube::HOME {
+                        show_empty_home(&feed);
+                    } else {
+                        show_status(
+                            &feed,
+                            nudge.as_deref().unwrap_or("Nothing here yet"),
+                            "",
+                            false,
+                        );
+                    }
                 }
                 // A second page of shelves gives the chip bar more choices.
                 if feed.state.borrow().sections.len() < 6 {
@@ -586,6 +590,18 @@ fn show_status(feed: &Feed, title: &str, description: &str, retry: bool) {
         "video-display-symbolic"
     }));
     show_actions(feed, retry, false);
+    feed.content.set_visible_child_name("status");
+}
+
+/// An empty Home (signed out, or with the history off), as youtube.com
+/// shows it; signed out, with "Sign in" for a feed of one's own.
+fn show_empty_home(feed: &Feed) {
+    feed.status.set_icon_name(Some("yt-search-symbolic"));
+    feed.status.set_title("Try searching to get started");
+    feed.status.set_description(Some(
+        "Start watching videos to help us build a feed of videos you\u{2019}ll love.",
+    ));
+    show_actions(feed, false, !crate::social::signed_in());
     feed.content.set_visible_child_name("status");
 }
 
