@@ -1,4 +1,4 @@
-/* The built-in theme. Plugins can override any of it with app.theme.add_css. */
+/* The built-in theme. Plugins can override any of it with app.css(...). */
 
 :root {
   --yt-bg: #0f0f0f;
@@ -670,3 +670,9 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .save-option label { font-size: 14px; }
 .save-new { padding: 8px 4px; font-size: 14px; }
 .save-form { padding: 8px 0 16px 0; }
+
+/* Keyboard shortcuts. */
+.shortcuts { padding: 8px 24px 24px 24px; }
+.shortcuts-heading { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.shortcut { padding: 5px 0; font-size: 14px; }
+.keycap { padding: 2px 8px; border-radius: 6px; background: var(--yt-raised); border: 1px solid #3f3f3f; font-size: 12px; font-weight: 500; }

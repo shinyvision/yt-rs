@@ -20,7 +20,8 @@ struct Item {
 #[derive(Default)]
 pub struct Slots {
     items: RefCell<HashMap<String, Vec<Item>>>,
-    mounted: RefCell<HashMap<String, Vec<glib::WeakRef<gtk::Box>>>>,
+    /// The containers on screen: boxes, and layers (see `create_layer`).
+    mounted: RefCell<HashMap<String, Vec<glib::WeakRef<gtk::Widget>>>>,
     next_id: Cell<u64>,
 }
 
@@ -70,6 +71,20 @@ impl Slots {
     /// Makes the container for a slot and fills it.
     pub fn create(&self, slot: &str, orientation: gtk::Orientation, spacing: i32) -> gtk::Box {
         let container = gtk::Box::new(orientation, spacing);
+        self.mount(slot, container.upcast_ref());
+        container
+    }
+
+    /// Makes a slot that lies over another widget (the video): each
+    /// contribution sits where its own `halign`, `valign` and margins put
+    /// it, and the pointer passes through the rest.
+    pub fn create_layer(&self, slot: &str) -> crate::ui::layer::Layer {
+        let layer = crate::ui::layer::Layer::default();
+        self.mount(slot, layer.upcast_ref());
+        layer
+    }
+
+    fn mount(&self, slot: &str, container: &gtk::Widget) {
         container.set_widget_name(&format!("slot:{slot}"));
         container.add_css_class("slot");
         self.mounted
@@ -77,8 +92,7 @@ impl Slots {
             .entry(slot.to_owned())
             .or_default()
             .push(container.downgrade());
-        self.fill(slot, &container);
-        container
+        self.fill(slot, container);
     }
 
     /// Every slot name that has a container on screen or contributions.
@@ -89,7 +103,7 @@ impl Slots {
     }
 
     fn refresh(&self, slot: &str) {
-        let containers: Vec<gtk::Box> = {
+        let containers: Vec<gtk::Widget> = {
             let mut mounted = self.mounted.borrow_mut();
             let Some(list) = mounted.get_mut(slot) else {
                 return;
@@ -102,9 +116,16 @@ impl Slots {
         }
     }
 
-    fn fill(&self, slot: &str, container: &gtk::Box) {
-        while let Some(child) = container.first_child() {
-            container.remove(&child);
+    fn fill(&self, slot: &str, container: &gtk::Widget) {
+        let layer = container.downcast_ref::<crate::ui::layer::Layer>();
+        match (layer, container.downcast_ref::<gtk::Box>()) {
+            (Some(layer), _) => layer.clear(),
+            (None, Some(b)) => {
+                while let Some(child) = b.first_child() {
+                    b.remove(&child);
+                }
+            }
+            _ => return,
         }
         let builds: Vec<SlotBuild> = self
             .items
@@ -114,7 +135,11 @@ impl Slots {
             .unwrap_or_default();
         container.set_visible(!builds.is_empty());
         for build in builds {
-            container.append(&build());
+            match (layer, container.downcast_ref::<gtk::Box>()) {
+                (Some(layer), _) => layer.add(&build()),
+                (None, Some(b)) => b.append(&build()),
+                _ => {}
+            }
         }
     }
 }

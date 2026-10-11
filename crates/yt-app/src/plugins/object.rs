@@ -208,6 +208,13 @@ impl UserData for LuaObject {
                 f.append(&child);
             } else if let Some(o) = parent.downcast_ref::<gtk::Overlay>() {
                 o.add_overlay(&child);
+            } else if let Some(g) = parent.downcast_ref::<adw::PreferencesGroup>() {
+                adw::prelude::PreferencesGroupExt::add(g, &child);
+            } else if let (Some(p), Some(g)) = (
+                parent.downcast_ref::<adw::PreferencesPage>(),
+                child.downcast_ref::<adw::PreferencesGroup>(),
+            ) {
+                adw::prelude::PreferencesPageExt::add(p, g);
             } else if parent.find_property("child").is_some() {
                 parent.set_property("child", &child);
             } else {
@@ -251,6 +258,44 @@ impl UserData for LuaObject {
                 Ok(())
             },
         );
+        // libadwaita's rows: widgets before and after the title.
+        for (name, prefix) in [("add_prefix", true), ("add_suffix", false)] {
+            methods.add_method(name, move |_, this, child: UserDataRef<LuaObject>| {
+                let (row, child) = (this.widget()?, child.widget()?);
+                use adw::prelude::*;
+                if let Some(r) = row.downcast_ref::<adw::ActionRow>() {
+                    if prefix {
+                        r.add_prefix(&child)
+                    } else {
+                        r.add_suffix(&child)
+                    }
+                } else if let Some(r) = row.downcast_ref::<adw::EntryRow>() {
+                    if prefix {
+                        r.add_prefix(&child)
+                    } else {
+                        r.add_suffix(&child)
+                    }
+                } else if let Some(r) = row.downcast_ref::<adw::ExpanderRow>() {
+                    if prefix {
+                        r.add_prefix(&child)
+                    } else {
+                        r.add_suffix(&child)
+                    }
+                } else {
+                    return Err(mlua::Error::runtime(
+                        "prefixes and suffixes go on libadwaita rows",
+                    ));
+                }
+                Ok(())
+            });
+        }
+        // The widget the pointer would reach at (x, y), as GTK picks it.
+        methods.add_method("pick", |_, this, (x, y): (f64, f64)| {
+            Ok(this
+                .widget()?
+                .pick(x, y, gtk::PickFlags::DEFAULT)
+                .map(|w| LuaObject(w.upcast())))
+        });
         methods.add_method("children", |_, this, ()| {
             Ok(children(&this.widget()?)
                 .into_iter()

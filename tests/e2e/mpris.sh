@@ -5,6 +5,10 @@
 # Usage: E2E=<command that runs a test plugin> mpris.sh; prints PASS/FAIL
 # lines and a summary.
 set -u
+# Nothing in the private session may start session services that share
+# paths with the real ones: its accessibility bus once took over the
+# desktop's own socket (/run/user/UID/at-spi/bus_0) and left it dead.
+export GTK_A11Y=none NO_AT_BRIDGE=1 GDK_DEBUG=no-portals
 exec dbus-run-session -- bash -c '
   set -u
   $E2E > "$LOG" 2>&1 &

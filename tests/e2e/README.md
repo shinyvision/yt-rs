@@ -43,8 +43,27 @@ the desktop's own media widget never sees the test player, and reads and
 drives it from outside with `gdbus` and `playerctl`: status, metadata,
 pause, play, seek, set position, volume, rate, loop, next, stop, and the
 `PropertiesChanged` signal. Give it the command that runs the `mpris`
-plugin, and `GTK_A11Y=none` (there is no accessibility bus there):
+plugin:
 
 ```sh
-E2E="<run the mpris plugin as above> GTK_A11Y=none" LOG=/tmp/mpris.log tests/e2e/mpris.sh
+E2E="<run the mpris plugin as above>" LOG=/tmp/mpris.log tests/e2e/mpris.sh
 ```
+
+It keeps the private session from starting an accessibility bus or desktop
+portals (`GTK_A11Y=none NO_AT_BRIDGE=1 GDK_DEBUG=no-portals`): one started
+there takes over the desktop's own accessibility socket and leaves it dead.
+
+## SponsorBlock
+
+`sponsorblock-test` drives the plugin in `examples/plugins/sponsorblock`
+against a stand-in server (`sponsorblock_server.py`, never the real one):
+install both plugins, start the server, and point the plugin at it through
+its storage:
+
+```sh
+python3 -I tests/e2e/sponsorblock_server.py 18761 /tmp/sb.log &
+mkdir -p "$E/plugin-data" && echo '{"server": "http://127.0.0.1:18761", "min_duration": 3}' > "$E/plugin-data/sponsorblock.json"
+cp -r examples/plugins/sponsorblock tests/e2e/sponsorblock-test "$E/plugins/"
+```
+
+The server's log then shows the counted skips, the vote and the submission.

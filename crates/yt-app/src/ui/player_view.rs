@@ -174,12 +174,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     overlay.add_overlay(&stats);
     overlay.add_overlay(&up_next);
     overlay.add_overlay(&controls);
-    overlay.add_overlay(
-        &app()
-            .ext
-            .slots
-            .create("player.overlay", gtk::Orientation::Vertical, 0),
-    );
+    overlay.add_overlay(&app().ext.slots.create_layer("player.overlay"));
 
     let view = Rc::new(PlayerView {
         area: area.clone(),

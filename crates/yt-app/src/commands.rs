@@ -46,6 +46,10 @@ pub fn register(this: &Rc<App>) {
         app().toast_with(&args);
         Ok(Value::Null)
     });
+    c.register("app.shortcuts", |_| {
+        crate::ui::shortcuts::present();
+        Ok(Value::Null)
+    });
     c.register("app.close_dialog", |_| {
         if let Some(dialog) = app().window().and_then(|w| w.visible_dialog()) {
             dialog.close();
@@ -157,6 +161,48 @@ pub fn register(this: &Rc<App>) {
     });
     c.register("list.clear", |_| {
         crate::lists::clear();
+        Ok(Value::Null)
+    });
+    // { owner, ranges = [{ start, end, color, label? }] }: marks parts of
+    // the video on the seek bar, in place of the owner's earlier ones.
+    c.register("seekbar.set_ranges", |args| {
+        let owner = str_arg(&args, "owner")?.to_owned();
+        let ranges = args
+            .get("ranges")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .map(|r| {
+                let time = |key: &str| {
+                    r.get(key)
+                        .and_then(Value::as_f64)
+                        .ok_or(format!("a range needs {key}"))
+                };
+                let color = r.get("color").and_then(Value::as_str).unwrap_or("#ffffff");
+                Ok(crate::ui::seekbar::Range {
+                    start: time("start")?,
+                    end: time("end")?,
+                    color: gdk::RGBA::parse(color).map_err(|_| format!("not a color: {color}"))?,
+                    label: r.get("label").and_then(Value::as_str).map(str::to_owned),
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        crate::ui::seekbar::set_ranges(&owner, ranges);
+        Ok(Value::Null)
+    });
+    // → everyone's marks, `{ start, end, color, label? }`.
+    c.register("seekbar.ranges", |_| {
+        Ok(Value::Array(
+            crate::ui::seekbar::ranges()
+                .into_iter()
+                .map(|r| {
+                    json!({ "start": r.start, "end": r.end, "color": r.color.to_string(), "label": r.label })
+                })
+                .collect(),
+        ))
+    });
+    c.register("seekbar.clear_ranges", |args| {
+        crate::ui::seekbar::set_ranges(str_arg(&args, "owner")?, Vec::new());
         Ok(Value::Null)
     });
     // The video's ⋮ menu, as `{ label, icon, command, args, confirm? }`.
@@ -517,6 +563,7 @@ fn default_keys(app: &App) {
     bind("F11", GLOBAL, "window.toggle_fullscreen", Value::Null);
     // As on youtube.com.
     bind("i", GLOBAL, "player.mini", Value::Null);
+    bind("question", GLOBAL, "app.shortcuts", Value::Null);
     // As on youtube.com.
     bind("slash", GLOBAL, "search.focus", Value::Null);
     bind("ctrl+r", GLOBAL, "feed.refresh", Value::Null);

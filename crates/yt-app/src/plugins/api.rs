@@ -7,6 +7,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Duration;
 
+use adw::prelude::AdwDialogExt;
 use gtk::glib;
 use gtk::prelude::*;
 use mlua::{Function, Lua, LuaSerdeExt, Table, UserData, UserDataMethods, UserDataRef, Variadic};
@@ -460,6 +461,41 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
             Ok(())
         })?,
     )?;
+    // app.dialog(content, { title?, width? }) → the dialog: shows a widget
+    // in a dialog over the window, as the app's own are.
+    t.set(
+        "dialog",
+        lua.create_function(
+            |_, (content, options): (UserDataRef<LuaObject>, Option<Table>)| {
+                let content = content
+                    .0
+                    .clone()
+                    .downcast::<gtk::Widget>()
+                    .map_err(|_| mlua::Error::runtime("a dialog shows a widget"))?;
+                let option = |key: &str| -> Option<mlua::Value> {
+                    options
+                        .as_ref()
+                        .and_then(|o| o.get::<mlua::Value>(key).ok())
+                };
+                let dialog = adw::Dialog::builder()
+                    .child(&content)
+                    .follows_content_size(true)
+                    .build();
+                if let Some(mlua::Value::String(title)) = option("title") {
+                    dialog.set_title(&title.to_str()?);
+                }
+                if let Some(width) = option("width").and_then(|w| w.as_i32()) {
+                    dialog.set_content_width(width);
+                    dialog.set_follows_content_size(false);
+                }
+                dialog.add_css_class("yt-dialog");
+                if let Some(window) = app().window() {
+                    dialog.present(Some(&window));
+                }
+                Ok(LuaObject(dialog.upcast()))
+            },
+        )?,
+    )?;
     t.set(
         "screenshot",
         lua.create_function(|_, path: String| {
@@ -760,6 +796,64 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
         })?,
     )?;
     t.set("json", json)?;
+    let hash = lua.create_table()?;
+    hash.set(
+        "sha256",
+        lua.create_function(|_, text: mlua::LuaString| {
+            Ok(
+                glib::compute_checksum_for_data(glib::ChecksumType::Sha256, &text.as_bytes())
+                    .map(|h| h.to_string()),
+            )
+        })?,
+    )?;
+    t.set("hash", hash)?;
+    // app.storage(name): what a plugin keeps between runs, as a table, and
+    // its :save(); a JSON file in the config directory.
+    t.set(
+        "storage",
+        lua.create_function(|lua, name: String| {
+            let valid = !name.is_empty()
+                && name
+                    .chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '-' || c == '_');
+            if !valid {
+                return Err(mlua::Error::runtime(
+                    "a storage name is letters, digits, - and _",
+                ));
+            }
+            let path = yt_core::paths::config_dir()
+                .join("plugin-data")
+                .join(format!("{name}.json"));
+            let data: Value = std::fs::read(&path)
+                .ok()
+                .and_then(|bytes| serde_json::from_slice(&bytes).ok())
+                .filter(Value::is_object)
+                .unwrap_or_else(|| serde_json::json!({}));
+            let table = match json_to_lua(lua, &data)? {
+                mlua::Value::Table(table) => table,
+                _ => lua.create_table()?,
+            };
+            let methods = lua.create_table()?;
+            methods.set(
+                "save",
+                lua.create_function(move |lua, this: Table| {
+                    let value = lua_to_json(lua, mlua::Value::Table(this))?;
+                    let text = serde_json::to_vec_pretty(&value).map_err(mlua::Error::external)?;
+                    let dir = path.parent().expect("a file in a directory");
+                    std::fs::create_dir_all(dir).map_err(mlua::Error::external)?;
+                    // Written whole, then put in place: never half a file.
+                    let partial = path.with_extension("json.partial");
+                    std::fs::write(&partial, text).map_err(mlua::Error::external)?;
+                    std::fs::rename(&partial, &path).map_err(mlua::Error::external)?;
+                    Ok(())
+                })?,
+            )?;
+            let meta = lua.create_table()?;
+            meta.set("__index", methods)?;
+            table.set_metatable(Some(meta))?;
+            Ok(table)
+        })?,
+    )?;
     let paths = lua.create_table()?;
     paths.set(
         "config",

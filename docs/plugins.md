@@ -92,6 +92,8 @@ Object methods:
 | `o:controllers()` | the widget's event controllers (gestures, key and scroll handlers), as objects |
 | `o:emit(signal, ...)` | emits a signal, e.g. `button:emit("clicked")`, and returns its result |
 | `o:add_controller(controller)` | event controllers, e.g. `ui.new("GtkGestureClick")` |
+| `o:add_prefix(w)`, `o:add_suffix(w)` | widgets before and after a libadwaita row's title (`AdwActionRow`, `AdwComboRow`, `AdwEntryRow`, ...); `o:append(row)` adds rows to an `AdwPreferencesGroup` |
+| `o:pick(x, y)` | the widget the pointer would reach at that point, as GTK picks it |
 | `o:on_tick(fn(seconds))` | runs every frame until `fn` returns `false` |
 | `o:type_name()`, `o:is_a(type)`, `o:properties()` | introspection |
 | `o:ptr()` | the C pointer, for LuaJIT's FFI |
@@ -267,6 +269,10 @@ app.commands()                     -- all names
 | `app.toast` | `{ message, action?, seconds? }`: a toast in the bottom-left corner; `action = { label, command, args? }` adds a button ("Undo") that runs the command |
 | `app.dismiss_toast` | hides the toast showing |
 | `app.close_dialog` | closes the dialog showing (while one is open, keys go to it) |
+| `app.shortcuts` | the keyboard shortcuts (`?`), every binding with what it does |
+| `seekbar.set_ranges` | `{ owner, ranges = { { start, end, color, label? } } }`: marks parts of the video on the seek bar, in place of `owner`'s earlier ones; a range too short to see is a mark, and `label` shows in the bubble over it. Cleared when another video loads |
+| `seekbar.clear_ranges` | `{ owner }` |
+| `seekbar.ranges` | → everyone's marks |
 | `app.screenshot` | `{ path }`, a PNG of the window after the next frame |
 | `sidebar.toggle`, `window.toggle_fullscreen` | |
 | `window.fullscreen` | `{ fullscreen }` |
@@ -413,6 +419,7 @@ app.components()
 | `playlists` | the user's playlists, as a grid |
 | `list_panel` | the list playing, above "Up next" on the watch page |
 | `save_dialog` | `{ video_id }`: "Save video to..." |
+| `settings` | the Settings page |
 | `search_box` | the search field in the top bar, with its list of earlier searches and suggestions |
 | `search` | `{ query, filters?, chip?, chips? }`: the search page |
 | `search_video`, `search_channel`, `search_playlist`, `search_shelf` | a result (an item of `search.page`); shelves are "People also watched", a row of Shorts, ... |
@@ -440,9 +447,19 @@ app.unslot(id)
 the search box), `topbar.end`, `feed.header`, `search.header`,
 `watch.actions`, `watch.below_player`,
 `player.overlay`, `player.controls.start`, `player.controls.end`,
+`settings.sections` (the Settings page: add an `AdwPreferencesGroup`),
 `mini_player.info` (under the mini player's title), `playlist.panel` (under
 a playlist page's details), `library.bottom` (the end of the "You" page),
 `comments.header`, `channel.header.actions`.
+
+`player.overlay` lies over the video: each widget there sits where its own
+`halign`, `valign` and margins put it (`halign = "end", valign = "end",
+margin_bottom = 76` is above the controls on the right), and clicks and the
+pointer pass through the rest to the video. Every other slot is a box.
+
+[SponsorBlock](../examples/plugins/sponsorblock) is a complete plugin using
+most of this: segments on the seek bar, widgets over the video, settings,
+storage, its own commands, keys and dialog, and a web API.
 
 ### Pages and the sidebar
 
@@ -509,6 +526,9 @@ and `slot:<name>` for slots.
 | `app.log(...)` | |
 | `app.screenshot(path)` | |
 | `app.json.encode(v)`, `app.json.decode(s)`, `app.array(t)` | |
+| `app.hash.sha256(text)` | its SHA-256, in hex |
+| `app.storage(name)` → `store` | what a plugin keeps between runs: a table of what was saved under `name` (letters, digits, `-`, `_`); change it and call `store:save()`. A JSON file in the config directory's `plugin-data` |
+| `app.dialog(content, { title?, width? })` | shows `content` (a widget) in a dialog over the window, as the app's own; `app.run("app.close_dialog")` closes it |
 | `app.paths.config`, `.cache`, `.plugins` | |
 | `app.quit()` | |
 

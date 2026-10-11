@@ -316,6 +316,12 @@ fn connect(controls: &Rc<Controls>, root: &gtk::Overlay) {
             on_player_event(&controls, event, state);
         }
     });
+    let weak = Rc::downgrade(controls);
+    follow(root, "seekbar.ranges", move |_| {
+        if let Some(controls) = weak.upgrade() {
+            controls.seekbar.set_ranges(super::seekbar::ranges());
+        }
+    });
     // The list playing: previous, and next within it.
     let weak = Rc::downgrade(controls);
     follow(root, "list.changed", move |_| {
@@ -562,7 +568,14 @@ fn show_hover(controls: &Rc<Controls>, hover: Option<(f64, f64)>) {
         }
         None => controls.bubble_time.set_label(&format_time(time)),
     }
-    let chapter = chapter_at(&controls.chapters.borrow(), time);
+    // The chapter, and what a plugin marked there ("Sponsor").
+    let chapter = match (
+        chapter_at(&controls.chapters.borrow(), time),
+        controls.seekbar.label_at(time),
+    ) {
+        (Some(chapter), Some(label)) => Some(format!("{chapter} \u{2022} {label}")),
+        (chapter, label) => chapter.or(label),
+    };
     controls.bubble_chapter.set_visible(chapter.is_some());
     controls
         .bubble_chapter

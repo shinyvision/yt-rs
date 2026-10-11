@@ -74,6 +74,10 @@ fn menu(account: &Account) -> gtk::Popover {
         }));
     }
     items.push(json!({
+        "label": "Settings", "icon": "yt-settings-symbolic",
+        "command": "app.navigate", "args": { "page": "settings" },
+    }));
+    items.push(json!({
         "label": "Sign out", "icon": "yt-logout-symbolic", "command": "auth.sign_out",
         "confirm": {
             "title": "Sign out?",

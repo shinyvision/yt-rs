@@ -16,6 +16,11 @@ impl Theme {
         let id = self.next_id.get();
         self.next_id.set(id + 1);
         let provider = gtk::CssProvider::new();
+        // Mistakes in a stylesheet (a plugin's, say) are said, not skipped
+        // in silence.
+        provider.connect_parsing_error(|_, section, error| {
+            tracing::warn!("CSS {}: {error}", section.to_str());
+        });
         provider.load_from_string(css);
         if let Some(display) = gdk::Display::default() {
             // Each stylesheet one step above the previous one.

@@ -14,6 +14,7 @@ pub mod cursor;
 pub mod dialog;
 pub mod feed;
 pub mod icons;
+pub mod layer;
 pub mod library;
 pub mod list_panel;
 pub mod logo;
@@ -33,8 +34,10 @@ pub mod search_box;
 pub mod search_filters;
 pub mod search_results;
 pub mod seekbar;
+pub mod settings_page;
 pub mod shell;
 pub mod shelves;
+pub mod shortcuts;
 pub mod sidebar;
 pub mod signin;
 pub mod split;
@@ -52,6 +55,7 @@ use crate::ext::components::Component;
 use crate::ext::pages::{NavItem, Page};
 
 pub fn register(app: &App) {
+    seekbar::init();
     let c = &app.ext.components;
     c.define("shell", Component::new(shell::build));
     c.define("sidebar", Component::new(sidebar::build));
@@ -91,6 +95,7 @@ pub fn register(app: &App) {
         Component::new(playlist_page::build).with_update(playlist_page::update),
     );
     c.define("library", Component::new(library::build_library));
+    c.define("settings", Component::new(settings_page::build));
     c.define("list_panel", Component::new(list_panel::build));
     c.define(
         "playlists",
@@ -188,6 +193,7 @@ pub fn register(app: &App) {
         ("playlist", "Playlist", true),
         ("library", "You", false),
         ("playlists", "Playlists", false),
+        ("settings", "Settings", false),
     ] {
         pages.register(Page {
             name: name.into(),
@@ -235,6 +241,13 @@ pub fn register(app: &App) {
         "yt-playlist-symbolic",
         10,
         "library",
+    ));
+    pages.add_nav(nav(
+        "settings",
+        "Settings",
+        "yt-settings-symbolic",
+        0,
+        "more",
     ));
     for (id, title, icon, list, order) in [
         (

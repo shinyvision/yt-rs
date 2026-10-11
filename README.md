@@ -47,7 +47,13 @@ of it.
 - **Plugins:** Lua (LuaJIT) plugins can replace or wrap any component, command,
   key, page or style, and add new ones. That includes widgets from C libraries,
   such as a web browser or a terminal. The app ships with no plugins;
-  [examples](examples/plugins) show what's possible.
+  [examples](examples/plugins) show what's possible, among them a complete
+  [SponsorBlock](examples/plugins/sponsorblock): every category, each set to
+  skip, show a button, only show on the seek bar or nothing; "Unskip",
+  votes, muting, highlights, full-video labels, counted skips, and marking
+  and submitting segments, with lookups that don't say which video plays.
+- **Settings** for playback and the account, plugins' own settings, and the
+  keyboard shortcuts (`?`).
 
 ## Requirements
 

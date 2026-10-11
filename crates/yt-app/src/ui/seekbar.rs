@@ -1,8 +1,13 @@
 //! The seek bar: played, buffered and remaining time, split into the video's
 //! chapters, scrubbed by clicking or dragging. While dragging it seeks to keyframes, which mpv does almost
 //! instantly, and seeks exactly when released.
+//!
+//! Plugins mark parts of the video on it ([`set_ranges`]: SponsorBlock's
+//! segments, say), in their own colors, over the played part; a range too
+//! short to see is a mark. They are cleared when another video loads.
 
 use std::cell::{Cell, RefCell};
+use std::collections::BTreeMap;
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
@@ -22,6 +27,7 @@ mod imp {
         pub hover: Cell<Option<f64>>,
         /// Where chapters start, in seconds.
         pub chapters: RefCell<Vec<f64>>,
+        pub ranges: RefCell<Vec<super::Range>>,
         pub drag_start: Cell<Option<f64>>,
         pub on_seek: RefCell<Vec<SeekCallback>>,
         pub on_hover: RefCell<Vec<HoverCallback>>,
@@ -120,6 +126,15 @@ mod imp {
             }
             let played = fraction(self.position.get()) * width;
             fill(played, &accent);
+            // Marked parts, over the rest; a moment is a mark 3 px wide.
+            for range in self.ranges.borrow().iter() {
+                let start = fraction(range.start) * width;
+                let end = (fraction(range.end) * width).max(start + 3.0);
+                snapshot.append_color(
+                    &range.color,
+                    &graphene::Rect::new(start, y, end - start, bar),
+                );
+            }
             snapshot.pop();
 
             if active {
@@ -131,6 +146,58 @@ mod imp {
             }
         }
     }
+}
+
+/// A marked part of the video, from `start` to `end` seconds.
+#[derive(Clone, Debug)]
+pub struct Range {
+    pub start: f64,
+    pub end: f64,
+    pub color: gtk::gdk::RGBA,
+    /// Said while the pointer is over it ("Sponsor").
+    pub label: Option<String>,
+}
+
+thread_local! {
+    /// The marked parts, by who marked them.
+    static RANGES: RefCell<BTreeMap<String, Vec<Range>>> = RefCell::default();
+}
+
+/// Marks parts of the video for `owner`, in place of its earlier ones, and
+/// announces it (`seekbar.ranges`).
+pub fn set_ranges(owner: &str, ranges: Vec<Range>) {
+    RANGES.with(|r| {
+        let mut all = r.borrow_mut();
+        if ranges.is_empty() {
+            all.remove(owner);
+        } else {
+            all.insert(owner.to_owned(), ranges);
+        }
+    });
+    crate::app::app()
+        .ext
+        .events
+        .emit("seekbar.ranges", &serde_json::json!({ "owner": owner }));
+}
+
+/// Everyone's marked parts.
+pub fn ranges() -> Vec<Range> {
+    RANGES.with(|r| r.borrow().values().flatten().cloned().collect())
+}
+
+/// Clears the marks when another video loads.
+pub fn init() {
+    crate::app::app().player.connect(|event, _| {
+        if matches!(event, crate::player::PlayerEvent::Loading { .. })
+            && RANGES.with(|r| !r.borrow().is_empty())
+        {
+            RANGES.with(|r| r.borrow_mut().clear());
+            crate::app::app()
+                .ext
+                .events
+                .emit("seekbar.ranges", &serde_json::json!({ "owner": null }));
+        }
+    });
 }
 
 glib::wrapper! {
@@ -162,6 +229,22 @@ impl SeekBar {
     pub fn set_chapters(&self, starts: Vec<f64>) {
         *self.imp().chapters.borrow_mut() = starts;
         self.queue_draw();
+    }
+
+    /// Shows these marked parts of the video.
+    pub fn set_ranges(&self, ranges: Vec<Range>) {
+        *self.imp().ranges.borrow_mut() = ranges;
+        self.queue_draw();
+    }
+
+    /// The label of the marked part at `time`, if any.
+    pub fn label_at(&self, time: f64) -> Option<String> {
+        self.imp()
+            .ranges
+            .borrow()
+            .iter()
+            .find(|r| time >= r.start && time < r.end.max(r.start + 1.0))
+            .and_then(|r| r.label.clone())
     }
 
     /// `f(position, exact)` runs when the user seeks.
