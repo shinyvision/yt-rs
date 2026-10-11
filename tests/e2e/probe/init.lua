@@ -1,0 +1,41 @@
+-- Plays one video (E2E_VIDEO, or the first home feed video whose title
+-- contains E2E_MATCH) and logs the player's state every second, for
+-- looking into a video that won't play. Silent, no watch history.
+local function log(...) app.log("[probe]", ...) end
+app.player.set("ao", "null")
+app.player.set("mute", "yes")
+app.run("watch.set_tracking", { enabled = false })
+
+local id, match = os.getenv("E2E_VIDEO"), os.getenv("E2E_MATCH")
+local started = false
+local function start(video)
+  if started then return end
+  started = true
+  log("playing", video.id, video.title or "")
+  app.run("video.play", { video = video, start = tonumber(os.getenv("E2E_START") or "0") })
+  local n = 0
+  local function tick()
+    n = n + 1
+    local s = app.player.state()
+    log(string.format("%2d s: position %.1f paused %s ended %s quality %s duration %.0f", n, s.position or -1,
+      tostring(s.paused), tostring(s.ended), s.quality or "-", s.duration or 0))
+    if n < tonumber(os.getenv("E2E_SECONDS") or "20") then app.timer(1000, tick) else app.run("player.stop"); app.quit() end
+  end
+  app.timer(1000, tick)
+end
+for _, name in ipairs({ "player.error", "player.waiting", "player.upcoming" }) do
+  app.on(name, function(p) log(name, app.json and app.json(p) or tostring(p.message or p.seconds)) end)
+end
+app.on("feed.loaded", function(e)
+  if id or not match then return end
+  for _, shelf in ipairs(e.page.shelves or {}) do
+    for _, v in ipairs(shelf.videos or {}) do
+      if (v.title or ""):find(match, 1, true) then return start(v) end
+    end
+  end
+  log("no home feed video matches", match)
+end)
+app.on("app.ready", function()
+  if id then start({ id = id }) end
+end)
+app.timer(120000, function() log("timeout"); app.quit() end)

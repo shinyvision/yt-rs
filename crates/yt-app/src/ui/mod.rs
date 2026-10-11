@@ -16,6 +16,8 @@ pub mod feed;
 pub mod icons;
 pub mod logo;
 pub mod menu;
+pub mod mini_player;
+pub mod player_dock;
 pub mod player_settings;
 pub mod player_view;
 pub mod preview;
@@ -31,6 +33,7 @@ pub mod signin;
 pub mod split;
 pub mod subscribe;
 pub mod topbar;
+pub mod video;
 pub mod video_input;
 pub mod watch;
 
@@ -64,6 +67,7 @@ pub fn register(app: &App) {
         Component::new(watch::build).with_update(watch::update),
     );
     c.define("player", Component::new(player_view::build));
+    c.define("mini_player", Component::new(mini_player::build));
     c.define("player_controls", Component::new(controls::build));
     c.define("player_settings", Component::new(player_settings::build));
     c.define("signin", Component::new(signin::build));

@@ -59,6 +59,9 @@ async fn main() -> yt_core::Result<()> {
                 );
                 if std::env::var("SHOW_URL").is_ok() {
                     println!("URL {}", set.video.url);
+                    if let Some(audio) = &set.audio {
+                        println!("AUDIO_URL {}", audio.url);
+                    }
                 }
                 check(&http, "video", &set.video).await;
                 if let Some(audio) = &set.audio {

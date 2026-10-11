@@ -143,6 +143,7 @@ impl App {
         step("theme, commands, components");
         app.tracker.attach(&app.player);
         crate::playback::init();
+        ui::player_dock::init();
         app.forward_player_events();
 
         // Plugins run before the window exists, so they can replace any
@@ -412,8 +413,8 @@ pub fn shutdown() {
         app.tracker
             .finish_blocking(std::time::Duration::from_secs(3));
         app.settings.flush();
-        // Destroying the windows frees mpv's renderer (when the video widget
-        // unrealizes), which must happen before mpv itself is destroyed.
+        // mpv aborts if its renderer outlives it.
+        crate::ui::player_dock::shut_down();
         for window in app.gtk.windows() {
             window.destroy();
         }

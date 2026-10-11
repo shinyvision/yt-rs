@@ -30,6 +30,8 @@ thread_local! {
     static RECOVERED: RefCell<Option<String>> = const { RefCell::new(None) };
     /// The video started for the watch page (playing, loading or ended).
     static SHOWN: RefCell<Option<String>> = const { RefCell::new(None) };
+    /// And what the card said about it, for the mini player's way back.
+    static CURRENT: RefCell<Option<Video>> = const { RefCell::new(None) };
     /// Where `play` asked a video to start: (video ID, seconds).
     static START: RefCell<Option<(String, f64)>> = const { RefCell::new(None) };
     /// The videos YouTube suggests after the one shown, for Next and
@@ -174,6 +176,7 @@ fn start(video: Video) {
     });
     RECOVERED.with(|r| r.borrow_mut().take());
     app.player.stop();
+    CURRENT.with(|c| *c.borrow_mut() = Some(video.clone()));
     app.ext
         .events
         .emit("video.opened", &json!({ "video": video }));
@@ -307,6 +310,21 @@ pub fn stop() {
     SHOWN.with(|s| s.borrow_mut().take());
     app().player.stop();
     runtime::release_memory_soon();
+}
+
+/// The video playing (or loaded), as the watch page was opened for it.
+pub fn current() -> Option<Video> {
+    CURRENT
+        .with(|c| c.borrow().clone())
+        .filter(|_| app().player.state().video_id.is_some())
+}
+
+/// Back to the watch page of the video playing in the mini player,
+/// without starting it over.
+pub fn expand() -> Result<(), String> {
+    let video = current().ok_or("no video is playing")?;
+    app().navigate("watch", json!({ "video": video }), true);
+    Ok(())
 }
 
 /// The video after the one shown, if YouTube suggested any.

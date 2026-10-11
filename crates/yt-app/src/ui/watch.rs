@@ -31,6 +31,11 @@ use crate::app::app;
 
 /// Room left below the player for the title and channel, in pixels.
 const BELOW_PLAYER: i32 = 128;
+/// In theater mode, room left below the player (youtube.com's 169 px less
+/// the top bar).
+const BELOW_THEATER: i32 = 113;
+/// The page's padding, and the gap between the columns.
+const PADDING: i32 = 24;
 /// The player is never shorter than this.
 const MIN_PLAYER_HEIGHT: i32 = 240;
 /// "Up next" is this wide beside the player, and shows this many videos.
@@ -46,10 +51,16 @@ struct Watch {
     video_id: RefCell<String>,
     scroller: gtk::ScrolledWindow,
     grid: gtk::Grid,
+    /// Where the player shows beside "Up next".
     player: AspectBin,
+    /// Where it shows full width, above the columns: in theater mode and
+    /// in fullscreen.
+    theater: AspectBin,
     info: gtk::Box,
     comments_area: gtk::Box,
     related: gtk::Box,
+    /// "Up next", at most its width.
+    related_column: adw::Clamp,
     fullscreen: Cell<bool>,
     narrow: Cell<bool>,
     title: gtk::Label,
@@ -68,7 +79,6 @@ struct Watch {
 
 pub fn build(props: &Value) -> gtk::Widget {
     let app = app();
-    let player = app.ext.components.build("player", &Value::Null);
 
     let title = gtk::Label::new(None);
     title.add_css_class("video-title");
@@ -134,18 +144,36 @@ pub fn build(props: &Value) -> gtk::Widget {
     related.set_widget_name("watch-related");
     related.set_valign(gtk::Align::Start);
 
-    let frame = AspectBin::new(9.0 / 16.0, &player);
+    // Long titles would make it as wide as they are.
+    let related_column = adw::Clamp::builder()
+        .child(&related)
+        .maximum_size(RELATED_WIDTH)
+        .tightening_threshold(RELATED_WIDTH)
+        .valign(gtk::Align::Start)
+        .build();
+
+    // The player itself moves between these and the mini player.
+    let frame = AspectBin::empty(9.0 / 16.0);
     frame.set_widget_name("watch-player");
     frame.set_hexpand(true);
+    let theater = AspectBin::empty(9.0 / 16.0);
+    theater.set_widget_name("watch-theater");
+    theater.add_css_class("theater-player");
+    theater.set_visible(false);
+    super::player_dock::register("watch", &frame);
+    super::player_dock::register("theater", &theater);
     let grid = gtk::Grid::new();
     grid.add_css_class("watch-column");
-    grid.set_column_spacing(24);
+    grid.set_column_spacing(PADDING as u32);
     grid.attach(&frame, 0, 0, 1, 1);
     grid.attach(&info, 0, 1, 1, 1);
     grid.attach(&comments_area, 0, 2, 1, 1);
-    grid.attach(&related, 1, 0, 1, 3);
+    grid.attach(&related_column, 1, 0, 1, 3);
+    let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    column.append(&theater);
+    column.append(&grid);
     let scroller = gtk::ScrolledWindow::builder()
-        .child(&grid)
+        .child(&column)
         .hscrollbar_policy(gtk::PolicyType::Never)
         .build();
     scroller.set_widget_name("watch-info");
@@ -160,9 +188,11 @@ pub fn build(props: &Value) -> gtk::Widget {
         scroller,
         grid,
         player: frame,
+        theater,
         info,
         comments_area,
         related,
+        related_column,
         fullscreen: Cell::new(false),
         narrow: Cell::new(false),
         title,
@@ -220,13 +250,15 @@ fn connect(watch: &Rc<Watch>, root: &adw::BreakpointBin) {
     });
     arrange(watch);
 
-    // The player's height follows the height of the view.
-    let weak = Rc::downgrade(watch);
-    watch.scroller.vadjustment().connect_changed(move |_| {
-        if let Some(watch) = weak.upgrade() {
-            fit_player(&watch);
-        }
-    });
+    // The player's size follows the view's.
+    for adjustment in [watch.scroller.vadjustment(), watch.scroller.hadjustment()] {
+        let weak = Rc::downgrade(watch);
+        adjustment.connect_changed(move |_| {
+            if let Some(watch) = weak.upgrade() {
+                fit_player(&watch);
+            }
+        });
+    }
 
     let weak = Rc::downgrade(watch);
     follow(root, "watch.loaded", move |payload| {
@@ -291,16 +323,14 @@ fn connect(watch: &Rc<Watch>, root: &adw::BreakpointBin) {
             return;
         };
         watch.fullscreen.set(fullscreen);
-        for part in [&watch.info, &watch.comments_area, &watch.related] {
-            part.set_visible(!fullscreen);
-        }
+        watch.grid.set_visible(!fullscreen);
         if fullscreen {
             page.add_css_class("fullscreen");
             watch.scroller.vadjustment().set_value(0.0);
         } else {
             page.remove_css_class("fullscreen");
         }
-        fit_player(&watch);
+        arrange(&watch);
     });
 }
 
@@ -325,7 +355,7 @@ fn arrange(watch: &Watch) {
         watch.player.upcast_ref::<gtk::Widget>(),
         watch.info.upcast_ref::<gtk::Widget>(),
         watch.comments_area.upcast_ref::<gtk::Widget>(),
-        watch.related.upcast_ref::<gtk::Widget>(),
+        watch.related_column.upcast_ref::<gtk::Widget>(),
     );
     if watch.narrow.get() {
         place(player, 0, 0, 1, 1);
@@ -333,17 +363,22 @@ fn arrange(watch: &Watch) {
         place(related, 0, 2, 1, 1);
         place(comments, 0, 3, 1, 1);
     } else if theater {
-        place(player, 0, 0, 2, 1);
-        place(info, 0, 1, 1, 1);
-        place(comments, 0, 2, 1, 1);
-        place(related, 1, 1, 1, 2);
+        // The player is in the row above.
+        place(info, 0, 0, 1, 1);
+        place(comments, 0, 1, 1, 1);
+        place(related, 1, 0, 1, 2);
     } else {
         place(player, 0, 0, 1, 1);
         place(info, 0, 1, 1, 1);
         place(comments, 0, 2, 1, 1);
         place(related, 1, 0, 1, 3);
     }
-    watch.related.set_size_request(
+    // Full width above the columns in theater mode and in fullscreen.
+    let above = (theater && !watch.narrow.get()) || watch.fullscreen.get();
+    watch.player.set_visible(!above);
+    watch.theater.set_visible(above);
+    super::player_dock::set_watch_slot(if above { "theater" } else { "watch" });
+    watch.related_column.set_size_request(
         if watch.narrow.get() {
             -1
         } else {
@@ -351,6 +386,13 @@ fn arrange(watch: &Watch) {
         },
         -1,
     );
+    watch
+        .related_column
+        .set_maximum_size(if watch.narrow.get() {
+            i32::MAX
+        } else {
+            RELATED_WIDTH
+        });
     if theater && !watch.narrow.get() {
         watch.grid.add_css_class("theater");
     } else {
@@ -384,20 +426,38 @@ fn show_related(watch: &Watch, page: &WatchPage) {
     }
 }
 
-/// 16:9, but no taller than the view minus room for the title; the whole
-/// view in fullscreen.
+/// Sizes the player to the view, as youtube.com does: 16:9, no taller than
+/// the view less room for the title (so the columns narrow, centered, when
+/// the window is short and wide); in theater mode, full width and no taller
+/// than the view less a little; the whole view in fullscreen.
 fn fit_player(watch: &Watch) {
     let view = watch.scroller.vadjustment().page_size() as i32;
-    if view <= 0 {
+    let width = watch.scroller.hadjustment().page_size() as i32;
+    if view <= 0 || width <= 0 {
         return;
     }
     let fullscreen = watch.fullscreen.get();
-    watch.player.set_fill(fullscreen);
-    watch.player.set_max_height(if fullscreen {
+    watch.theater.set_fill(fullscreen);
+    watch.theater.set_max_height(if fullscreen {
         view
     } else {
-        (view - BELOW_PLAYER).max(MIN_PLAYER_HEIGHT)
+        (view - BELOW_THEATER).max(MIN_PLAYER_HEIGHT)
     });
+    let max_height = (view - BELOW_PLAYER).max(MIN_PLAYER_HEIGHT);
+    watch.player.set_max_height(max_height);
+    // Centered columns when the player can't use the width.
+    let beside = if watch.narrow.get() {
+        0
+    } else {
+        RELATED_WIDTH + PADDING
+    };
+    let free = width - 2 * PADDING - beside;
+    let player_width = free.min(max_height * 16 / 9);
+    let margin = PADDING + ((free - player_width) / 2).max(0);
+    if watch.grid.margin_start() != margin {
+        watch.grid.set_margin_start(margin);
+        watch.grid.set_margin_end(margin);
+    }
 }
 
 /// What the feed card knew: shown at once, before the details load.

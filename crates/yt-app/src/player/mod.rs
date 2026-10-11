@@ -3,8 +3,9 @@
 //! [`Player`] owns the mpv instance and lives on the GTK main thread. mpv
 //! wakes it up from its own threads; the player then drains mpv's events on
 //! the main loop, keeps [`PlayerState`] current and tells its listeners.
-//! [`render::RenderContext`] draws the video into a `GtkGLArea`.
+//! [`render::RenderContext`] draws the video into textures (`ui::video`).
 
+pub mod gl;
 pub mod live;
 pub mod mpv;
 pub mod render;
@@ -195,7 +196,10 @@ impl Player {
         }
         mpv.initialize()?;
         live::install(&mpv, http)?;
-        mpv.request_log_messages("warn")?;
+        // More of mpv's log for looking into a problem: YT_RS_MPV_LOG=v
+        // (or debug, trace), shown with YT_RS_LOG=mpv=debug.
+        let level = std::env::var("YT_RS_MPV_LOG").unwrap_or_else(|_| "warn".into());
+        mpv.request_log_messages(&level)?;
         for (id, name, format) in [
             (TIME_POS, "time-pos", Format::Double),
             (DURATION, "duration", Format::Double),
@@ -685,7 +689,9 @@ impl Player {
                 text,
             } => match level.as_str() {
                 "fatal" | "error" => tracing::error!(target: "mpv", "[{prefix}] {text}"),
-                _ => tracing::warn!(target: "mpv", "[{prefix}] {text}"),
+                "warn" => tracing::warn!(target: "mpv", "[{prefix}] {text}"),
+                "info" => tracing::info!(target: "mpv", "[{prefix}] {text}"),
+                _ => tracing::debug!(target: "mpv", "[{prefix}] {text}"),
             },
             Event::PropertyChange { id, value, .. } => self.property_changed(id, value),
             _ => {}

@@ -100,6 +100,28 @@ impl AspectBin {
         bin
     }
 
+    /// An empty bin, for a child placed later with [`AspectBin::set_child`].
+    pub fn empty(ratio: f64) -> Self {
+        let bin: Self = glib::Object::new();
+        bin.imp().ratio.set(ratio);
+        bin
+    }
+
+    pub fn child(&self) -> Option<gtk::Widget> {
+        self.first_child()
+    }
+
+    /// Replaces the child (the player moves between bins this way).
+    pub fn set_child(&self, child: Option<&impl IsA<gtk::Widget>>) {
+        while let Some(old) = self.first_child() {
+            old.unparent();
+        }
+        if let Some(child) = child {
+            child.set_parent(self);
+        }
+        self.queue_resize();
+    }
+
     /// The width asked for when there is room (320 by default).
     pub fn set_natural_width(&self, width: i32) {
         self.imp().natural_width.set(width);

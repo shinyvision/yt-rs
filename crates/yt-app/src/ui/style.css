@@ -15,6 +15,12 @@
   --view-fg-color: var(--yt-text);
   --headerbar-bg-color: var(--yt-bg);
   --popover-bg-color: #282828;
+  /* The sidebar's pane and drawer (libadwaita's split view). */
+  --sidebar-bg-color: var(--yt-bg);
+  --sidebar-fg-color: var(--yt-text);
+  --sidebar-backdrop-color: var(--yt-bg);
+  --sidebar-border-color: transparent;
+  --sidebar-shade-color: transparent;
   --dialog-bg-color: #282828;
   --accent-bg-color: var(--yt-accent);
   --accent-color: #ff4e45;
@@ -130,7 +136,34 @@ window.yt-window {
 .menu-button > button:hover, .menu-button > button:checked { background: var(--yt-hover); }
 
 /* Watch page: the player, then the details, scrolling together. */
-.watch-page .watch-column { padding: 24px 24px 32px 24px; }
+.watch-page .watch-column { padding: 24px 0 32px 0; }
+/* Theater mode and fullscreen: the player from edge to edge, on black. */
+.theater-player { background: black; }
+.theater-player .player { border-radius: 0; }
+
+/* The page dims behind the sidebar's drawer. */
+.guide-scrim { background: rgba(0, 0, 0, 0.5); }
+
+/* The mini player, in the bottom-right corner. */
+.mini-player {
+  margin: 0 16px 16px 0;
+  background: #212121;
+  border-radius: 12px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.6);
+}
+.mini-video { border-radius: 12px 12px 0 0; background: black; }
+.mini-video .player { border-radius: 0; }
+.mini-controls { background: rgba(0, 0, 0, 0.4); opacity: 0; transition: opacity 150ms; padding: 4px; }
+.mini-video.hovered .mini-controls { opacity: 1; }
+.mini-button { min-width: 40px; min-height: 40px; padding: 0; border-radius: 999px; background: none; color: white; box-shadow: none; -gtk-icon-size: 24px; }
+.mini-button:hover { background: rgba(255, 255, 255, 0.15); }
+.mini-play { min-width: 56px; min-height: 56px; -gtk-icon-size: 36px; }
+.mini-progress, .mini-progress trough, .mini-progress progress { min-height: 3px; border-radius: 0; }
+.mini-progress trough { background: rgba(255, 255, 255, 0.25); }
+.mini-progress progress { background: var(--yt-accent); }
+.mini-info { padding: 10px 14px 12px 14px; }
+.mini-title { font-size: 14px; font-weight: 500; color: var(--yt-text); }
+.mini-channel { font-size: 12px; color: var(--yt-text-dim); }
 .watch-page.fullscreen .watch-column { padding: 0; }
 .watch-details { padding-top: 16px; }
 .watch-page .video-title { font-size: 20px; font-weight: 700; }

@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use yt_core::feed::Video;
 
 use crate::app::{App, app};
-use crate::ext::keymap::GLOBAL;
+use crate::ext::keymap::{GLOBAL, PLAYER};
 use crate::{playback, ui};
 
 pub fn register(this: &Rc<App>) {
@@ -58,7 +58,7 @@ pub fn register(this: &Rc<App>) {
     });
 
     c.register("sidebar.toggle", |_| {
-        ui::sidebar::toggle();
+        ui::shell::toggle_sidebar();
         Ok(Value::Null)
     });
     c.register("window.toggle_fullscreen", |_| {
@@ -370,6 +370,24 @@ pub fn register(this: &Rc<App>) {
         playback::stop();
         Ok(Value::Null)
     });
+    // The mini player: off the watch page (the video carries on in it), or
+    // back to the watch page.
+    c.register("player.mini", |_| {
+        let app = app();
+        if app.current_page().as_deref() != Some("watch") {
+            return playback::expand().map(|()| Value::Null);
+        }
+        if app.player.state().video_id.is_none() {
+            return Err("no video is playing".into());
+        }
+        if !app.back() {
+            app.navigate("home", Value::Null, true);
+        }
+        Ok(Value::Null)
+    });
+    c.register("player.expand", |_| {
+        playback::expand().map(|()| Value::Null)
+    });
 
     c.register("watch.set_tracking", |args| {
         let enabled = args
@@ -415,20 +433,23 @@ fn default_keys(app: &App) {
     bind("Forward", GLOBAL, "app.forward", Value::Null);
     bind("F11", GLOBAL, "window.toggle_fullscreen", Value::Null);
     // As on youtube.com.
+    bind("i", GLOBAL, "player.mini", Value::Null);
+    // As on youtube.com.
     bind("slash", GLOBAL, "search.focus", Value::Null);
     bind("ctrl+r", GLOBAL, "feed.refresh", Value::Null);
     bind("F5", GLOBAL, "feed.refresh", Value::Null);
     bind("ctrl+q", GLOBAL, "app.quit", Value::Null);
 
-    for key in ["space", "k"] {
-        bind(key, "watch", "player.toggle_pause", Value::Null);
-    }
+    // Keys the mini player takes too, as on youtube.com; the others would
+    // scroll or move the focus on other pages.
+    bind("space", "watch", "player.toggle_pause", Value::Null);
+    bind("k", PLAYER, "player.toggle_pause", Value::Null);
     bind("f", "watch", "window.toggle_fullscreen", Value::Null);
-    bind("m", "watch", "player.toggle_mute", Value::Null);
+    bind("m", PLAYER, "player.toggle_mute", Value::Null);
     bind("Left", "watch", "player.seek_by", json!({ "seconds": -5 }));
     bind("Right", "watch", "player.seek_by", json!({ "seconds": 5 }));
-    bind("j", "watch", "player.seek_by", json!({ "seconds": -10 }));
-    bind("l", "watch", "player.seek_by", json!({ "seconds": 10 }));
+    bind("j", PLAYER, "player.seek_by", json!({ "seconds": -10 }));
+    bind("l", PLAYER, "player.seek_by", json!({ "seconds": 10 }));
     bind("Up", "watch", "player.change_volume", json!({ "delta": 5 }));
     bind(
         "Down",
@@ -437,16 +458,16 @@ fn default_keys(app: &App) {
         json!({ "delta": -5 }),
     );
     // As on youtube.com.
-    bind("c", "watch", "player.toggle_captions", Value::Null);
+    bind("c", PLAYER, "player.toggle_captions", Value::Null);
     bind(
         "greater",
-        "watch",
+        PLAYER,
         "player.change_speed",
         json!({ "delta": 0.25 }),
     );
     bind(
         "less",
-        "watch",
+        PLAYER,
         "player.change_speed",
         json!({ "delta": -0.25 }),
     );
@@ -474,7 +495,7 @@ fn default_keys(app: &App) {
     );
     bind("End", "watch", "player.seek_end", Value::Null);
     bind("t", "watch", "watch.toggle_theater", Value::Null);
-    bind("shift+n", "watch", "player.next", Value::Null);
+    bind("shift+n", PLAYER, "player.next", Value::Null);
 }
 
 /// Runs key bindings for key presses anywhere in the window, except plain
@@ -485,7 +506,11 @@ pub fn key_controller() -> gtk::EventControllerKey {
     controller.connect_key_pressed(|controller, key, _code, modifiers| {
         let app = app();
         let page = app.current_page().unwrap_or_default();
-        let Some(binding) = app.ext.keymap.lookup(key, modifiers, &page) else {
+        let mut scopes = vec![page.as_str()];
+        if crate::ui::player_dock::current().is_some() {
+            scopes.push(PLAYER);
+        }
+        let Some(binding) = app.ext.keymap.lookup(key, modifiers, &scopes) else {
             return glib::Propagation::Proceed;
         };
         let typing = controller

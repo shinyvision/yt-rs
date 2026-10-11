@@ -4,6 +4,7 @@
 use std::ffi::{CStr, c_char, c_int, c_void};
 use std::ptr::NonNull;
 
+use super::gl::{GlLoader, RGBA8};
 use super::mpv::{Mpv, ffi::mpv_handle};
 
 #[allow(non_camel_case_types)]
@@ -18,7 +19,6 @@ mod ffi {
     pub const PARAM_API_TYPE: c_int = 1;
     pub const PARAM_OPENGL_INIT_PARAMS: c_int = 2;
     pub const PARAM_OPENGL_FBO: c_int = 3;
-    pub const PARAM_FLIP_Y: c_int = 4;
     pub const PARAM_WL_DISPLAY: c_int = 9;
     pub const PARAM_ADVANCED_CONTROL: c_int = 10;
 
@@ -64,53 +64,6 @@ mod ffi {
     }
 }
 
-const GL_DRAW_FRAMEBUFFER_BINDING: u32 = 0x8CA6;
-
-/// Looks up OpenGL functions for mpv. GTK uses EGL on Wayland (and on X11
-/// in recent versions), so `eglGetProcAddress` comes first; `dlsym` on the
-/// GL library is the fallback.
-struct GlLoader {
-    egl_get_proc_address: Option<unsafe extern "C" fn(*const c_char) -> *mut c_void>,
-    _egl: Option<libloading::Library>,
-    gl: Option<libloading::Library>,
-}
-
-impl GlLoader {
-    fn new() -> Self {
-        let egl = unsafe { libloading::Library::new("libEGL.so.1") }.ok();
-        let egl_get_proc_address = egl.as_ref().and_then(|lib| unsafe {
-            lib.get::<unsafe extern "C" fn(*const c_char) -> *mut c_void>(b"eglGetProcAddress\0")
-                .ok()
-                .map(|f| *f)
-        });
-        let gl = ["libGL.so.1", "libOpenGL.so.0"]
-            .iter()
-            .find_map(|name| unsafe { libloading::Library::new(*name) }.ok());
-        Self {
-            egl_get_proc_address,
-            _egl: egl,
-            gl,
-        }
-    }
-
-    fn get(&self, name: &CStr) -> *mut c_void {
-        if let Some(f) = self.egl_get_proc_address {
-            let ptr = unsafe { f(name.as_ptr()) };
-            if !ptr.is_null() {
-                return ptr;
-            }
-        }
-        self.gl
-            .as_ref()
-            .and_then(|lib| unsafe {
-                lib.get::<*mut c_void>(name.to_bytes_with_nul())
-                    .ok()
-                    .map(|s| *s)
-            })
-            .unwrap_or(std::ptr::null_mut())
-    }
-}
-
 unsafe extern "C" fn get_proc_address(ctx: *mut c_void, name: *const c_char) -> *mut c_void {
     // SAFETY: `ctx` is the boxed loader owned by the render context.
     let loader = unsafe { &*(ctx as *const GlLoader) };
@@ -126,7 +79,6 @@ pub struct RenderContext {
     /// Only kept alive: mpv calls into it through a raw pointer.
     _loader: Box<GlLoader>,
     update_callback: Option<Box<Callback>>,
-    get_integerv: Option<unsafe extern "C" fn(u32, *mut c_int)>,
 }
 
 impl RenderContext {
@@ -172,17 +124,10 @@ impl RenderContext {
         let ctx = NonNull::new(ctx)
             .filter(|_| code >= 0)
             .ok_or_else(|| format!("mpv could not create a renderer (error {code})"))?;
-        let get_integerv = {
-            let ptr = loader.get(c"glGetIntegerv");
-            (!ptr.is_null()).then(|| unsafe {
-                std::mem::transmute::<*mut c_void, unsafe extern "C" fn(u32, *mut c_int)>(ptr)
-            })
-        };
         Ok(Self {
             ctx,
             _loader: loader,
             update_callback: None,
-            get_integerv,
         })
     }
 
@@ -205,28 +150,19 @@ impl RenderContext {
         unsafe { ffi::mpv_render_context_update(self.ctx.as_ptr()) }
     }
 
-    /// Draws the current frame into the framebuffer that is bound for
-    /// drawing, which is `width`×`height` pixels.
-    pub fn render(&self, width: i32, height: i32) {
-        let mut fbo: c_int = 0;
-        if let Some(get_integerv) = self.get_integerv {
-            unsafe { get_integerv(GL_DRAW_FRAMEBUFFER_BINDING, &mut fbo) };
-        }
+    /// Draws the current frame into framebuffer `fbo` (RGBA, top row
+    /// first), which is `width`×`height` pixels.
+    pub fn render(&self, fbo: u32, width: i32, height: i32) {
         let mut target = ffi::mpv_opengl_fbo {
-            fbo,
+            fbo: fbo as c_int,
             w: width,
             h: height,
-            internal_format: 0,
+            internal_format: RGBA8,
         };
-        let mut flip: c_int = 1;
         let mut params = [
             ffi::mpv_render_param {
                 kind: ffi::PARAM_OPENGL_FBO,
                 data: (&raw mut target).cast(),
-            },
-            ffi::mpv_render_param {
-                kind: ffi::PARAM_FLIP_Y,
-                data: (&raw mut flip).cast(),
             },
             ffi::mpv_render_param {
                 kind: ffi::PARAM_INVALID,

@@ -154,6 +154,7 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `player.fallback` | `{ video_id, position }`: a stream was refused, so playback looks the video's streams up again and carries on from `position` |
 | `player.waiting` | `{ video_id, seconds }`: YouTube holds the streams back that long (the length of a pre-roll ad); playback starts after |
 | `player.stopped` | |
+| `player.docked` | `{ slot }`: the video moved: to `watch` (beside "Up next"), `theater` (full width, also in fullscreen), `mini` (the mini player, over another page) or `null` (shown nowhere) |
 | `player.speed` | `{ speed }` |
 | `player.settings` | `{ quality, auto_quality, captions, looping, stable_volume }`: one of these changed |
 | `player.bezel` | `{ icon?, text? }`: emit it to flash the round icon over the video (and text above it), as play, pause, seeking and volume do |
@@ -167,7 +168,7 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `watch.reported` | `{ video_id, kind, ok, url }` for each watch-time report |
 | `watch.tracking` | `{ enabled }` |
 | `window.fullscreen` | `{ fullscreen }` |
-| `sidebar.toggled` | `{ mini }` |
+| `sidebar.toggled` | `{ mini, drawer }`: the docked guide is now its rail of icons (`mini`), or the drawer is open (`drawer`) |
 | `auth.signed_in`, `auth.signed_out` | |
 | `account.loaded` | `{ account = { name, handle, photo } }`: the signed-in user |
 | `watch.loaded` | `{ video_id, page }`: a video's details (`title`, `views`, `published`, `likes`, `vote`, `description`, `chapters = { { start, title, thumbnail? } }`, `owner`, `subscription`, `comments = { count, sorts }`, `related`) |
@@ -282,6 +283,8 @@ app.commands()                     -- all names
 | `player.seek_percent`, `player.seek_end` | `{ percent }`: of the video, or of the part of a live stream YouTube keeps; `seek_end` goes back to a live stream's edge |
 | `player.go_live` | back to a live stream's edge |
 | `player.next`, `player.cancel_up_next` | the next video (YouTube's first suggestion) |
+| `player.mini` | off the watch page with the video carrying on in the mini player, or back from it (`i`) |
+| `player.expand` | back to the watch page of the video in the mini player, where it is |
 | `player.set_autoplay` | `{ enabled }` |
 | `player.settings` | → the settings panel's entries |
 | `player.stats`, `player.toggle_stats` | → "stats for nerds" as `{ { name, value }, ... }`; show or hide them over the video |
@@ -320,6 +323,7 @@ comment or channel updates, whoever started the action.
 ```lua
 app.keymap.set("ctrl+f", "my_plugin.find")            -- everywhere
 app.keymap.set("n", "player.seek_by", { seconds = 30 }, "watch")   -- one page
+app.keymap.set("n", "player.seek_by", { seconds = 30 }, "player")  -- wherever the video shows
 app.keymap.unset("space", "watch")
 app.keymap.clear()                                      -- no keys at all
 app.keymap.list()
@@ -328,7 +332,10 @@ app.bind("ctrl+g", function() app.toast("hi") end)      -- a Lua function
 
 Keys use GTK's names (`space`, `Left`, `F5`, `<Control>f`) or the short form
 (`ctrl+shift+f`). Shifted symbols are named by what they type: Shift+. is
-`greater`. A page's own bindings win over global ones. Keys without Ctrl or
+`greater`. The `player` scope applies on the watch page and wherever the mini
+player shows (k, j, l, m, c, <, >, Shift+N are there by default; space, the
+arrows, digits, f and t only on the watch page). A page's own bindings win
+over `player` ones, and those over global ones. Keys without Ctrl or
 Alt (Escape too) don't fire while you type in a text field.
 
 ### Components
@@ -355,7 +362,9 @@ app.components()
 | Component | Properties |
 |---|---|
 | `shell` | the window layout. A replacement must put `app.page_host()` (where pages appear) somewhere in it |
-| `sidebar`, `topbar` | |
+| `sidebar` | `{ mini? }`: YouTube's guide; with `mini`, its rail of icons |
+| `topbar` | |
+| `mini_player` | the video in the bottom-right corner while another page shows; the player itself moves into it |
 | `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it |
 | `chip_bar` | `{ chips, selected, browse_id?, event? }`: clicking a chip emits `event` (`feed.chip_selected` by default) with `{ browse_id, index }` |
 | `video_card` | a video |
@@ -399,6 +408,7 @@ app.unslot(id)
 the search box), `topbar.end`, `feed.header`, `search.header`,
 `watch.actions`, `watch.below_player`,
 `player.overlay`, `player.controls.start`, `player.controls.end`,
+`mini_player.info` (under the mini player's title),
 `comments.header`, `channel.header.actions`.
 
 ### Pages and the sidebar

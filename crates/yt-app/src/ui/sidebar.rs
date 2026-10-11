@@ -1,6 +1,6 @@
-//! The sidebar: the registered navigation entries, in full or as icons
-//! only, then the channels the user subscribes to
-//! (`sidebar_subscriptions`).
+//! The sidebar: the registered navigation entries, then the channels the
+//! user subscribes to (`sidebar_subscriptions`); with `{ mini = true }`,
+//! the rail of icons instead. Where each shows is the shell's business.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -13,16 +13,19 @@ use super::{attach, avatar, follow};
 use crate::app::app;
 use crate::ext::pages::NavItem;
 
-const NAME: &str = "sidebar";
 const SUBSCRIPTIONS: &str = "sidebar-subscriptions";
 /// Channels shown before "Show more".
 const FOLDED: usize = 7;
 
-pub fn build(_props: &Value) -> gtk::Widget {
+pub fn build(props: &Value) -> gtk::Widget {
     let app = app();
+    let mini = props.get("mini").and_then(Value::as_bool).unwrap_or(false);
     let sidebar = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    sidebar.set_widget_name(NAME);
+    sidebar.set_widget_name(if mini { "sidebar-mini" } else { "sidebar" });
     sidebar.add_css_class("sidebar");
+    if mini {
+        sidebar.add_css_class("mini");
+    }
 
     let items = gtk::Box::new(gtk::Orientation::Vertical, 2);
     sidebar.append(
@@ -30,14 +33,16 @@ pub fn build(_props: &Value) -> gtk::Widget {
             .slots
             .create("sidebar.top", gtk::Orientation::Vertical, 2),
     );
-    let subscriptions = app
-        .ext
-        .components
-        .build("sidebar_subscriptions", &Value::Null);
-    subscriptions.set_widget_name(SUBSCRIPTIONS);
     let column = gtk::Box::new(gtk::Orientation::Vertical, 2);
     column.append(&items);
-    column.append(&subscriptions);
+    if !mini {
+        let subscriptions = app
+            .ext
+            .components
+            .build("sidebar_subscriptions", &Value::Null);
+        subscriptions.set_widget_name(SUBSCRIPTIONS);
+        column.append(&subscriptions);
+    }
     // Scrolls, so a long subscriptions list can't make the window taller.
     let scroller = gtk::ScrolledWindow::builder()
         .child(&column)
@@ -51,11 +56,10 @@ pub fn build(_props: &Value) -> gtk::Widget {
             .create("sidebar.bottom", gtk::Orientation::Vertical, 2),
     );
 
-    fill(&items, sidebar.has_css_class("mini"));
+    fill(&items, mini);
     let weak = items.downgrade();
     app.ext.pages.on_nav_change(move || {
         if let Some(items) = weak.upgrade() {
-            let mini = items.parent().is_some_and(|p| p.has_css_class("mini"));
             fill(&items, mini);
         }
     });
@@ -69,52 +73,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
             highlight(&items, page);
         }
     });
-
-    // Collapse to icons when the window is narrow.
-    sidebar.connect_realize(|sidebar| {
-        let Some(window) = sidebar.root().and_downcast::<adw::ApplicationWindow>() else {
-            return;
-        };
-        let condition = adw::BreakpointCondition::new_length(
-            adw::BreakpointConditionLengthType::MaxWidth,
-            1100.0,
-            adw::LengthUnit::Sp,
-        );
-        let breakpoint = adw::Breakpoint::new(condition);
-        breakpoint.connect_apply(|_| set_mini(true));
-        breakpoint.connect_unapply(|_| set_mini(false));
-        window.add_breakpoint(breakpoint);
-    });
     sidebar.upcast()
-}
-
-/// Switches between the full sidebar and icons only.
-pub fn toggle() {
-    let mini = find().is_some_and(|s| !s.has_css_class("mini"));
-    set_mini(mini);
-}
-
-fn set_mini(mini: bool) {
-    let Some(sidebar) = find() else { return };
-    if mini {
-        sidebar.add_css_class("mini");
-    } else {
-        sidebar.remove_css_class("mini");
-    }
-    if let Some(items) = super::find_widget(&sidebar, "sidebar-items").and_downcast::<gtk::Box>() {
-        fill(&items, mini);
-    }
-    if let Some(subscriptions) = super::find_widget(&sidebar, SUBSCRIPTIONS) {
-        subscriptions.set_visible(!mini);
-    }
-    app()
-        .ext
-        .events
-        .emit("sidebar.toggled", &json!({ "mini": mini }));
-}
-
-fn find() -> Option<gtk::Widget> {
-    super::find_widget(app().window()?.upcast_ref(), NAME)
 }
 
 fn fill(items: &gtk::Box, mini: bool) {
@@ -270,9 +229,8 @@ fn show_subscriptions(this: &Subscriptions) {
     for channel in &channels[..shown] {
         this.list.append(&channel_button(channel));
     }
-    let mini = find().is_some_and(|s| s.has_css_class("mini"));
     if let Some(root) = this.list.parent() {
-        root.set_visible(!channels.is_empty() && !mini);
+        root.set_visible(!channels.is_empty());
     }
     let hidden = channels.len() - shown;
     this.more.set_visible(channels.len() > FOLDED);

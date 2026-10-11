@@ -74,6 +74,11 @@ pub fn build(_props: &Value) -> gtk::Widget {
             .slots
             .create("topbar.center", gtk::Orientation::Horizontal, 8),
     );
+    // Everything sits in the middle of the bar's height (YouTube's 56 px),
+    // rather than stretching to it.
+    for part in [&start, &center, &end] {
+        part.set_valign(gtk::Align::Center);
+    }
     let bar = gtk::CenterBox::new();
     bar.add_css_class("topbar");
     bar.set_start_widget(Some(&start));

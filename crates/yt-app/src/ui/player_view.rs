@@ -1,5 +1,5 @@
-//! The `player` component: mpv's video in a `GtkGLArea`, with the controls
-//! over it.
+//! The `player` component: mpv's video (`video::VideoView`), with the
+//! controls over it.
 //!
 //! The controls show on mouse movement and fade out after a moment without
 //! it while the video plays, as on youtube.com: not while the pointer is on
@@ -10,10 +10,7 @@
 //! the "Up next" countdown when a video ends.
 
 use std::cell::{Cell, RefCell};
-use std::ffi::c_void;
 use std::rc::Rc;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 
 use adw::prelude::*;
@@ -23,10 +20,10 @@ use serde_json::Value;
 use serde_json::json;
 
 use super::bezel::Bezel;
+use super::video::VideoView;
 use super::{attach, follow};
 use crate::app::app;
 use crate::player::PlayerEvent;
-use crate::player::render::RenderContext;
 
 const HIDE_CONTROLS_AFTER: Duration = Duration::from_millis(2500);
 /// The controls fade in quickly and out a little slower, as on youtube.com.
@@ -37,11 +34,12 @@ const BEZEL_TEXT_FOR: Duration = Duration::from_millis(900);
 const STATS_EVERY: Duration = Duration::from_millis(500);
 
 struct PlayerView {
-    area: gtk::GLArea,
-    renderer: RefCell<Option<RenderContext>>,
+    area: VideoView,
     controls: gtk::Box,
     /// Whether the controls are shown (or fading in).
     controls_shown: Cell<bool>,
+    /// In the mini player, which has controls of its own.
+    mini: Cell<bool>,
     /// The pointer is over the controls, so they stay.
     over_controls: Cell<bool>,
     fade: RefCell<Option<adw::TimedAnimation>>,
@@ -69,10 +67,8 @@ struct PlayerView {
 }
 
 pub fn build(_props: &Value) -> gtk::Widget {
-    let area = gtk::GLArea::new();
-    area.set_auto_render(false);
-    area.set_has_depth_buffer(false);
-    area.set_has_stencil_buffer(false);
+    let area = VideoView::new();
+    area.set_widget_name("video");
     area.set_hexpand(true);
     area.set_vexpand(true);
 
@@ -187,9 +183,10 @@ pub fn build(_props: &Value) -> gtk::Widget {
 
     let view = Rc::new(PlayerView {
         area: area.clone(),
-        renderer: RefCell::new(None),
+
         controls,
         controls_shown: Cell::new(true),
+        mini: Cell::new(false),
         over_controls: Cell::new(false),
         fade: RefCell::new(None),
         spinner,
@@ -236,67 +233,11 @@ pub fn build(_props: &Value) -> gtk::Widget {
 
 fn connect_rendering(view: &Rc<PlayerView>) {
     let weak = Rc::downgrade(view);
-    view.area.connect_realize(move |area| {
-        let Some(view) = weak.upgrade() else { return };
-        area.make_current();
-        if let Some(e) = area.error() {
-            show_message(&view, &format!("OpenGL is unavailable: {e}"));
-            return;
-        }
-        // SAFETY: the GL context is current, and the display is GTK's.
-        match unsafe { RenderContext::new(app().player.mpv(), wayland_display(area)) } {
-            Ok(mut renderer) => {
-                // mpv calls this from its render thread; draw on the main loop.
-                let target = glib::SendWeakRef::from(area.downgrade());
-                let pending = Arc::new(AtomicBool::new(false));
-                renderer.set_update_callback(move || {
-                    if !pending.swap(true, Ordering::AcqRel) {
-                        let (target, pending) = (target.clone(), pending.clone());
-                        glib::MainContext::default().invoke(move || {
-                            pending.store(false, Ordering::Release);
-                            if let Some(area) = target.upgrade() {
-                                area.queue_render();
-                            }
-                        });
-                    }
-                });
-                *view.renderer.borrow_mut() = Some(renderer);
-            }
-            Err(e) => show_message(&view, &e),
-        }
-    });
-    let weak = Rc::downgrade(view);
-    view.area.connect_unrealize(move |area| {
+    view.area.connect_error(move |message| {
         if let Some(view) = weak.upgrade() {
-            area.make_current();
-            view.renderer.borrow_mut().take();
+            show_message(&view, message);
         }
     });
-    let weak = Rc::downgrade(view);
-    view.area.connect_render(move |area, _context| {
-        if let Some(view) = weak.upgrade()
-            && let Some(renderer) = view.renderer.borrow().as_ref()
-        {
-            renderer.update();
-            let scale = area.scale_factor();
-            renderer.render(area.width() * scale, area.height() * scale);
-        }
-        glib::Propagation::Stop
-    });
-}
-
-/// GTK's Wayland display, which lets mpv hand hardware-decoded frames
-/// straight to OpenGL. Null on other platforms.
-fn wayland_display(widget: &impl IsA<gtk::Widget>) -> *mut c_void {
-    use gtk::glib::translate::ToGlibPtr;
-    let display = widget.display();
-    match display.downcast_ref::<gdk_wayland::WaylandDisplay>() {
-        // SAFETY: a valid GdkWaylandDisplay.
-        Some(wayland) => unsafe {
-            gdk_wayland::ffi::gdk_wayland_display_get_wl_display(wayland.to_glib_none().0).cast()
-        },
-        None => std::ptr::null_mut(),
-    }
 }
 
 fn connect_input(overlay: &gtk::Overlay, view: &Rc<PlayerView>) {
@@ -408,6 +349,20 @@ fn connect_player(view: &Rc<PlayerView>) {
             old.remove();
         }
     });
+    // In the mini player, the controls and the "Up next" card stay away.
+    let weak = Rc::downgrade(view);
+    app().ext.events.on("player.docked", move |payload| {
+        let Some(view) = weak.upgrade() else { return };
+        let mini = payload.get("slot").and_then(Value::as_str) == Some("mini");
+        view.mini.set(mini);
+        if mini {
+            set_controls_shown(&view, false);
+            view.area.set_cursor_from_name(None);
+            view.up_next.set_visible(false);
+        } else {
+            show_controls(&view);
+        }
+    });
     // Errors from looking up streams arrive as events, not player events,
     // with what to do about them: `{ message, action? = { label, command,
     // args? } }`.
@@ -471,6 +426,9 @@ fn show_action(view: &PlayerView, action: Option<&Value>) {
 }
 
 fn show_controls(view: &Rc<PlayerView>) {
+    if view.mini.get() {
+        return;
+    }
     set_controls_shown(view, true);
     schedule_hide(view);
 }
@@ -551,6 +509,10 @@ fn run(command: &str, args: Value) {
 
 /// Flashes the bezel with `icon`, and shows `text` above it for a moment.
 fn flash(view: &Rc<PlayerView>, icon: Option<&str>, text: Option<&str>) {
+    // The mini player's own buttons say it.
+    if view.mini.get() {
+        return;
+    }
     if let Some(icon) = icon {
         view.bezel.flash(icon);
     }
@@ -742,7 +704,8 @@ fn show_up_next(view: &Rc<PlayerView>, payload: &Value) {
     ));
     view.up_next_count
         .set_label(&format!("Up next in {}", left.get()));
-    view.up_next.set_visible(true);
+    // Too big for the mini player, where the next video simply follows.
+    view.up_next.set_visible(!view.mini.get());
     if let Some(timer) = view.up_next_timer.borrow_mut().take() {
         timer.remove();
     }
