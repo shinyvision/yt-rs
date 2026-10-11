@@ -87,6 +87,27 @@ recovery, and context actions. Screenshots use `E2E_SHOTS` as usual.
 cookie isolation, keyring failures, web authentication, parsing and dry-run
 behaviour without real credentials (requires yt-dlp for the mocked reader).
 
+## Android notification authentication experiment
+
+Install `examples/plugins/android-notifications` as `plugins/android-notifications`
+and `tests/e2e/android-notifications` as `plugins/android-notifications-test`
+in a throwaway profile with no TV token. Run under an isolated headless
+compositor with `YT_RS_DRY_RUN=1`, `G_DEBUG=fatal-criticals`, and
+`YT_RS_LOG=warn,plugin=info`. This needs libsecret and libsoup 3. Fixture tests
+cover exchange, renewal, restart, exact messages, pagination and cancellation.
+A real system-keyring test stores a dummy value under that profile's own
+schema attributes, reads it back, and deletes it.
+
+With `E2E_LIVE_LOGIN=1`, WebKitGTK 6.0 loads the public Google Android setup
+page in an ephemeral session. The test checks the form and injected bridge,
+and makes one anonymous YouTube request through the real HTTP transport. An
+offline session verifies a path-scoped test handoff and cookie cleanup. It
+never enters credentials, reads the browser profile, or sends a signed-in
+inbox request. This mode currently reports 40 checks passed. Screenshots use
+`E2E_SHOTS`. For the separate interactive account test, run
+`bash tests/manual/android-notifications.sh`; see the
+[prototype guide](../../examples/plugins/android-notifications/README.md).
+
 ## Downloads
 
 `downloads` runs twice on one profile: `E2E_PHASE=online` (downloads, the
