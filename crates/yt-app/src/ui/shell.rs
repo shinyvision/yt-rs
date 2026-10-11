@@ -249,10 +249,8 @@ fn docked(shell: &Shell) -> bool {
 fn layout(shell: &Shell) {
     let fullscreen = shell.fullscreen.get();
     let docked = docked(shell);
-    if docked {
-        if let Some(drawer) = shell.drawer() {
-            drawer.set_show_sidebar(false);
-        }
+    if docked && let Some(drawer) = shell.drawer() {
+        drawer.set_show_sidebar(false);
     }
     shell.topbar.set_visible(!fullscreen);
     let full_docked = docked && shell.full.get();
