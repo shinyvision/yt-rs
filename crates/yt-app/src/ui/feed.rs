@@ -73,6 +73,8 @@ struct State {
     loading: bool,
     /// Bumped on reload, so responses for an older load are ignored.
     generation: u64,
+    /// Kept pages must refresh after switching between accounts/signed out.
+    auth_dirty: bool,
 }
 
 struct Feed {
@@ -178,6 +180,32 @@ pub fn build(props: &Value) -> gtk::Widget {
         scroller,
     });
     attach(&root, feed.clone());
+    for event in ["auth.signed_in", "auth.signed_out"] {
+        let weak = Rc::downgrade(&feed);
+        let widget = root.downgrade();
+        follow(&root, event, move |_| {
+            if let Some(early) = EARLY_HOME.with(|e| e.borrow_mut().take()) {
+                early.abort();
+            }
+            if let Some(feed) = weak.upgrade() {
+                {
+                    let mut state = feed.state.borrow_mut();
+                    state.generation += 1;
+                    state.auth_dirty = true;
+                    state.loading = false;
+                    state.preloaded = None;
+                    state.sections.clear();
+                    state.continuation = None;
+                }
+                feed.model.borrow().remove_all();
+                rebuild_chips(&feed);
+                feed.content.set_visible_child_name("loading");
+                if widget.upgrade().is_some_and(|w| w.is_mapped()) {
+                    reload(&feed);
+                }
+            }
+        });
+    }
     // A video the user told YouTube they don't want goes, as on youtube.com.
     let weak = Rc::downgrade(&feed);
     follow(&root, "video.hidden", move |payload| {
@@ -242,6 +270,7 @@ pub fn update(widget: &gtk::Widget, props: &Value) {
     };
     let changed = configure(&feed, props);
     if changed
+        || feed.state.borrow().auth_dirty
         || props
             .get("refresh_on_show")
             .and_then(Value::as_bool)
@@ -293,6 +322,7 @@ fn reload(feed: &Rc<Feed>) {
     let (browse_id, params, order, preloaded, generation) = {
         let mut state = feed.state.borrow_mut();
         state.generation += 1;
+        state.auth_dirty = false;
         state.loading = true;
         state.sections.clear();
         state.continuation = None;

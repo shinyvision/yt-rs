@@ -44,6 +44,15 @@ local steps = {
   end },
   { 500, function()
     check("sign-in notice inside bell", app.find("notifications-notice") ~= nil)
+    local notice = app.find("notifications-notice-area")
+    local parent = notice:get_parent()
+    local ok, x, y = notice:translate_coordinates(parent, 0, 0)
+    check("sign-in prompt centered in the full panel", notice:get_mapped() and ok and
+      math.abs(x + notice:get_width() / 2 - parent:get_width() / 2) <= 0.5 and
+      math.abs(y + notice:get_height() / 2 - parent:get_height() / 2) <= 0.5)
+    local labels = app.find("notifications-notice"):children()
+    check("sign-in prompt text centered", labels[1].xalign == 0.5 and labels[2].xalign == 0.5 and labels[2].justify == "center")
+    shot("00-sign-in-prompt")
     app.find("notifications-sign-in"):emit("clicked")
     check("sign-in stays in the app", opened == nil and app.find("notifications-login") ~= nil)
     shot("01-sign-in")

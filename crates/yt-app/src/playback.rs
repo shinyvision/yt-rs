@@ -283,7 +283,7 @@ fn unplayable(video: Video, start: Option<f64>, error: yt_core::Error, generatio
                 }
             });
         }
-        Unplayable::SignIn if !runtime::block_on(app().session.is_signed_in()) => failed(
+        Unplayable::SignIn if !crate::social::signed_in() => failed(
             &reason,
             action("Sign in", "app.navigate", json!({ "page": "signin" })),
         ),

@@ -6,7 +6,10 @@
 //! tokens from TV clients, which is why [`crate::innertube`] calls the API
 //! as the TV app.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
+use std::sync::Arc;
+
+mod storage;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Deserializer, Serialize};
@@ -27,7 +30,7 @@ pub(crate) const TV_USER_AGENT: &str = "Mozilla/5.0 (ChromiumStylePlatform) Coba
 
 /// A saved sign-in. The refresh token lasts until it is revoked; the access
 /// token is replaced whenever it expires.
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
 pub struct Token {
     pub refresh_token: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
@@ -36,6 +39,14 @@ pub struct Token {
     /// string here instead; that reads as 0, so the token is refreshed.
     #[serde(default, alias = "expiry", deserialize_with = "lenient_unix_time")]
     pub expires_at: u64,
+}
+
+impl std::fmt::Debug for Token {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Token")
+            .field("expires_at", &self.expires_at)
+            .finish_non_exhaustive()
+    }
 }
 
 impl Token {
@@ -215,24 +226,63 @@ impl OAuth {
     }
 }
 
-/// The signed-in account. Hands out valid access tokens, refreshing and
-/// saving the token when it expires.
+/// The signed-in account. Persistent refresh credentials live in the OS
+/// keyring; access tokens stay in memory. All keyring I/O uses blocking workers.
 pub struct Session {
     oauth: OAuth,
-    path: PathBuf,
-    token: Mutex<Option<Token>>,
+    legacy_path: PathBuf,
+    store: Arc<dyn storage::Store>,
+    state: Mutex<SessionState>,
+}
+
+#[derive(Default)]
+struct SessionState {
+    loaded: bool,
+    token: Option<Token>,
+}
+
+impl Session {
+    async fn storage<T: Send + 'static>(
+        &self,
+        work: impl FnOnce(&dyn storage::Store, &std::path::Path) -> Result<T> + Send + 'static,
+    ) -> Result<T> {
+        let store = self.store.clone();
+        let path = self.legacy_path.clone();
+        tokio::task::spawn_blocking(move || work(store.as_ref(), &path))
+            .await
+            .map_err(|_| Error::Keyring("The system keyring operation failed. Try again."))?
+    }
+
+    async fn restore(&self, state: &mut SessionState) -> Result<()> {
+        if !state.loaded {
+            state.token = self.storage(storage::restore).await?;
+            state.loaded = true;
+        }
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn signed_out(oauth: OAuth) -> Self {
+        let mut session = Self::load(oauth, PathBuf::new());
+        session.state = Mutex::new(SessionState {
+            loaded: true,
+            token: None,
+        });
+        session
+    }
 }
 
 #[yt_export::export("session")]
 impl Session {
-    /// Loads the sign-in saved at `path`, if there is one.
+    /// Opens the profile's account. The first async call restores the keyring
+    /// and migrates an old token file, without blocking the GTK thread.
     #[export(skip = "makes the service")]
     pub fn load(oauth: OAuth, path: PathBuf) -> Self {
-        let token = read_token(&path).ok();
         Self {
             oauth,
-            path,
-            token: Mutex::new(token),
+            store: Arc::new(storage::Keyring::new(&path)),
+            legacy_path: path,
+            state: Mutex::new(SessionState::default()),
         }
     }
 
@@ -241,89 +291,359 @@ impl Session {
         &self.oauth
     }
 
-    pub async fn is_signed_in(&self) -> bool {
-        self.token.lock().await.is_some()
+    pub async fn is_signed_in(&self) -> Result<bool> {
+        let mut state = self.state.lock().await;
+        self.restore(&mut state).await?;
+        Ok(state.token.is_some())
     }
 
     /// Returns an access token, refreshing it first if it has expired.
     pub async fn access_token(&self) -> Result<String> {
-        let mut guard = self.token.lock().await;
-        let token = guard.as_mut().ok_or(Error::NotSignedIn)?;
+        let mut state = self.state.lock().await;
+        self.restore(&mut state).await?;
+        let token = state.token.as_mut().ok_or(Error::NotSignedIn)?;
         if !token.is_fresh() {
             *token = self.oauth.refresh(&token.refresh_token).await?;
-            write_token(&self.path, token)?;
         }
         Ok(token.access_token.clone())
     }
 
-    /// Replaces the access token even if it hasn't expired, for when YouTube
-    /// rejected it early. `rejected` is the token that was rejected, so that
-    /// concurrent callers refresh only once.
+    /// Refresh once when concurrent requests reject the same access token.
     pub async fn refresh_rejected(&self, rejected: &str) -> Result<String> {
-        let mut guard = self.token.lock().await;
-        let token = guard.as_mut().ok_or(Error::NotSignedIn)?;
+        let mut state = self.state.lock().await;
+        self.restore(&mut state).await?;
+        let token = state.token.as_mut().ok_or(Error::NotSignedIn)?;
         if token.access_token == rejected {
             *token = self.oauth.refresh(&token.refresh_token).await?;
-            write_token(&self.path, token)?;
         }
         Ok(token.access_token.clone())
     }
 
-    /// Stores a token from a completed sign-in.
+    /// Sign-in succeeds only after the refresh credential is saved and verified.
     pub async fn sign_in(&self, token: Token) -> Result<()> {
-        write_token(&self.path, &token)?;
-        *self.token.lock().await = Some(token);
+        let mut state = self.state.lock().await;
+        let saved = token.clone();
+        self.storage(move |store, path| storage::save(store, path, &saved))
+            .await?;
+        state.token = Some(token);
+        state.loaded = true;
         Ok(())
     }
 
-    /// Revokes the sign-in and deletes the saved token.
+    /// Delete local credentials even when Google is unreachable. Remote
+    /// revocation is best effort; a keyring failure remains a retryable error.
     pub async fn sign_out(&self) -> Result<()> {
-        let token = self.token.lock().await.take();
-        if let Some(token) = token {
-            self.oauth.revoke(&token.refresh_token).await?;
+        let mut state = self.state.lock().await;
+        // Removing credentials must remain possible even if their contents
+        // are corrupt. Read only to obtain a token for remote revocation.
+        let _ = self.restore(&mut state).await;
+        self.storage(|store, path| {
+            storage::remove_legacy(path)?;
+            store.delete()
+        })
+        .await?;
+        let token = state.token.take();
+        state.loaded = true;
+        drop(state);
+        if let Some(token) = token
+            && self.oauth.revoke(&token.refresh_token).await.is_err()
+        {
+            tracing::warn!("Signed out locally; Google session revocation could not be completed");
         }
-        match std::fs::remove_file(&self.path) {
-            Err(e) if e.kind() != std::io::ErrorKind::NotFound => Err(e.into()),
-            _ => Ok(()),
-        }
+        Ok(())
     }
-}
-
-pub(crate) fn read_token(path: &Path) -> Result<Token> {
-    let token: Token = serde_json::from_slice(&std::fs::read(path)?)?;
-    if token.refresh_token.is_empty() {
-        return Err(Error::NotSignedIn);
-    }
-    Ok(token)
-}
-
-/// Writes the token atomically, readable only by the current user.
-pub(crate) fn write_token(path: &Path, token: &Token) -> Result<()> {
-    use std::io::Write;
-    use std::os::unix::fs::{DirBuilderExt, OpenOptionsExt};
-
-    if let Some(dir) = path.parent() {
-        std::fs::DirBuilder::new()
-            .recursive(true)
-            .mode(0o700)
-            .create(dir)?;
-    }
-    let tmp = path.with_extension("json.tmp");
-    let mut file = std::fs::OpenOptions::new()
-        .write(true)
-        .create(true)
-        .truncate(true)
-        .mode(0o600)
-        .open(&tmp)?;
-    file.write_all(&serde_json::to_vec_pretty(token)?)?;
-    file.sync_all()?;
-    std::fs::rename(&tmp, path)?;
-    Ok(())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+    use storage::Store;
+
+    #[derive(Default)]
+    struct MemoryStore {
+        value: std::sync::Mutex<Option<String>>,
+        fail_read: AtomicBool,
+        fail_write: AtomicBool,
+        fail_delete: AtomicBool,
+        lose_write: AtomicBool,
+        writes: AtomicUsize,
+    }
+
+    impl Store for MemoryStore {
+        fn read(&self) -> Result<Option<String>> {
+            if self.fail_read.load(Ordering::SeqCst) {
+                return Err(Error::Keyring("locked"));
+            }
+            Ok(self.value.lock().unwrap().clone())
+        }
+        fn write(&self, value: &str) -> Result<()> {
+            if self.fail_write.load(Ordering::SeqCst) {
+                return Err(Error::Keyring("locked"));
+            }
+            self.writes.fetch_add(1, Ordering::SeqCst);
+            if !self.lose_write.load(Ordering::SeqCst) {
+                *self.value.lock().unwrap() = Some(value.to_owned());
+            }
+            Ok(())
+        }
+        fn delete(&self) -> Result<()> {
+            if self.fail_delete.load(Ordering::SeqCst) {
+                return Err(Error::Keyring("locked"));
+            }
+            self.value.lock().unwrap().take();
+            Ok(())
+        }
+    }
+
+    struct Profile(PathBuf);
+    impl Profile {
+        fn new() -> Self {
+            let path = std::env::temp_dir().join(format!(
+                "yt-rs-auth-{}-{}",
+                std::process::id(),
+                rand::random::<u64>()
+            ));
+            std::fs::create_dir(&path).unwrap();
+            Self(path)
+        }
+        fn path(&self) -> PathBuf {
+            self.0.join("token.json")
+        }
+        fn legacy(&self) {
+            std::fs::write(self.path(), serde_json::to_vec(&token()).unwrap()).unwrap();
+            std::fs::write(
+                self.path().with_extension("json.tmp"),
+                "old temporary token",
+            )
+            .unwrap();
+        }
+    }
+    impl Drop for Profile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    fn token() -> Token {
+        Token {
+            refresh_token: "fixture-refresh".into(),
+            access_token: "fixture-access".into(),
+            expires_at: unix_now() + 3600,
+        }
+    }
+    fn session(profile: &Profile, store: Arc<MemoryStore>) -> Session {
+        let mut session = Session::load(
+            OAuth::with_endpoints(
+                reqwest::Client::new(),
+                "http://127.0.0.1:0",
+                "http://127.0.0.1:0/revoke",
+            ),
+            profile.path(),
+        );
+        session.store = store;
+        session
+    }
+
+    #[tokio::test]
+    async fn migration_verifies_keyring_and_removes_both_plaintext_files() {
+        let profile = Profile::new();
+        profile.legacy();
+        let store = Arc::new(MemoryStore::default());
+        let session = session(&profile, store.clone());
+        let (first, second) = tokio::join!(session.is_signed_in(), session.is_signed_in());
+        assert!(first.unwrap() && second.unwrap());
+        assert_eq!(store.writes.load(Ordering::SeqCst), 1);
+        let saved: Value = serde_json::from_str(&store.read().unwrap().unwrap()).unwrap();
+        assert_eq!(saved, json!({"refresh_token": "fixture-refresh"}));
+        assert!(!profile.path().exists());
+        assert!(!profile.path().with_extension("json.tmp").exists());
+    }
+
+    #[tokio::test]
+    async fn migration_never_removes_the_only_copy_after_a_failed_save() {
+        for lose_write in [false, true] {
+            let profile = Profile::new();
+            profile.legacy();
+            let store = Arc::new(MemoryStore::default());
+            store.fail_write.store(!lose_write, Ordering::SeqCst);
+            store.lose_write.store(lose_write, Ordering::SeqCst);
+            let session = session(&profile, store);
+            assert!(session.is_signed_in().await.is_err());
+            assert!(profile.path().exists());
+            assert!(profile.path().with_extension("json.tmp").exists());
+            assert!(session.state.lock().await.token.is_none());
+        }
+    }
+
+    #[tokio::test]
+    async fn locked_keyring_does_not_fall_back_to_plaintext_and_can_retry() {
+        let profile = Profile::new();
+        profile.legacy();
+        let store = Arc::new(MemoryStore::default());
+        store.fail_read.store(true, Ordering::SeqCst);
+        let session = session(&profile, store.clone());
+        assert!(matches!(
+            session.access_token().await,
+            Err(Error::Keyring(_))
+        ));
+        assert_eq!(store.writes.load(Ordering::SeqCst), 0);
+        store.fail_read.store(false, Ordering::SeqCst);
+        assert!(session.is_signed_in().await.unwrap());
+        assert!(!profile.path().exists());
+    }
+
+    #[tokio::test]
+    async fn keyring_account_takes_precedence_over_stale_plaintext() {
+        let profile = Profile::new();
+        profile.legacy();
+        let store = Arc::new(MemoryStore::default());
+        store.write(r#"{"refresh_token":"new-account"}"#).unwrap();
+        let session = session(&profile, store);
+        assert!(session.is_signed_in().await.unwrap());
+        let state = session.state.lock().await;
+        let token = state.token.as_ref().unwrap();
+        assert_eq!(token.refresh_token, "new-account");
+        assert!(token.access_token.is_empty());
+        assert!(!profile.path().exists());
+    }
+
+    #[tokio::test]
+    async fn failed_sign_in_save_never_creates_a_plaintext_fallback() {
+        let profile = Profile::new();
+        let store = Arc::new(MemoryStore::default());
+        store.fail_write.store(true, Ordering::SeqCst);
+        let session = session(&profile, store);
+        assert!(session.sign_in(token()).await.is_err());
+        assert!(!session.is_signed_in().await.unwrap());
+        assert!(!profile.path().exists());
+    }
+
+    #[tokio::test]
+    async fn signing_out_offline_clears_keyring_memory_and_legacy_files() {
+        let profile = Profile::new();
+        let store = Arc::new(MemoryStore::default());
+        let session = session(&profile, store.clone());
+        session.sign_in(token()).await.unwrap();
+        profile.legacy();
+        session.sign_out().await.unwrap();
+        assert!(!session.is_signed_in().await.unwrap());
+        assert!(store.read().unwrap().is_none());
+        assert!(!profile.path().exists());
+        assert!(!profile.path().with_extension("json.tmp").exists());
+    }
+
+    #[tokio::test]
+    async fn failed_keyring_removal_keeps_sign_out_retryable() {
+        let profile = Profile::new();
+        let store = Arc::new(MemoryStore::default());
+        let session = session(&profile, store.clone());
+        session.sign_in(token()).await.unwrap();
+        store.fail_delete.store(true, Ordering::SeqCst);
+        assert!(session.sign_out().await.is_err());
+        assert!(session.is_signed_in().await.unwrap());
+        store.fail_delete.store(false, Ordering::SeqCst);
+        session.sign_out().await.unwrap();
+        assert!(!session.is_signed_in().await.unwrap());
+    }
+
+    #[tokio::test]
+    async fn corrupt_keyring_is_an_error_and_can_be_cleared() {
+        let profile = Profile::new();
+        let store = Arc::new(MemoryStore::default());
+        store.write("invalid-fixture-secret").unwrap();
+        let session = session(&profile, store.clone());
+        let error = session.is_signed_in().await.unwrap_err().to_string();
+        assert!(!error.contains("invalid-fixture-secret"));
+        session.sign_out().await.unwrap();
+        assert!(store.read().unwrap().is_none());
+    }
+
+    #[tokio::test]
+    async fn restart_renews_access_in_memory_without_writing_an_access_token() {
+        use std::io::{Read, Write};
+        let server = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let address = server.local_addr().unwrap();
+        let reply = std::thread::spawn(move || {
+            let (mut stream, _) = server.accept().unwrap();
+            stream
+                .set_read_timeout(Some(Duration::from_secs(5)))
+                .unwrap();
+            let mut request = Vec::new();
+            let mut buf = [0; 1024];
+            loop {
+                let n = stream.read(&mut buf).unwrap();
+                assert!(n > 0);
+                request.extend_from_slice(&buf[..n]);
+                let text = String::from_utf8_lossy(&request);
+                if let Some((headers, body)) = text.split_once("\r\n\r\n") {
+                    let length: usize = headers
+                        .lines()
+                        .find_map(|l| {
+                            l.to_lowercase()
+                                .strip_prefix("content-length: ")
+                                .map(str::to_owned)
+                        })
+                        .unwrap()
+                        .parse()
+                        .unwrap();
+                    if body.len() >= length {
+                        break;
+                    }
+                }
+            }
+            assert!(String::from_utf8_lossy(&request).starts_with("POST /token "));
+            let body = r#"{"access_token":"renewed-fixture-access","expires_in":3600}"#;
+            write!(stream, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}", body.len(), body).unwrap();
+        });
+        let profile = Profile::new();
+        let store = Arc::new(MemoryStore::default());
+        session(&profile, store.clone())
+            .sign_in(token())
+            .await
+            .unwrap();
+        let mut restarted = session(&profile, store.clone());
+        restarted.oauth = OAuth::with_endpoints(
+            reqwest::Client::new(),
+            &format!("http://{address}"),
+            "http://127.0.0.1:0/revoke",
+        );
+        assert_eq!(
+            restarted.access_token().await.unwrap(),
+            "renewed-fixture-access"
+        );
+        assert_eq!(
+            restarted.access_token().await.unwrap(),
+            "renewed-fixture-access"
+        );
+        reply.join().unwrap();
+        assert_eq!(store.writes.load(Ordering::SeqCst), 1);
+        assert!(!store.read().unwrap().unwrap().contains("access"));
+        assert!(!profile.path().exists());
+    }
+
+    #[tokio::test]
+    #[ignore = "requires an unlocked system keyring; uses only disposable dummy credentials"]
+    async fn system_keyring_round_trip_isolated_by_profile() {
+        let first = Profile::new();
+        let second = Profile::new();
+        let make = |p: &Profile| {
+            Session::load(
+                OAuth::with_endpoints(
+                    reqwest::Client::new(),
+                    "http://127.0.0.1:0",
+                    "http://127.0.0.1:0/revoke",
+                ),
+                p.path(),
+            )
+        };
+        let signed_in = make(&first);
+        signed_in.sign_in(token()).await.unwrap();
+        assert!(make(&first).is_signed_in().await.unwrap());
+        assert!(!make(&second).is_signed_in().await.unwrap());
+        signed_in.sign_out().await.unwrap();
+        assert!(!make(&first).is_signed_in().await.unwrap());
+        assert!(!first.path().exists());
+    }
 
     #[test]
     fn reads_tokens_written_by_the_go_cli() {
@@ -345,24 +665,5 @@ mod tests {
         assert!(token.is_fresh());
         token.expires_at = unix_now() + 30;
         assert!(!token.is_fresh());
-    }
-
-    #[test]
-    fn token_file_round_trip_is_private() {
-        use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("yt-core-token-{}", std::process::id()));
-        let path = dir.join("sub").join("token.json");
-        let token = Token {
-            refresh_token: "r".into(),
-            access_token: "a".into(),
-            expires_at: 42,
-        };
-        write_token(&path, &token).unwrap();
-        assert_eq!(
-            std::fs::metadata(&path).unwrap().permissions().mode() & 0o777,
-            0o600
-        );
-        assert_eq!(read_token(&path).unwrap(), token);
-        std::fs::remove_dir_all(dir).unwrap();
     }
 }

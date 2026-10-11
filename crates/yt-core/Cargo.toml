@@ -10,6 +10,7 @@ base64.workspace = true
 bytes.workspace = true
 regex.workspace = true
 directories.workspace = true
+keyring.workspace = true
 rand.workspace = true
 reqwest.workspace = true
 rquickjs.workspace = true

@@ -7,7 +7,8 @@ follows events, logs what it sees (`[social] ...`) and takes screenshots.
 cargo build --release
 E=$(mktemp -d)
 mkdir -p "$E/plugins" && cp -r tests/e2e/social "$E/plugins/"
-install -m 600 ~/.config/yt-rs/token.json "$E/token.json"   # your sign-in
+# For tests that need an account, first run yt-rs with this profile and sign
+# in normally. Its keyring entry is separate from your everyday profile.
 mkdir -p /tmp/yt-rs-shots
 E2E_SHOTS=/tmp/yt-rs-shots YT_RS_CONFIG_DIR="$E" YT_RS_APP_ID=dev.ytrs.YtRsTest YT_RS_LOG=warn,plugin=info \
   G_DEBUG=fatal-criticals ./target/release/yt-rs
@@ -29,7 +30,7 @@ widgets into crashes, so they can't go unnoticed.
 `search` checks the search box, results, loading more, chips, filters and
 the filters dialog, and what plugins can change there. Signed in, a search
 lands in the account's YouTube search history, so the default run only
-searches "hello"; `E2E_SEARCH=signed_out` (with no `token.json`) runs the
+searches "hello"; `E2E_SEARCH=signed_out` (in a fresh signed-out profile) runs the
 other queries (an artist, a misspelling, a narrow window) anonymously.
 
 `playback` plays a video YouTube used to bot-check (with chapters), seeks,
@@ -76,11 +77,29 @@ profile, with no token file. Run in a separate headless Sway compositor as
 for other GUI tests, with `YT_RS_DRY_RUN=1` and `G_DEBUG=fatal-criticals`.
 Account and network operations use Lua fixtures. The real UI, embedded
 sign-in dialog, link router, commands, filters and events are exercised.
-Playback and external URLs are intercepted. The 45 checks cover sign-in and
+Playback and external URLs are intercepted. The 47 checks cover sign-in and
 cancellation, count badges, loading, exact panel geometry, pagination,
 deduplication, native video navigation, empty/error states, sign-out during
 an in-flight request, reconnection, and context actions. Screenshots use
-`E2E_SHOTS` as usual.
+`E2E_SHOTS` as usual. The sign-in prompt and its text are centered in the
+full panel, including after cancellation or expired authentication.
+
+## TV account storage and home refresh
+
+`cargo test -p yt-core auth::tests` checks verified plaintext-to-keyring
+migration, failed writes and reads, retry, corrupt credentials, offline
+sign-out, and token renewal after restart. These use an in-memory store
+and a local HTTP fixture. The ignored
+`auth::tests::system_keyring_round_trip_isolated_by_profile` test additionally
+checks the real OS keyring using disposable dummy credentials; run it with
+`-- --ignored --exact` and an unlocked keyring.
+
+Install `tests/e2e/auth` in a fresh profile to exercise the actual TV sign-in
+UI with fake OAuth responses. Its nine checks cover the cached signed-out
+home after login, a signed-in empty home, recommendations, sign-out while
+home is hidden, and signing in again. It never stores a credential or sends
+authenticated HTTP. Run with `YT_RS_DRY_RUN=1` and `G_DEBUG=fatal-criticals`
+under the isolated compositor. Screenshots use `E2E_SHOTS`.
 
 ## Notification account and protocol
 

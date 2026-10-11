@@ -569,6 +569,21 @@ pub fn register(this: &Rc<App>) {
             .emit("watch.tracking", &json!({ "enabled": enabled }));
         Ok(json!(enabled))
     });
+    c.register("auth.restore", |_| {
+        crate::runtime::spawn_local(async {
+            let app = app();
+            let session = app.session.clone();
+            match crate::runtime::background(async move { session.is_signed_in().await }).await {
+                Ok(true) => app.ext.events.emit("auth.signed_in", &Value::Null),
+                Ok(false) => {}
+                Err(e) => app.toast_with(&json!({
+                    "message": e.to_string(),
+                    "action": { "label": "Try again", "command": "auth.restore" },
+                })),
+            }
+        });
+        Ok(Value::Null)
+    });
     c.register("auth.sign_out", |_| {
         crate::runtime::spawn_local(async {
             let app = app();

@@ -54,6 +54,7 @@ and on returning after that interval. A `fields=onResponseReceivedActions`
 filter keeps this request small. It does not browse the notification inbox
 or mark notifications seen. Opening the bell fetches the inbox; YouTube may
 then update its seen state. No browser-name status or subtitle is shown.
+Sign-in prompts and loading indicators are centered in the panel's body.
 
 The panel retains the web layout: 480×642 (clamped to smaller windows), the
 outlined bell and gear, six-line messages, 48-pixel avatars, 86×48 thumbnails,

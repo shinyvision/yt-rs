@@ -10,7 +10,7 @@ fn dirs() -> Option<directories::ProjectDirs> {
     directories::ProjectDirs::from("", "", APP)
 }
 
-/// Settings, the saved sign-in and plugins (`~/.config/yt-rs`).
+/// Settings and plugins (`~/.config/yt-rs`); also identifies the keyring account.
 #[yt_export::export("paths")]
 pub fn config_dir() -> PathBuf {
     if let Some(dir) = std::env::var_os("YT_RS_CONFIG_DIR") {
@@ -54,6 +54,7 @@ pub fn downloads_dir() -> PathBuf {
 }
 
 #[yt_export::export("paths")]
+/// Legacy plaintext token location, used only for migration and removal.
 pub fn token_file() -> PathBuf {
     config_dir().join("token.json")
 }

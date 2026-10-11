@@ -86,6 +86,7 @@ Arch Linux package names:
 | `mpv`        | playback (libmpv)                                          |
 | `luajit`     | plugins                                                    |
 | `glib2` (with libgirepository-2.0, GLib 2.80+) | plugins' access to GTK and other libraries |
+| `dbus` and a Secret Service provider (e.g. `gnome-keyring`) | saving the TV sign-in securely |
 
 Building needs Rust 1.90 or newer and a C compiler (for the bundled QuickJS).
 
@@ -99,8 +100,14 @@ cargo build --release
 On first start the app asks you to sign in. It works like signing in a smart
 TV: you enter a short code at google.com/device and pick your account or
 channel. Your Google account then lists it as "YouTube on TV". The sign-in is
-saved in `~/.config/yt-rs/token.json`, readable only by you, and lasts until
-you revoke it.
+saved in the system keyring, separately for each yt-rs profile. Only the
+refresh credential is saved; short-lived access tokens stay in memory.
+An existing `~/.config/yt-rs/token.json` is migrated automatically: the app
+saves and reads back the keyring entry before deleting the old token and
+temporary file. A locked or unavailable keyring produces a retryable error;
+the app never falls back to saving plaintext. Signing out deletes the local
+credential and attempts to revoke the Google session, even if remote
+revocation fails because you are offline.
 
 ## Keys
 

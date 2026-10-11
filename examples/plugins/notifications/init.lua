@@ -12,7 +12,7 @@ font_map:add_font_file(DIR .. "/fonts/Roboto.ttf")
 Gtk.IconTheme.get_for_display(Gdk.Display.get_default()):add_search_path(DIR .. "/icons")
 local state = { count = 0, items = {}, status = "loading", busy = true, operation = "restore",
   progress = "Connecting to YouTube…", connected = false }
-local button, badge, popover, rows, footer, stack, loading_label
+local button, badge, popover, rows, footer, stack, loading_label, notice_area
 local cancel, generation, last_check = nil, 0, 0
 local refresh, render, update_badge, sign_in
 local login_session
@@ -293,6 +293,7 @@ render = function()
   if not rows then return end
   clear(rows)
   clear(footer)
+  clear(notice_area)
   local loading = state.busy and (state.operation == "menu" or #state.items == 0)
   stack.visible_child_name = loading and "loading" or "list"
   loading_label.label = state.progress or "Fetching notifications…"
@@ -301,8 +302,9 @@ render = function()
     local notice = ui.box { orientation = "vertical", spacing = 12, class = "notification-notice",
       name = "notifications-notice", margin_start = 24, margin_end = 24, margin_top = 24, margin_bottom = 24 }
     notice:append(ui.label(not state.connected and "Sign in to YouTube" or "Notifications unavailable",
-      { class = "title-3", wrap = true }))
-    notice:append(ui.label(state.message or "Sign in once to see your YouTube notifications here.", { wrap = true, xalign = 0, max_width_chars = 44 }))
+      { class = "title-3", wrap = true, justify = "center", xalign = 0.5 }))
+    notice:append(ui.label(state.message or "Sign in once to see your YouTube notifications here.",
+      { wrap = true, justify = "center", xalign = 0.5, max_width_chars = 32 }))
     local buttons = ui.box { orientation = "horizontal", spacing = 8, halign = "center" }
     if not state.connected then
       buttons:append(ui.button("Sign in", sign_in,
@@ -313,7 +315,12 @@ render = function()
         { name = "notifications-retry", sensitive = not state.busy }))
     end
     notice:append(buttons)
-    rows:append(notice)
+    if #state.items == 0 then
+      notice_area:append(notice)
+      stack.visible_child_name = "notice"
+    else
+      rows:append(notice)
+    end
   end
   for _, item in ipairs(state.items) do rows:append(app.build("notification", item)) end
   if state.status == "ok" and #state.items == 0 and not state.busy then
@@ -359,6 +366,9 @@ app.component("notifications_button", { build = function()
   stack = Gtk.Stack { vexpand = true }
   stack:add_named(scroller, "list")
   stack:add_named(loading, "loading")
+  notice_area = ui.box { orientation = "vertical", halign = "center", valign = "center",
+    name = "notifications-notice-area" }
+  stack:add_named(notice_area, "notice")
   column:append(stack)
   popover = Gtk.Popover { child = column, has_arrow = false, halign = "end", name = "notifications-popover" }
   popover:set_offset(0, 8)

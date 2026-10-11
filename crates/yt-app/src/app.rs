@@ -191,13 +191,11 @@ impl App {
 
         // Home either way, as youtube.com: signed out, YouTube's own
         // picks, and "Sign in" at the top.
-        if crate::social::signed_in() {
-            app.load_signed_in();
-        }
         app.ext
             .events
             .on("auth.signed_in", |_| crate::app::app().load_signed_in());
         app.navigate("home", Value::Null, false);
+        let _ = app.ext.commands.run("auth.restore", Value::Null);
         step("first page");
         // Once the first frame is up, get the challenge solver ready for the
         // first click.

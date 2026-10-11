@@ -12,6 +12,8 @@ pub enum Error {
     SignInDeclined,
     #[error("the sign-in code expired before it was approved")]
     SignInCodeExpired,
+    #[error("{0}")]
+    Keyring(&'static str),
     #[error("YouTube rejected the access token")]
     Unauthorized,
     #[error("{0}")]

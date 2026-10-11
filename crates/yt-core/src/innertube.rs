@@ -298,8 +298,9 @@ impl InnerTube {
         // Signed out, the web client's results are all there is.
         let tv = async {
             match self.session.is_signed_in().await {
-                true => Some(self.call("search", body.clone()).await),
-                false => None,
+                Ok(true) => Some(self.call("search", body.clone()).await),
+                Ok(false) => None,
+                Err(e) => Some(Err(e)),
             }
         };
         let (tv, web) = tokio::join!(tv, self.call_web("search", body.clone()));
@@ -798,7 +799,7 @@ impl InnerTube {
                 }
             },
         });
-        if self.session.is_signed_in().await {
+        if self.session.is_signed_in().await? {
             self.call_as(TV_DOWNGRADED, "player", body).await
         } else {
             self.send(
@@ -932,13 +933,10 @@ mod tests {
     use crate::auth::OAuth;
     use crate::playlist::Privacy;
 
-    /// Signed out (no token file), so a request that got through would fail.
+    /// Signed out without touching any real credential store.
     fn api() -> InnerTube {
         let http = reqwest::Client::new();
-        let session = Arc::new(Session::load(
-            OAuth::new(http.clone()),
-            std::path::PathBuf::from("/nonexistent/token.json"),
-        ));
+        let session = Arc::new(Session::signed_out(OAuth::new(http.clone())));
         InnerTube::new(http, session)
     }
 

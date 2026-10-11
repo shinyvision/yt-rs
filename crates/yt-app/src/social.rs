@@ -105,7 +105,6 @@ pub fn register(this: &Rc<App>) {
     c.register("channels.lookup", |args| {
         Ok(serde_json::to_value(app().channels.lookup(str_arg(&args, "key")?)).unwrap_or_default())
     });
-    SIGNED_IN.with(|s| s.set(crate::runtime::block_on(this.session.is_signed_in())));
     this.ext
         .events
         .on("auth.signed_in", |_| SIGNED_IN.with(|s| s.set(true)));

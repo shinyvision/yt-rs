@@ -24,6 +24,7 @@ bytes = "1"
 cairo-rs = "0.22"
 base64 = "0.23"
 directories = "6"
+keyring = { version = "3.6.3", features = ["apple-native", "windows-native", "sync-secret-service", "crypto-rust"] }
 glib = "0.22"
 gtk = { package = "gtk4", version = "0.11", features = ["v4_18"] }
 adw = { package = "libadwaita", version = "0.9", features = ["v1_7"] }
