@@ -75,3 +75,11 @@ page, playing from the files, stopping and resuming a long download), then
 `E2E_PHASE=offline` with YouTube out of reach
 (`HTTPS_PROXY=http://127.0.0.1:9 HTTP_PROXY=http://127.0.0.1:9`): the
 download still plays, and deleting it empties the page.
+
+## Channel orders
+
+`channel-order` opens Rick Astley's Videos and checks the Latest, Popular
+and Oldest chips: there before the videos load, each order loading in its
+order (Popular and Oldest from the web client), more loading on scrolling,
+back to the top on another order, and no chips on the other tabs. Reads
+only.

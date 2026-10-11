@@ -138,7 +138,7 @@ fn channel_page() {
     );
     assert!(page.about.iter().any(|r| r.ends_with("videos")));
     let tabs: Vec<_> = page.tabs.iter().map(|t| t.title.as_str()).collect();
-    assert_eq!(tabs, vec!["Videos", "Shorts", "Live"]);
+    assert_eq!(tabs, vec!["Videos", "Shorts", "Live", "Playlists"]);
     assert!(page.subscription.is_some());
     // Shorts tiles on channel pages are videos too.
     assert!(

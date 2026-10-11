@@ -13,6 +13,7 @@ use std::rc::{Rc, Weak};
 use gtk::prelude::*;
 use gtk::{gio, glib};
 use serde_json::{Value, json};
+use yt_core::channel::VideoOrder;
 use yt_core::feed::{FeedPage, Video};
 
 use super::{attach, attached, follow};
@@ -47,6 +48,8 @@ struct State {
     browse_id: String,
     /// Browse params, e.g. a channel tab.
     params: Option<String>,
+    /// A channel's videos, in this order (`sortable`); chips choose it.
+    order: Option<VideoOrder>,
     /// A first page the caller already has, shown instead of loading it.
     preloaded: Option<FeedPage>,
     untitled: String,
@@ -114,6 +117,7 @@ pub fn build(props: &Value) -> gtk::Widget {
     content.add_named(&spinner, Some("loading"));
     content.add_named(&status, Some("status"));
     content.add_named(&scroller, Some("grid"));
+    content.set_widget_name("feed-content");
 
     let chips = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -168,10 +172,12 @@ pub fn build(props: &Value) -> gtk::Widget {
     // Load more when scrolled near the end, and also when the content
     // doesn't fill the view yet (then there is nothing to scroll).
     let weak = Rc::downgrade(&feed);
+    // Only on screen: a page kept out of sight loads nothing.
     let near_end = move |adj: &gtk::Adjustment| {
         if adj.value() + adj.page_size() > adj.upper() - PRELOAD_DISTANCE
             && adj.page_size() > 0.0
             && let Some(feed) = weak.upgrade()
+            && feed.grid.is_mapped()
             && feed.model.borrow().n_items() > 0
         {
             load_more(&feed);
@@ -197,6 +203,10 @@ pub fn build(props: &Value) -> gtk::Widget {
     let weak = Rc::downgrade(&feed);
     follow(&root, "feed.chip_selected", move |payload| {
         select_from_event(&weak, payload)
+    });
+    let weak = Rc::downgrade(&feed);
+    follow(&root, "feed.order_selected", move |payload| {
+        order_from_event(&weak, payload)
     });
 
     configure(&feed, props);
@@ -238,10 +248,19 @@ fn configure(feed: &Feed, props: &Value) -> bool {
         .and_then(Value::as_str)
         .filter(|p| !p.is_empty())
         .map(str::to_owned);
+    // `sortable`: a channel's Videos, with chips for Latest, Popular and
+    // Oldest; `order` picks one.
+    let order = (props.get("sortable").and_then(Value::as_bool) == Some(true)).then(|| {
+        props
+            .get("order")
+            .and_then(|o| serde_json::from_value(o.clone()).ok())
+            .unwrap_or_default()
+    });
     let mut state = feed.state.borrow_mut();
-    let changed = state.browse_id != browse_id || state.params != params;
+    let changed = state.browse_id != browse_id || state.params != params || state.order != order;
     state.browse_id = browse_id;
     state.params = params;
+    state.order = order;
     state.untitled = untitled;
     state.preloaded = props
         .get("page")
@@ -251,7 +270,7 @@ fn configure(feed: &Feed, props: &Value) -> bool {
 }
 
 fn reload(feed: &Rc<Feed>) {
-    let (browse_id, params, preloaded, generation) = {
+    let (browse_id, params, order, preloaded, generation) = {
         let mut state = feed.state.borrow_mut();
         state.generation += 1;
         state.loading = true;
@@ -260,12 +279,19 @@ fn reload(feed: &Rc<Feed>) {
         (
             state.browse_id.clone(),
             state.params.clone(),
+            // Latest is the tab as it comes.
+            state.order.filter(|o| *o != VideoOrder::Latest),
             state.preloaded.take(),
             state.generation,
         )
     };
     if feed.model.borrow().n_items() == 0 {
         feed.content.set_visible_child_name("loading");
+    }
+    // The order chips show from the start; other chips come with the page.
+    let sortable = feed.state.borrow().order.is_some();
+    if sortable != feed.chips.has_css_class("orders") {
+        rebuild_chips(feed);
     }
     let weak = Rc::downgrade(feed);
     runtime::spawn_local(async move {
@@ -275,9 +301,10 @@ fn reload(feed: &Rc<Feed>) {
             Some(page) => Ok(page),
             None => {
                 runtime::background(async move {
-                    match params {
-                        Some(params) => youtube.browse_with(&id, &params).await,
-                        None => youtube.browse(&id).await,
+                    match (order, params) {
+                        (Some(order), _) => youtube.channel_videos(&id, order).await,
+                        (None, Some(params)) => youtube.browse_with(&id, &params).await,
+                        (None, None) => youtube.browse(&id).await,
                     }
                 })
                 .await
@@ -341,7 +368,10 @@ fn load_more(feed: &Rc<Feed>) {
             return;
         };
         feed.state.borrow_mut().loading = false;
-        let Ok(page) = result else { return };
+        let page = match result {
+            Ok(page) => page,
+            Err(e) => return tracing::warn!("couldn't load more of the feed: {e}"),
+        };
         let browse_id = feed.state.borrow().browse_id.clone();
         let page = filtered(page, &browse_id);
         let added = {
@@ -381,7 +411,10 @@ fn load_more_shelves(feed: &Rc<Feed>) {
             return;
         };
         feed.state.borrow_mut().loading = false;
-        let Ok(page) = result else { return };
+        let page = match result {
+            Ok(page) => page,
+            Err(e) => return tracing::warn!("couldn't load more shelves: {e}"),
+        };
         let browse_id = feed.state.borrow().browse_id.clone();
         let selected_before = feed.state.borrow().selected;
         let len_before = feed
@@ -414,6 +447,7 @@ fn fill_view(feed: &Rc<Feed>) {
         let adj = feed.scroller.vadjustment();
         if adj.page_size() > 0.0
             && adj.value() + adj.page_size() > adj.upper() - PRELOAD_DISTANCE
+            && feed.grid.is_mapped()
             && feed.model.borrow().n_items() > 0
         {
             load_more(&feed);
@@ -551,26 +585,65 @@ fn show_status(feed: &Feed, title: &str, description: &str, retry: bool) {
 }
 
 fn rebuild_chips(feed: &Feed) {
-    let (titles, selected, browse_id) = {
+    let props = {
         let state = feed.state.borrow();
-        (
-            state
-                .sections
-                .iter()
-                .map(|s| s.title.clone())
-                .collect::<Vec<_>>(),
-            state.selected,
-            state.browse_id.clone(),
-        )
+        match state.order {
+            // A channel's videos: the orders.
+            Some(order) => json!({
+                "chips": VideoOrder::ALL.map(VideoOrder::label),
+                "selected": VideoOrder::ALL.iter().position(|o| *o == order),
+                "browse_id": state.browse_id,
+                "event": "feed.order_selected",
+            }),
+            None if state.sections.len() > 1 => json!({
+                "chips": state.sections.iter().map(|s| s.title.clone()).collect::<Vec<_>>(),
+                "selected": state.selected,
+                "browse_id": state.browse_id,
+            }),
+            None => Value::Null,
+        }
     };
     while let Some(child) = feed.chips.first_child() {
         feed.chips.remove(&child);
     }
-    if titles.len() > 1 {
-        let props = json!({ "chips": titles, "selected": selected, "browse_id": browse_id });
+    if props.get("event").is_some() {
+        feed.chips.add_css_class("orders");
+    } else {
+        feed.chips.remove_css_class("orders");
+    }
+    if !props.is_null() {
         feed.chips
             .append(&app().ext.components.build("chip_bar", &props));
     }
+}
+
+/// A chip for another order: the videos load again in it.
+fn order_from_event(weak: &Weak<Feed>, payload: &Value) {
+    let Some(feed) = weak.upgrade() else { return };
+    let Some(order) = payload
+        .get("index")
+        .and_then(Value::as_u64)
+        .and_then(|i| VideoOrder::ALL.get(i as usize).copied())
+    else {
+        return;
+    };
+    {
+        let mut state = feed.state.borrow_mut();
+        if state.order.is_none_or(|o| o == order)
+            || state.browse_id
+                != payload
+                    .get("browse_id")
+                    .and_then(Value::as_str)
+                    .unwrap_or_default()
+        {
+            return;
+        }
+        state.order = Some(order);
+    }
+    // The videos in the old order go at once.
+    feed.content.set_visible_child_name("loading");
+    feed.scroller.vadjustment().set_value(0.0);
+    reload(&feed);
 }
 
 fn select_from_event(weak: &Weak<Feed>, payload: &Value) {

@@ -306,6 +306,10 @@ fn show_tab(view: &Rc<ChannelView>, channel_id: &str, tab: &ChannelTab) {
     });
     let home = tab.params.is_empty();
     let playlists = tab.params == yt_core::channel::PLAYLISTS_TAB;
+    // Videos come in youtube.com's orders: Latest, Popular, Oldest.
+    if tab.params == yt_core::channel::VIDEOS_TAB {
+        props["sortable"] = true.into();
+    }
     // Home came with the channel page; the other tabs load when chosen.
     if home && let Some(page) = view.page.borrow().as_ref() {
         props["page"] = serde_json::to_value(&page.home).unwrap_or_default();

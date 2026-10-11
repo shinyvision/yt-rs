@@ -78,6 +78,50 @@ pub struct FeedPage {
     pub nudge: Option<String>,
 }
 
+/// Marks a continuation token as the web client's, so
+/// [`InnerTube::continuation`](crate::innertube::InnerTube::continuation)
+/// sends it with that client. Tokens stay opaque to callers.
+pub const WEB_TOKEN: &str = "web:";
+
+/// A page of a web client grid (a channel's videos in another order, or
+/// more of them): the videos as one untitled shelf, with a token (marked
+/// as the web client's) for more.
+pub fn parse_web_grid(resp: &Value) -> FeedPage {
+    let mut shelf = Shelf::default();
+    for action in resp
+        .get("onResponseReceivedActions")
+        .and_then(Value::as_array)
+        .into_iter()
+        .flatten()
+    {
+        let items = action
+            .pointer("/reloadContinuationItemsCommand/continuationItems")
+            .or_else(|| action.pointer("/appendContinuationItemsAction/continuationItems"))
+            .and_then(Value::as_array);
+        for item in items.into_iter().flatten() {
+            if let Some(video) = item
+                .pointer("/richItemRenderer/content/lockupViewModel")
+                .and_then(from_lockup)
+            {
+                shelf.videos.push(video);
+            } else if let Some(token) = str_at(
+                item,
+                "/continuationItemRenderer/continuationEndpoint/continuationCommand/token",
+            ) {
+                shelf.continuation = Some(format!("{WEB_TOKEN}{token}"));
+            }
+        }
+    }
+    FeedPage {
+        shelves: if shelf.videos.is_empty() {
+            Vec::new()
+        } else {
+            vec![shelf]
+        },
+        ..FeedPage::default()
+    }
+}
+
 pub fn parse(resp: &Value) -> FeedPage {
     let mut parser = Parser::default();
     parser.walk(resp, "");

@@ -239,3 +239,41 @@ fn nudge_instead_of_a_feed() {
     assert!(page.shelves.is_empty());
     assert_eq!(page.nudge.as_deref(), Some("Your YouTube history is off"));
 }
+
+#[test]
+fn web_grid_in_another_order() {
+    // A channel's videos by popularity, from the web client (cut down to
+    // two videos and the token for more).
+    let path = format!(
+        "{}/tests/fixtures/channel_videos_web.json",
+        env!("CARGO_MANIFEST_DIR")
+    );
+    let json: serde_json::Value = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+    let page = feed::parse_web_grid(&json);
+    assert_eq!(page.shelves.len(), 1);
+    let shelf = &page.shelves[0];
+    assert_eq!(shelf.videos.len(), 2);
+    let first = &shelf.videos[0];
+    assert_eq!(first.id, "dQw4w9WgXcQ");
+    assert_eq!(
+        first.title,
+        "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)"
+    );
+    assert_eq!(first.views.as_deref(), Some("1.8B views"));
+    assert_eq!(first.published.as_deref(), Some("16 years ago"));
+    assert!(first.duration.is_some(), "{first:?}");
+    assert!(first.thumbnail.is_some());
+    // More come with the web client.
+    assert!(
+        shelf
+            .continuation
+            .as_deref()
+            .is_some_and(|t| t.starts_with(feed::WEB_TOKEN) && t.len() > 20)
+    );
+    // Nothing in it, no shelf.
+    assert!(
+        feed::parse_web_grid(&serde_json::json!({}))
+            .shelves
+            .is_empty()
+    );
+}

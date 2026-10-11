@@ -67,14 +67,59 @@ pub struct ChannelPage {
 /// so the params tell which is which. Releases (albums) are YouTube
 /// Music's, and left out.
 const TABS: &[(&str, &str)] = &[
-    ("8gYHEgVqAIABAg%3D%3D", "Videos"),
+    (VIDEOS_TAB, "Videos"),
     ("8gYHEgVyAIABAg%3D%3D", "Shorts"),
     ("8gYHEgVKAIABAg%3D%3D", "Live"),
     (PLAYLISTS_TAB, "Playlists"),
 ];
 
+/// The params of a channel's Videos tab.
+pub const VIDEOS_TAB: &str = "8gYHEgVqAIABAg%3D%3D";
+
 /// The params of a channel's Playlists tab.
 pub const PLAYLISTS_TAB: &str = "8gYLEgliBAoCEGiAAQI%3D";
+
+/// The order of a channel's videos, as the chips over them on youtube.com.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum VideoOrder {
+    #[default]
+    Latest,
+    Popular,
+    Oldest,
+}
+
+impl VideoOrder {
+    pub const ALL: [Self; 3] = [Self::Latest, Self::Popular, Self::Oldest];
+
+    /// Its chip's label, as youtube.com writes it.
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Latest => "Latest",
+            Self::Popular => "Popular",
+            Self::Oldest => "Oldest",
+        }
+    }
+}
+
+/// The web client's Videos tab, which has the order chips (the TV
+/// client's has none, and ignores any order in its params).
+pub(crate) const WEB_VIDEOS_TAB: &str = "EgZ2aWRlb3PyBgQKAjoA";
+
+/// The token of the chip for `order` on the web client's Videos tab.
+pub(crate) fn order_token(tab: &Value, order: VideoOrder) -> Option<String> {
+    let mut token = None;
+    collect(tab, "chipViewModel", &mut |chip| {
+        if token.is_none() && str_at(chip, "/text") == Some(order.label()) {
+            token = str_at(
+                chip,
+                "/tapCommand/innertubeCommand/continuationCommand/token",
+            )
+            .map(str::to_owned);
+        }
+    });
+    token
+}
 
 pub fn parse_page(resp: &Value, browse_id: &str) -> ChannelPage {
     let header = find(resp, "channelHeaderRenderer");

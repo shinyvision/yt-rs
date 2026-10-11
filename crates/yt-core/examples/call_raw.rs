@@ -1,6 +1,7 @@
 //! Prints the TV client's raw answer to any InnerTube request, for looking
 //! into an endpoint: `cargo run -p yt-core --example call_raw -- <endpoint>
-//! '<JSON body>'`. Careful: some endpoints change the account.
+//! '<JSON body>'`; with `WEB=1`, as the web client, signed out. Careful: some
+//! endpoints change the account.
 
 use std::sync::Arc;
 
@@ -18,7 +19,12 @@ async fn main() -> yt_core::Result<()> {
         OAuth::new(http.clone()),
         yt_core::paths::token_file(),
     ));
-    let resp = InnerTube::new(http, session).call(&endpoint, body).await?;
+    let youtube = InnerTube::new(http, session);
+    let resp = if std::env::var_os("WEB").is_some() {
+        youtube.call_web(&endpoint, body).await?
+    } else {
+        youtube.call(&endpoint, body).await?
+    };
     println!(
         "{}",
         serde_json::to_string_pretty(&resp).unwrap_or_default()

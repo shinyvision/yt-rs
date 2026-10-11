@@ -45,7 +45,8 @@ of it.
   replies, like or dislike them, write comments and replies, and delete your
   own.
 - **Channels:** channel pages with banner, about, Home (its shelves as rows),
-  Videos, Shorts, Live and Playlists, subscribe and unsubscribe, and your subscriptions in the sidebar.
+  Videos (Latest, Popular or Oldest first), Shorts, Live and Playlists,
+  subscribe and unsubscribe, and your subscriptions in the sidebar.
   Channel pictures appear on every video, comment and channel.
 - **Plugins:** Lua (LuaJIT) plugins can replace or wrap any component, command,
   key, page or style, and add new ones. That includes widgets from C libraries,

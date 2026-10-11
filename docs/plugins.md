@@ -142,6 +142,7 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `page.changed` | `{ page, args, back, forward }`: `back` and `forward` say whether there is a page to go back or forward to |
 | `feed.loaded` | `{ browse_id, page }` (a feed page: `shelves`, `continuation`) |
 | `feed.refresh`, `feed.chip_selected` | `{ browse_id, index }` |
+| `feed.order_selected` | `{ browse_id, index }`: an order chip over a channel's videos (0 Latest, 1 Popular, 2 Oldest) |
 | `video.opened` | `{ video }`, before playback starts |
 | `player.loading` | `{ video_id }` |
 | `player.loaded`, `player.ended` | `{ video_id }` |
@@ -401,7 +402,7 @@ app.components()
 | `topbar` | |
 | `mini_player` | the video in the bottom-right corner while another page shows; the player itself moves into it |
 | `toast` | `{ message, action?, seconds? }`: a toast's content |
-| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page?, on_channel? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it; `on_channel` leaves the channel out of the cards (on its own page); `layout = "list"` shows one video a row (History); `title` puts a heading over it |
+| `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page?, on_channel?, sortable?, order? }`: a feed page. `params` picks a channel tab; `sortable` (a channel's Videos) adds chips for Latest, Popular and Oldest, and `order` (`"latest"`, `"popular"`, `"oldest"`) picks one; `page` is a first page to show instead of loading it; `on_channel` leaves the channel out of the cards (on its own page); `layout = "list"` shows one video a row (History); `title` puts a heading over it |
 | `shelves` | `{ page, browse_id, on_channel? }`: a page's shelves as rows that scroll sideways (a channel's home) |
 | `chip_bar` | `{ chips, selected, browse_id?, event? }`: clicking a chip emits `event` (`feed.chip_selected` by default) with `{ browse_id, index }` |
 | `video_card` | a video, plus `layout?` (`"compact"`: a row, as in "Up next"; `"shelf"`: narrower, for a shelf's row; `"list"`: a wide row, as in History) and `on_channel?` (without the channel's name and picture) |

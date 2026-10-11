@@ -382,6 +382,12 @@ impl InnerTube {
 
     /// Loads more of a feed: more shelves, or more of one shelf.
     pub async fn continuation(&self, token: &str) -> Result<FeedPage> {
+        if let Some(token) = token.strip_prefix(feed::WEB_TOKEN) {
+            let resp = self
+                .call_web("browse", json!({ "continuation": token }))
+                .await?;
+            return Ok(feed::parse_web_grid(&resp));
+        }
         Ok(feed::parse(
             &self
                 .call("browse", json!({ "continuation": token }))
@@ -393,6 +399,33 @@ impl InnerTube {
     pub async fn browse_with(&self, browse_id: &str, params: &str) -> Result<FeedPage> {
         let body = json!({ "browseId": browse_id, "params": params });
         Ok(feed::parse(&self.call("browse", body).await?))
+    }
+
+    /// A channel's videos in an order. Latest is the TV client's Videos tab
+    /// (the user's, with YouTube's menus); the TV client has no other
+    /// orders, so Popular and Oldest come from youtube.com's chips.
+    pub async fn channel_videos(
+        &self,
+        channel_id: &str,
+        order: channel::VideoOrder,
+    ) -> Result<FeedPage> {
+        if order == channel::VideoOrder::Latest {
+            return self.browse_with(channel_id, channel::VIDEOS_TAB).await;
+        }
+        let body = json!({ "browseId": channel_id, "params": channel::WEB_VIDEOS_TAB });
+        let tab = self.call_web("browse", body).await?;
+        let token = channel::order_token(&tab, order).ok_or_else(|| Error::Api {
+            endpoint: "browse".into(),
+            status: 200,
+            message: Some(format!(
+                "this channel's videos can't be sorted by {}",
+                order.label().to_lowercase()
+            )),
+        })?;
+        let resp = self
+            .call_web("browse", json!({ "continuation": token }))
+            .await?;
+        Ok(feed::parse_web_grid(&resp))
     }
 
     /// A video's watch page: details, channel, description, comments entry.
