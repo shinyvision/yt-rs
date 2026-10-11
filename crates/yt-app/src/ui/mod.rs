@@ -228,6 +228,7 @@ pub fn register(app: &App) {
         args: Value::Null,
         order,
         section: section.into(),
+        needs_account: false,
     };
     pages.add_nav(nav("home", "Home", "go-home-symbolic", 0, "main"));
     pages.add_nav(nav(
@@ -244,13 +245,16 @@ pub fn register(app: &App) {
         0,
         "library",
     ));
-    pages.add_nav(nav(
-        "playlists",
-        "Playlists",
-        "yt-playlist-symbolic",
-        10,
-        "library",
-    ));
+    pages.add_nav(NavItem {
+        needs_account: true,
+        ..nav(
+            "playlists",
+            "Playlists",
+            "yt-playlist-symbolic",
+            10,
+            "library",
+        )
+    });
     pages.add_nav(nav(
         "settings",
         "Settings",
@@ -283,6 +287,7 @@ pub fn register(app: &App) {
             args: json!({ "playlist_id": list }),
             order,
             section: "library".into(),
+            needs_account: true,
         });
     }
 }

@@ -15,6 +15,8 @@ of it.
   spelling corrections, the chips (Shorts, Unwatched, Videos, ...) and the
   filters (type, length, upload date, features, popularity). Signed in, the
   results are your own, with watch progress; signed out, search still works.
+- **Signed out**, it works as youtube.com does: Home, videos, channels,
+  comments, search and live chat; "Sign in" where an account is needed.
 - **Playback** in mpv: hardware-accelerated (VA-API), up to 1080p, resuming
   where you left off, with a scrub bar you can drag. Streams are read in
   bounded chunks, which YouTube serves at full speed: a video starts in well

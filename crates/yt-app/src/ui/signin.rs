@@ -1,5 +1,6 @@
 //! The `signin` page: signs in the way a smart TV does. The user approves
-//! the app by entering a short code at google.com/device.
+//! the app by entering a short code at google.com/device. And what pages
+//! that need an account show signed out: youtube.com's prompts.
 
 use gtk::prelude::*;
 use serde_json::Value;
@@ -118,4 +119,58 @@ fn sign_in_flow(
             }
         });
     }
+}
+
+/// The "Sign in" button youtube.com shows signed out: it opens the sign-in
+/// page.
+pub fn button() -> gtk::Button {
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    content.append(&gtk::Image::from_icon_name("yt-person-symbolic"));
+    content.append(&gtk::Label::new(Some("Sign in")));
+    let button = gtk::Button::builder()
+        .child(&content)
+        .css_classes(["pill-button", "outline", "signin-button"])
+        .build();
+    button.connect_clicked(|_| {
+        app().navigate("signin", Value::Null, true);
+    });
+    button
+}
+
+/// What a page that needs an account says signed out, as youtube.com says
+/// it: its icon, title and description.
+pub fn wording(page: &str) -> (&'static str, &'static str, &'static str) {
+    match page {
+        "subscriptions" | "FEsubscriptions" => (
+            "view-list-symbolic",
+            "Don\u{2019}t miss new videos",
+            "Sign in to see updates from your favorite YouTube channels",
+        ),
+        "history" | "FEhistory" => (
+            "yt-history-symbolic",
+            "Keep track of what you watch",
+            "Watch history isn\u{2019}t viewable when signed out.",
+        ),
+        _ => (
+            "yt-library-symbolic",
+            "Enjoy your favorite videos",
+            "Sign in to access videos that you\u{2019}ve liked or saved",
+        ),
+    }
+}
+
+/// A page's sign-in prompt (see [`wording`]).
+pub fn prompt(page: &str) -> gtk::Widget {
+    let (icon, title, description) = wording(page);
+    let button = button();
+    button.set_halign(gtk::Align::Center);
+    let status = adw::StatusPage::builder()
+        .icon_name(icon)
+        .title(title)
+        .description(description)
+        .child(&button)
+        .vexpand(true)
+        .build();
+    status.set_widget_name("signin-prompt");
+    status.upcast()
 }

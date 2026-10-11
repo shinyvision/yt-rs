@@ -114,9 +114,17 @@ fn send(this: &SubscribeButton, command: &str) {
     this.busy.set(true);
     show(this);
     let args = json!({ "subscription": *this.subscription.borrow() });
-    if let Err(e) = app().ext.commands.run(command, args) {
-        this.busy.set(false);
-        show(this);
-        app().toast(&e);
+    match app().ext.commands.run(command, args) {
+        // Signed out: it offered to sign in instead.
+        Ok(answer) if answer.get("signed_in") == Some(&Value::Bool(false)) => {
+            this.busy.set(false);
+            show(this);
+        }
+        Ok(_) => {}
+        Err(e) => {
+            this.busy.set(false);
+            show(this);
+            app().toast(&e);
+        }
     }
 }

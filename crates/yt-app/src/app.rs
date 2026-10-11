@@ -163,15 +163,15 @@ impl App {
         step("window");
         app.ext.events.emit("app.ready", &Value::Null);
 
-        let signed_in = runtime::block_on(app.session.is_signed_in());
-        let start = if signed_in { "home" } else { "signin" };
-        if signed_in {
+        // Home either way, as youtube.com: signed out, YouTube's own
+        // picks, and "Sign in" at the top.
+        if crate::social::signed_in() {
             app.load_signed_in();
         }
         app.ext
             .events
             .on("auth.signed_in", |_| crate::app::app().load_signed_in());
-        app.navigate(start, Value::Null, false);
+        app.navigate("home", Value::Null, false);
         step("first page");
         // Once the first frame is up, get the challenge solver ready for the
         // first click.

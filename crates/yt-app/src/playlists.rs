@@ -18,6 +18,7 @@ use yt_core::playlist::{LIKED, Privacy, WATCH_LATER};
 
 use crate::app::{App, app};
 use crate::commands::str_arg;
+use crate::social::needs_account;
 use crate::social::{app_youtube, outcome, run};
 
 pub fn register(this: &Rc<App>) {
@@ -27,79 +28,94 @@ pub fn register(this: &Rc<App>) {
         app().navigate("playlist", json!({ "playlist_id": playlist_id }), true);
         Ok(Value::Null)
     });
-    c.register("video.save", |args| {
-        crate::ui::save_dialog::present(&video_id(&args)?);
-        Ok(Value::Null)
-    });
-    c.register("video.save_to_watch_later", |args| {
-        let video_id = video_id(&args)?;
-        edit(WATCH_LATER, &video_id, true, None, true);
-        Ok(Value::Null)
-    });
-    c.register("playlist.add", |args| {
-        let playlist_id = str_arg(&args, "playlist_id")?.to_owned();
-        let video_id = video_id(&args)?;
-        let title = args.get("title").and_then(Value::as_str).map(str::to_owned);
-        edit(
-            &playlist_id,
-            &video_id,
-            true,
-            title,
-            args.get("undo").and_then(Value::as_bool).unwrap_or(true),
-        );
-        Ok(Value::Null)
-    });
-    c.register("playlist.remove", |args| {
-        let playlist_id = str_arg(&args, "playlist_id")?.to_owned();
-        let video_id = video_id(&args)?;
-        let title = args.get("title").and_then(Value::as_str).map(str::to_owned);
-        edit(
-            &playlist_id,
-            &video_id,
-            false,
-            title,
-            args.get("undo").and_then(Value::as_bool).unwrap_or(true),
-        );
-        Ok(Value::Null)
-    });
-    c.register("playlist.create", |args| {
-        let title = str_arg(&args, "title")?.trim().to_owned();
-        if title.is_empty() {
-            return Err("a playlist needs a title".into());
-        }
-        let privacy: Privacy = args
-            .get("privacy")
-            .cloned()
-            .map(serde_json::from_value)
-            .transpose()
-            .map_err(|_| "privacy is private, unlisted or public")?
-            .unwrap_or(Privacy::Private);
-        let video_id = args
-            .get("video_id")
-            .and_then(Value::as_str)
-            .map(str::to_owned);
-        let name = title.clone();
-        run(
-            async move {
-                app_youtube(move |y| async move {
-                    y.create_playlist(&name, privacy, video_id.as_deref()).await
-                })
-                .await
-            },
-            move |result| {
-                if result.is_ok() {
-                    app().toast(&format!("Created \u{201c}{title}\u{201d}"));
-                }
-                outcome(
-                    "playlist.created",
-                    json!({ "title": title }),
-                    result.map(|id| json!({ "playlist_id": id })),
-                );
-            },
-        );
-        Ok(Value::Null)
-    });
-    c.register("playlist.delete", |args| {
+    c.register(
+        "video.save",
+        needs_account("Sign in to add this video to a playlist", move |args| {
+            crate::ui::save_dialog::present(&video_id(&args)?);
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "video.save_to_watch_later",
+        needs_account("Sign in to add this video to a playlist", move |args| {
+            let video_id = video_id(&args)?;
+            edit(WATCH_LATER, &video_id, true, None, true);
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "playlist.add",
+        needs_account("Sign in to add this video to a playlist", move |args| {
+            let playlist_id = str_arg(&args, "playlist_id")?.to_owned();
+            let video_id = video_id(&args)?;
+            let title = args.get("title").and_then(Value::as_str).map(str::to_owned);
+            edit(
+                &playlist_id,
+                &video_id,
+                true,
+                title,
+                args.get("undo").and_then(Value::as_bool).unwrap_or(true),
+            );
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "playlist.remove",
+        needs_account("Sign in to change your playlists", move |args| {
+            let playlist_id = str_arg(&args, "playlist_id")?.to_owned();
+            let video_id = video_id(&args)?;
+            let title = args.get("title").and_then(Value::as_str).map(str::to_owned);
+            edit(
+                &playlist_id,
+                &video_id,
+                false,
+                title,
+                args.get("undo").and_then(Value::as_bool).unwrap_or(true),
+            );
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "playlist.create",
+        needs_account("Sign in to make playlists", move |args| {
+            let title = str_arg(&args, "title")?.trim().to_owned();
+            if title.is_empty() {
+                return Err("a playlist needs a title".into());
+            }
+            let privacy: Privacy = args
+                .get("privacy")
+                .cloned()
+                .map(serde_json::from_value)
+                .transpose()
+                .map_err(|_| "privacy is private, unlisted or public")?
+                .unwrap_or(Privacy::Private);
+            let video_id = args
+                .get("video_id")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            let name = title.clone();
+            run(
+                async move {
+                    app_youtube(move |y| async move {
+                        y.create_playlist(&name, privacy, video_id.as_deref()).await
+                    })
+                    .await
+                },
+                move |result| {
+                    if result.is_ok() {
+                        app().toast(&format!("Created \u{201c}{title}\u{201d}"));
+                    }
+                    outcome(
+                        "playlist.created",
+                        json!({ "title": title }),
+                        result.map(|id| json!({ "playlist_id": id })),
+                    );
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
+    c.register("playlist.delete", needs_account("Sign in to change your playlists", move |args| {
         let playlist_id = str_arg(&args, "playlist_id")?.to_owned();
         if [WATCH_LATER, LIKED].contains(&playlist_id.as_str()) {
             return Err("this list can't be deleted".into());
@@ -119,18 +135,21 @@ pub fn register(this: &Rc<App>) {
             },
         );
         Ok(Value::Null)
-    });
+    }));
     // One of the video's own menu actions (its `actions`).
-    c.register("video.action", |args| {
-        let video_id = video_id(&args)?;
-        let action: VideoAction = args
-            .get("action")
-            .cloned()
-            .ok_or("no action")
-            .and_then(|a| serde_json::from_value(a).map_err(|_| "not a video action"))?;
-        act(&video_id, action);
-        Ok(Value::Null)
-    });
+    c.register(
+        "video.action",
+        needs_account("Sign in to change what YouTube recommends", move |args| {
+            let video_id = video_id(&args)?;
+            let action: VideoAction = args
+                .get("action")
+                .cloned()
+                .ok_or("no action")
+                .and_then(|a| serde_json::from_value(a).map_err(|_| "not a video action"))?;
+            act(&video_id, action);
+            Ok(Value::Null)
+        }),
+    );
 }
 
 /// `{ video_id }`, or `{ video = { id } }` as the video menu passes it.

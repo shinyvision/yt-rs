@@ -258,6 +258,13 @@ end)
 Every button and key in the app runs a command, so replacing a command changes
 every way of triggering it.
 
+Commands that need an account (liking, subscribing, commenting, saving and
+the playlists', "Not interested") offer to sign in when no one is: a toast
+with "Sign in", and the answer `{ signed_in = false }`. Signed out,
+everything else works as it does on youtube.com: feeds, videos, channels,
+comments, search, live chat; the account's own pages show youtube.com's
+prompts to sign in.
+
 ```lua
 app.run("player.seek", { position = 90 })
 local original = app.command("video.play", function(args)
@@ -421,7 +428,7 @@ app.components()
 | `comment_composer` | `{ video_id, parent_id?, mention?, autofocus? }`: the box to write a comment or reply |
 | `subscribe_button` | `{ subscription, channel_name }` |
 | `sidebar_subscriptions` | the sidebar's list of subscribed channels |
-| `account_button` | the user's picture in the top bar, with its menu |
+| `account_button` | the user's picture in the top bar, with its menu; signed out, "Sign in" |
 | `menu` | `{ items }`: a menu's list. An item is `{ label, icon?, command, args?, confirm?, selected? }`; with `confirm` (a `confirm_dialog`'s properties) it asks first. `{ separator = true }` draws a line between groups |
 | `confirm_dialog` | `{ title, body?, confirm, cancel? }`: a dialog's content. A replacement needs buttons named `dialog-cancel` and `dialog-confirm` |
 | `player_settings` | `{ entries }`: the settings panel's pages |
@@ -483,7 +490,8 @@ app.page { name = "notes", title = "Notes", keep = true,
   build = function(args) return ui.label("...") end,
   update = function(widget, args) end }      -- optional
 app.nav { id = "notes", title = "Notes", icon = "accessories-text-editor-symbolic",
-  page = "notes", section = "library", order = 10 }   -- sections: main, library, bottom
+  page = "notes", section = "library", order = 10,     -- sections: main, library, bottom
+  needs_account = false }                             -- true: hidden signed out
 app.navigate("notes", { any = "args" })
 app.back()
 app.forward()

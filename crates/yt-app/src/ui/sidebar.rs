@@ -63,6 +63,14 @@ pub fn build(props: &Value) -> gtk::Widget {
             fill(&items, mini);
         }
     });
+    for event in ["auth.signed_in", "auth.signed_out"] {
+        let weak = items.downgrade();
+        app.ext.events.on(event, move |_| {
+            if let Some(items) = weak.upgrade() {
+                fill(&items, mini);
+            }
+        });
+    }
     let weak = items.downgrade();
     app.ext.events.on("page.changed", move |payload| {
         let page = payload
@@ -81,7 +89,16 @@ fn fill(items: &gtk::Box, mini: bool) {
     while let Some(child) = items.first_child() {
         items.remove(&child);
     }
-    let nav = app().ext.pages.nav();
+    // Signed out, what needs an account goes, and youtube.com's sign-in
+    // box comes after "You".
+    let signed_in = crate::social::signed_in();
+    let nav: Vec<NavItem> = app()
+        .ext
+        .pages
+        .nav()
+        .into_iter()
+        .filter(|i| signed_in || !i.needs_account)
+        .collect();
     // The rail is youtube.com's: the main pages, then "You".
     if mini {
         for item in nav.iter().filter(|i| i.section == "main") {
@@ -95,6 +112,10 @@ fn fill(items: &gtk::Box, mini: bool) {
                 if !section.is_empty() {
                     items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
                 }
+                if section == "library" && !signed_in {
+                    items.append(&sign_in_box());
+                    items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+                }
                 if item.section == "library" {
                     items.append(&you_heading());
                 }
@@ -102,10 +123,31 @@ fn fill(items: &gtk::Box, mini: bool) {
             }
             items.append(&nav_button(item, mini));
         }
+        if section == "library" && !signed_in {
+            items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+            items.append(&sign_in_box());
+        }
     }
     if let Some(page) = app().current_page() {
         highlight(items, &page, &app().current_args().unwrap_or_default());
     }
+}
+
+/// "Sign in to like videos, comment, and subscribe.", as youtube.com's
+/// sidebar has it signed out.
+fn sign_in_box() -> gtk::Widget {
+    let text = gtk::Label::new(Some("Sign in to like videos, comment, and subscribe."));
+    text.set_wrap(true);
+    text.set_xalign(0.0);
+    text.set_max_width_chars(24);
+    let button = super::signin::button();
+    button.set_halign(gtk::Align::Start);
+    let column = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    column.add_css_class("sidebar-signin");
+    column.set_widget_name("sidebar-signin");
+    column.append(&text);
+    column.append(&button);
+    column.upcast()
 }
 
 /// The "You" page's entry.
@@ -118,6 +160,7 @@ fn you() -> NavItem {
         args: Value::Null,
         order: 0,
         section: "library".into(),
+        needs_account: false,
     }
 }
 

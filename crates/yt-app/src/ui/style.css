@@ -723,3 +723,9 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .live-chat-footer { padding: 8px 12px 8px 16px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
 .live-chat-viewer { font-size: 13px; color: rgba(255, 255, 255, 0.7); }
 .live-chat-show { min-height: 36px; }
+
+/* Signed out: youtube.com's "Sign in" buttons and the sidebar's box. */
+.signin-button { color: #3ea6ff; font-weight: 500; }
+.signin-button image { color: #3ea6ff; }
+.sidebar-signin { padding: 12px 16px 12px 24px; }
+.sidebar-signin > label { font-size: 14px; }

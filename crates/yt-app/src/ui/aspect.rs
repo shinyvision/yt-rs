@@ -21,6 +21,8 @@ mod imp {
         pub fill: Cell<bool>,
         /// The width asked for when there is room.
         pub natural_width: Cell<i32>,
+        /// Never taller than at this width, if above 0.
+        pub max_width: Cell<i32>,
     }
 
     impl Default for AspectBin {
@@ -30,6 +32,7 @@ mod imp {
                 max_height: Cell::new(0),
                 fill: Cell::new(false),
                 natural_width: Cell::new(320),
+                max_width: Cell::new(0),
             }
         }
     }
@@ -58,11 +61,14 @@ mod imp {
             match orientation {
                 gtk::Orientation::Horizontal => (0, self.natural_width.get(), -1, -1),
                 _ => {
-                    let width = if for_size >= 0 {
+                    let mut width = if for_size >= 0 {
                         for_size
                     } else {
                         self.natural_width.get()
                     };
+                    if self.max_width.get() > 0 {
+                        width = width.min(self.max_width.get());
+                    }
                     let mut height = (width as f64 * self.ratio.get()).round() as i32;
                     let max = self.max_height.get();
                     if max > 0 {
@@ -126,6 +132,15 @@ impl AspectBin {
     pub fn set_natural_width(&self, width: i32) {
         self.imp().natural_width.set(width);
         self.queue_resize();
+    }
+
+    /// Asks for no more height than at `width` (0 for no cap): for a bin
+    /// that is never wider than that, so measuring it wider (as boxes do
+    /// when sharing out room) doesn't make it ask for more.
+    pub fn set_max_width(&self, width: i32) {
+        if self.imp().max_width.replace(width) != width {
+            self.queue_resize();
+        }
     }
 
     /// Caps the height (0 for no cap).

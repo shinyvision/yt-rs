@@ -152,12 +152,15 @@ fn configure(section: &Rc<Section>, props: &Value) {
     while let Some(child) = section.composer.first_child() {
         section.composer.remove(&child);
     }
-    section.composer.append(
-        &app()
-            .ext
-            .components
-            .build("comment_composer", &json!({ "video_id": video_id })),
-    );
+    // Signed out, no "Add a comment...", as on youtube.com.
+    if social::signed_in() {
+        section.composer.append(
+            &app()
+                .ext
+                .components
+                .build("comment_composer", &json!({ "video_id": video_id })),
+        );
+    }
     reload(section);
 }
 
@@ -617,6 +620,9 @@ fn connect_comment(
     let weak = Rc::downgrade(view);
     reply_button.connect_clicked(move |_| {
         let Some(view) = weak.upgrade() else { return };
+        if !social::signed_in() {
+            return social::offer_sign_in("Sign in to comment");
+        }
         let comment = view.comment.borrow();
         let parent_id = if is_reply { comment.id.split('.').next().unwrap_or_default().to_owned() } else { comment.id.clone() };
         let mention = if is_reply { comment.author.handle.clone().map(|h| format!("{h} ")) } else { None };

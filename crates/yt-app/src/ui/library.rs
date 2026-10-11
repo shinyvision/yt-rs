@@ -21,6 +21,12 @@ const ROW_LENGTH: usize = 20;
 
 /// The `library` component.
 pub fn build_library(_props: &Value) -> gtk::Widget {
+    // Signed out, youtube.com's prompt: it is all the account's.
+    if !crate::social::signed_in() {
+        let prompt = super::signin::prompt("library");
+        prompt.set_widget_name("page-library");
+        return prompt;
+    }
     let column = gtk::Box::new(gtk::Orientation::Vertical, 0);
     column.add_css_class("library");
     column.append(&account_header());
@@ -182,6 +188,12 @@ fn load_section(place: &gtk::Box, section: &'static str) {
 /// `{ browse_id, params }` a page's (a channel's Playlists tab), which has
 /// no title.
 pub fn build_playlists(props: &Value) -> gtk::Widget {
+    // The user's playlists need them signed in; a channel's don't.
+    if props.get("browse_id").is_none() && !crate::social::signed_in() {
+        let prompt = super::signin::prompt("playlists");
+        prompt.set_widget_name("page-playlists");
+        return prompt;
+    }
     let title = gtk::Label::new(Some("Playlists"));
     title.add_css_class("page-title");
     title.set_xalign(0.0);

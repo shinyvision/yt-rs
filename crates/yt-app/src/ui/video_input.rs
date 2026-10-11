@@ -154,7 +154,7 @@ pub fn load_actions(video: &Value, done: impl FnOnce() + 'static) {
 /// YouTube itself offers for this video (from its tile: "Not interested",
 /// "Remove from Watch later", ...); then the `video.menu` filter.
 pub fn menu_items(video: &Value) -> Value {
-    let signed_in = crate::social::account().is_some();
+    let signed_in = crate::social::signed_in();
     let mut defaults = vec![
         json!({ "label": "Add to queue", "icon": "yt-queue-symbolic", "command": "queue.add" }),
     ];

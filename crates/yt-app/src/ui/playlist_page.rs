@@ -44,7 +44,11 @@ struct View {
     menu: gtk::MenuButton,
     model: gtk::gio::ListStore,
     scroller: gtk::ScrolledWindow,
+    thumb: super::aspect::AspectBin,
 }
+
+/// The panel's picture beside the list, as youtube.com's.
+const THUMB_WIDTH: i32 = 312;
 
 pub fn build(props: &Value) -> gtk::Widget {
     let picture = gtk::Picture::new();
@@ -53,7 +57,8 @@ pub fn build(props: &Value) -> gtk::Widget {
     let thumb = super::aspect::AspectBin::new(9.0 / 16.0, &picture);
     thumb.add_css_class("playlist-thumb");
     thumb.set_overflow(gtk::Overflow::Hidden);
-    thumb.set_natural_width(312);
+    thumb.set_natural_width(THUMB_WIDTH);
+    thumb.set_max_width(THUMB_WIDTH);
 
     let label = |class: &str| {
         let l = gtk::Label::new(None);
@@ -90,6 +95,10 @@ pub fn build(props: &Value) -> gtk::Widget {
     let panel = gtk::Box::new(gtk::Orientation::Vertical, 12);
     panel.add_css_class("playlist-panel");
     panel.set_valign(gtk::Align::Start);
+    // Its own width beside the list: the buttons expanding inside mustn't
+    // make it take the list's room.
+    panel.set_hexpand(false);
+
     panel.append(&thumb);
     panel.append(&title);
     panel.append(&owner);
@@ -158,6 +167,7 @@ pub fn build(props: &Value) -> gtk::Widget {
         menu,
         model,
         scroller,
+        thumb,
     });
     attach(&root, view.clone());
     connect(&view, &root, &play, &shuffle);
@@ -196,6 +206,12 @@ fn connect(view: &Rc<View>, root: &adw::BreakpointBin, play: &gtk::Button, shuff
         "orientation",
         Some(&gtk::Orientation::Vertical.to_value()),
     );
+    // Beside the list, the panel's picture is its width (the box measures
+    // the panel wider while sharing out room); above it, the page's.
+    let thumb = view.thumb.clone();
+    breakpoint.connect_apply(move |_| thumb.set_max_width(0));
+    let thumb = view.thumb.clone();
+    breakpoint.connect_unapply(move |_| thumb.set_max_width(THUMB_WIDTH));
     root.add_breakpoint(breakpoint);
 
     for (button, shuffle) in [(play, false), (shuffle, true)] {
@@ -287,7 +303,19 @@ fn reload(view: &Rc<View>) {
                 );
                 fill(&view, page);
             }
+            // Watch later and Liked videos signed out.
+            Err(yt_core::Error::NotSignedIn) => {
+                let (icon, title, description) = super::signin::wording("playlist");
+                view.status.set_icon_name(Some(icon));
+                view.status.set_title(title);
+                view.status.set_description(Some(description));
+                let button = super::signin::button();
+                button.set_halign(gtk::Align::Center);
+                view.status.set_child(Some(&button));
+                view.content.set_visible_child_name("status");
+            }
             Err(e) => {
+                view.status.set_child(None::<&gtk::Widget>);
                 view.status.set_title("Couldn't load the playlist");
                 view.status.set_description(Some(&e.to_string()));
                 view.content.set_visible_child_name("status");

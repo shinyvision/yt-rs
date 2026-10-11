@@ -30,8 +30,41 @@ thread_local! {
     /// Vote tokens of comments whose thread was loaded, by comment ID.
     static VOTES: RefCell<HashMap<String, VoteActions>> = RefCell::default();
     static ACCOUNT: RefCell<Option<Account>> = const { RefCell::new(None) };
+    /// Whether a user is signed in (whether or not their account has
+    /// loaded yet).
+    static SIGNED_IN: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
     /// The @handle of each watched video's channel, by video ID.
     static OWNERS: RefCell<HashMap<String, String>> = RefCell::default();
+}
+
+/// Whether a user is signed in: what needs an account shows, or a way to
+/// sign in instead.
+pub fn signed_in() -> bool {
+    SIGNED_IN.with(std::cell::Cell::get)
+}
+
+/// A command that needs an account. Signed out, it offers to sign in
+/// instead (`why`, with "Sign in", as youtube.com asks) and answers
+/// `{ signed_in = false }`.
+pub fn needs_account(
+    why: &'static str,
+    command: impl Fn(Value) -> Result<Value, String> + 'static,
+) -> impl Fn(Value) -> Result<Value, String> + 'static {
+    move |args| {
+        if signed_in() {
+            return command(args);
+        }
+        offer_sign_in(why);
+        Ok(json!({ "signed_in": false }))
+    }
+}
+
+/// A toast saying why to sign in, with "Sign in".
+pub fn offer_sign_in(why: &str) {
+    app().toast_with(&json!({
+        "message": why,
+        "action": { "label": "Sign in", "command": "app.navigate", "args": { "page": "signin" } },
+    }));
 }
 
 pub fn register(this: &Rc<App>) {
@@ -68,7 +101,12 @@ pub fn register(this: &Rc<App>) {
     c.register("channels.lookup", |args| {
         Ok(serde_json::to_value(app().channels.lookup(str_arg(&args, "key")?)).unwrap_or_default())
     });
+    SIGNED_IN.with(|s| s.set(crate::runtime::block_on(this.session.is_signed_in())));
+    this.ext
+        .events
+        .on("auth.signed_in", |_| SIGNED_IN.with(|s| s.set(true)));
     this.ext.events.on("auth.signed_out", |_| {
+        SIGNED_IN.with(|s| s.set(false));
         ACCOUNT.with(|a| a.borrow_mut().take());
         VOTES.with(|v| v.borrow_mut().clear());
     });
@@ -81,59 +119,94 @@ pub fn register(this: &Rc<App>) {
         app().ext.events.emit("comments.sort_selected", &args);
         Ok(Value::Null)
     });
-    c.register("channel.subscribe", |args| set_subscribed(&args, true));
-    c.register("channel.unsubscribe", |args| set_subscribed(&args, false));
-    c.register("video.rate", |args| {
-        let video_id = str_arg(&args, "video_id")?.to_owned();
-        let rating = match args.get("rating").and_then(Value::as_str).unwrap_or("like") {
-            "like" => Rating::Like,
-            "dislike" => Rating::Dislike,
-            _ => Rating::None,
-        };
-        let name = args.get("rating").and_then(Value::as_str).unwrap_or("like").to_owned();
-        let id = video_id.clone();
-        run(
-            async move { app_youtube(move |y| async move { y.rate_video(&id, rating).await }).await },
-            move |result| outcome("video.rated", json!({ "video_id": video_id, "rating": name }), result.map(|()| json!({}))),
-        );
-        Ok(Value::Null)
-    });
-    c.register("comment.post", |args| {
-        let video_id = str_arg(&args, "video_id")?.to_owned();
-        let text = comment_text(&args)?;
-        let (id, typed) = (video_id.clone(), text.clone());
-        run(
-            async move { app_youtube(move |y| async move { y.post_comment(&id, &text).await }).await },
-            move |result| {
-                outcome(
-                    "comment.posted",
-                    json!({ "video_id": video_id, "parent_id": null }),
-                    result.map(|c| json!({ "comment": posted(c, &typed) })),
-                )
-            },
-        );
-        Ok(Value::Null)
-    });
-    c.register("comment.reply", |args| {
-        let video_id = str_arg(&args, "video_id")?.to_owned();
-        let parent_id = str_arg(&args, "parent_id")?.to_owned();
-        let text = comment_text(&args)?;
-        let (id, parent, typed) = (video_id.clone(), parent_id.clone(), text.clone());
-        run(
-            async move {
-                app_youtube(move |y| async move { y.reply_to_comment(&id, &parent, &text).await })
+    c.register(
+        "channel.subscribe",
+        needs_account("Sign in to subscribe to this channel", |args| {
+            set_subscribed(&args, true)
+        }),
+    );
+    c.register(
+        "channel.unsubscribe",
+        needs_account("Sign in to subscribe to this channel", |args| {
+            set_subscribed(&args, false)
+        }),
+    );
+    c.register(
+        "video.rate",
+        needs_account("Sign in to make your opinion count", move |args| {
+            let video_id = str_arg(&args, "video_id")?.to_owned();
+            let rating = match args.get("rating").and_then(Value::as_str).unwrap_or("like") {
+                "like" => Rating::Like,
+                "dislike" => Rating::Dislike,
+                _ => Rating::None,
+            };
+            let name = args
+                .get("rating")
+                .and_then(Value::as_str)
+                .unwrap_or("like")
+                .to_owned();
+            let id = video_id.clone();
+            run(
+                async move {
+                    app_youtube(move |y| async move { y.rate_video(&id, rating).await }).await
+                },
+                move |result| {
+                    outcome(
+                        "video.rated",
+                        json!({ "video_id": video_id, "rating": name }),
+                        result.map(|()| json!({})),
+                    )
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "comment.post",
+        needs_account("Sign in to comment", move |args| {
+            let video_id = str_arg(&args, "video_id")?.to_owned();
+            let text = comment_text(&args)?;
+            let (id, typed) = (video_id.clone(), text.clone());
+            run(
+                async move {
+                    app_youtube(move |y| async move { y.post_comment(&id, &text).await }).await
+                },
+                move |result| {
+                    outcome(
+                        "comment.posted",
+                        json!({ "video_id": video_id, "parent_id": null }),
+                        result.map(|c| json!({ "comment": posted(c, &typed) })),
+                    )
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
+    c.register(
+        "comment.reply",
+        needs_account("Sign in to comment", move |args| {
+            let video_id = str_arg(&args, "video_id")?.to_owned();
+            let parent_id = str_arg(&args, "parent_id")?.to_owned();
+            let text = comment_text(&args)?;
+            let (id, parent, typed) = (video_id.clone(), parent_id.clone(), text.clone());
+            run(
+                async move {
+                    app_youtube(
+                        move |y| async move { y.reply_to_comment(&id, &parent, &text).await },
+                    )
                     .await
-            },
-            move |result| {
-                outcome(
-                    "comment.posted",
-                    json!({ "video_id": video_id, "parent_id": parent_id }),
-                    result.map(|c| json!({ "comment": posted(c, &typed) })),
-                )
-            },
-        );
-        Ok(Value::Null)
-    });
+                },
+                move |result| {
+                    outcome(
+                        "comment.posted",
+                        json!({ "video_id": video_id, "parent_id": parent_id }),
+                        result.map(|c| json!({ "comment": posted(c, &typed) })),
+                    )
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
     c.register("comment.copy", |args| {
         let comment: yt_core::comments::Comment =
             serde_json::from_value(args.get("comment").cloned().unwrap_or_default())
@@ -144,73 +217,78 @@ pub fn register(this: &Rc<App>) {
         }
         Ok(Value::Null)
     });
-    c.register("comment.delete", |args| {
-        let video_id = str_arg(&args, "video_id")?.to_owned();
-        let comment_id = str_arg(&args, "comment_id")?.to_owned();
-        let (id, comment) = (video_id.clone(), comment_id.clone());
-        run(
-            async move {
-                app_youtube(move |y| async move { y.delete_comment(&id, &comment).await }).await
-            },
-            move |result| {
-                outcome(
-                    "comment.deleted",
-                    json!({ "video_id": video_id, "comment_id": comment_id }),
-                    result.map(|()| json!({})),
-                )
-            },
-        );
-        Ok(Value::Null)
-    });
+    c.register(
+        "comment.delete",
+        needs_account("Sign in to manage your comments", move |args| {
+            let video_id = str_arg(&args, "video_id")?.to_owned();
+            let comment_id = str_arg(&args, "comment_id")?.to_owned();
+            let (id, comment) = (video_id.clone(), comment_id.clone());
+            run(
+                async move {
+                    app_youtube(move |y| async move { y.delete_comment(&id, &comment).await }).await
+                },
+                move |result| {
+                    outcome(
+                        "comment.deleted",
+                        json!({ "video_id": video_id, "comment_id": comment_id }),
+                        result.map(|()| json!({})),
+                    )
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
     // { video_id, comment_id, thread, from: "none"|"like"|"dislike", to: ... }
-    c.register("comment.vote", |args| {
-        let video_id = str_arg(&args, "video_id")?.to_owned();
-        let comment_id = str_arg(&args, "comment_id")?.to_owned();
-        let thread = args
-            .get("thread")
-            .and_then(Value::as_str)
-            .map(str::to_owned);
-        let vote = |key: &str| {
-            serde_json::from_value::<Vote>(args.get(key).cloned().unwrap_or(json!("none")))
-                .map_err(|e| e.to_string())
-        };
-        let (from, to) = (vote("from")?, vote("to")?);
-        let comment = comment_id.clone();
-        run(
-            async move {
-                let actions = match VOTES.with(|v| v.borrow().get(&comment).cloned()) {
-                    Some(actions) => actions,
-                    None => {
-                        let thread = thread.ok_or("this comment can't be voted on")?;
-                        let id = video_id.clone();
-                        let loaded =
-                            app_youtube(
-                                move |y| async move { y.comment_thread(&thread, &id).await },
-                            )
+    c.register(
+        "comment.vote",
+        needs_account("Sign in to make your opinion count", move |args| {
+            let video_id = str_arg(&args, "video_id")?.to_owned();
+            let comment_id = str_arg(&args, "comment_id")?.to_owned();
+            let thread = args
+                .get("thread")
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            let vote = |key: &str| {
+                serde_json::from_value::<Vote>(args.get(key).cloned().unwrap_or(json!("none")))
+                    .map_err(|e| e.to_string())
+            };
+            let (from, to) = (vote("from")?, vote("to")?);
+            let comment = comment_id.clone();
+            run(
+                async move {
+                    let actions = match VOTES.with(|v| v.borrow().get(&comment).cloned()) {
+                        Some(actions) => actions,
+                        None => {
+                            let thread = thread.ok_or("this comment can't be voted on")?;
+                            let id = video_id.clone();
+                            let loaded = app_youtube(move |y| async move {
+                                y.comment_thread(&thread, &id).await
+                            })
                             .await?;
-                        VOTES.with(|v| {
-                            v.borrow_mut()
-                                .insert(comment.clone(), loaded.actions.clone())
-                        });
-                        loaded.actions
+                            VOTES.with(|v| {
+                                v.borrow_mut()
+                                    .insert(comment.clone(), loaded.actions.clone())
+                            });
+                            loaded.actions
+                        }
+                    };
+                    let token = actions
+                        .token(from, to)
+                        .ok_or("YouTube offers no way to change this vote")?
+                        .to_owned();
+                    app_youtube(move |y| async move { y.comment_action(&token).await }).await
+                },
+                move |result| {
+                    let payload = json!({ "comment_id": comment_id, "vote": to, "from": from });
+                    match result {
+                        Ok(()) => app().ext.events.emit("comment.voted", &payload),
+                        Err(error) => failed("comment.vote", &error, payload),
                     }
-                };
-                let token = actions
-                    .token(from, to)
-                    .ok_or("YouTube offers no way to change this vote")?
-                    .to_owned();
-                app_youtube(move |y| async move { y.comment_action(&token).await }).await
-            },
-            move |result| {
-                let payload = json!({ "comment_id": comment_id, "vote": to, "from": from });
-                match result {
-                    Ok(()) => app().ext.events.emit("comment.voted", &payload),
-                    Err(error) => failed("comment.vote", &error, payload),
-                }
-            },
-        );
-        Ok(Value::Null)
-    });
+                },
+            );
+            Ok(Value::Null)
+        }),
+    );
 }
 
 /// Loads the signed-in account (for the top bar and "is this my comment").

@@ -98,6 +98,28 @@ const WRITES: &[&str] = &[
     "subscription/unsubscribe",
 ];
 
+/// Endpoints and feeds only an account has: signed out, asking for them
+/// fails with [`Error::NotSignedIn`] (the rest is asked for anonymously).
+const ACCOUNT_ENDPOINTS: &[&str] = &["account/accounts_list", "playlist/get_add_to_playlist"];
+const ACCOUNT_FEEDS: &[&str] = &[
+    "FEsubscriptions",
+    "FEhistory",
+    "FElibrary",
+    "FEplaylist_aggregation",
+    "VLWL",
+    "VLLL",
+];
+
+fn needs_account(endpoint: &str, body: &Value) -> bool {
+    WRITES.contains(&endpoint)
+        || ACCOUNT_ENDPOINTS.contains(&endpoint)
+        || (endpoint == "browse"
+            && body
+                .get("browseId")
+                .and_then(Value::as_str)
+                .is_some_and(|id| ACCOUNT_FEEDS.contains(&id)))
+}
+
 /// The TV app's player script: its version (the ID in its URL), where it
 /// is, and its `signatureTimestamp`. `player` requests send the timestamp,
 /// and YouTube answers with stream URLs whose challenges that version of
@@ -164,14 +186,23 @@ impl InnerTube {
         if self.dry_run.load(std::sync::atomic::Ordering::Relaxed) && WRITES.contains(&endpoint) {
             return dry_run_answer(endpoint, &body);
         }
+        let token = match self.session.access_token().await {
+            Ok(token) => Some(token),
+            // Signed out, as the TV app asks before anyone signs in; what
+            // only an account has fails at once.
+            Err(Error::NotSignedIn) if !needs_account(endpoint, &body) => None,
+            Err(e) => return Err(e),
+        };
         let body = with_tv_context(client, body);
-        let token = self.session.access_token().await?;
-        match self.send(client, endpoint, &body, Some(&token)).await {
-            Err(Error::Unauthorized) => {
+        match (
+            self.send(client, endpoint, &body, token.as_deref()).await,
+            token,
+        ) {
+            (Err(Error::Unauthorized), Some(token)) => {
                 let token = self.session.refresh_rejected(&token).await?;
                 self.send(client, endpoint, &body, Some(&token)).await
             }
-            result => result,
+            (result, _) => result,
         }
     }
 
@@ -902,10 +933,34 @@ mod tests {
             .unwrap();
         assert_eq!(id, "PLdry-run");
         assert!(api.post_comment("dQw4w9WgXcQ", "hi").await.is_err());
-        // Reads still go out (and fail here, signed out and offline).
-        assert!(api.browse(HOME).await.is_err());
+        // Reads aren't answered for: the account's own fail, signed out.
+        assert!(matches!(
+            api.browse("FEsubscriptions").await,
+            Err(Error::NotSignedIn)
+        ));
         // Off again, writes go out too.
         api.set_dry_run(false);
         assert!(api.add_to_playlist("WL", "dQw4w9WgXcQ").await.is_err());
+    }
+
+    #[test]
+    fn signed_out_asks_only_for_what_needs_no_account() {
+        let browse = |id: &str| json!({ "browseId": id });
+        // Anyone's: asked for anonymously.
+        assert!(!needs_account("browse", &browse(HOME)));
+        assert!(!needs_account(
+            "browse",
+            &browse("UCuAXFkgsw1L7xaCfnd5JJOw")
+        ));
+        assert!(!needs_account("browse", &browse("VLPLxxxxxxxx")));
+        assert!(!needs_account("next", &json!({ "videoId": "dQw4w9WgXcQ" })));
+        assert!(!needs_account("live_chat/get_live_chat", &json!({})));
+        // The account's own, and every write.
+        for id in ["FEsubscriptions", "FEhistory", "VLWL", "VLLL"] {
+            assert!(needs_account("browse", &browse(id)), "{id}");
+        }
+        assert!(needs_account("account/accounts_list", &json!({})));
+        assert!(needs_account("like/like", &json!({})));
+        assert!(needs_account("subscription/subscribe", &json!({})));
     }
 }

@@ -111,7 +111,13 @@ pub fn build(props: &Value) -> gtk::Widget {
     let retry = gtk::Button::with_label("Try again");
     retry.add_css_class("pill-button");
     retry.set_halign(gtk::Align::Center);
-    status.set_child(Some(&retry));
+    // Signed out, a feed of the account's says so, with a way to sign in.
+    let sign_in = super::signin::button();
+    sign_in.set_halign(gtk::Align::Center);
+    let actions = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    actions.append(&retry);
+    actions.append(&sign_in);
+    status.set_child(Some(&actions));
 
     let content = gtk::Stack::new();
     content.add_named(&spinner, Some("loading"));
@@ -334,6 +340,7 @@ fn reload(feed: &Rc<Feed>) {
                     load_more_shelves(&feed);
                 }
             }
+            Err(yt_core::Error::NotSignedIn) => show_signed_out(&feed),
             Err(e) => show_status(&feed, "Couldn't load the feed", &e.to_string(), true),
         }
     });
@@ -578,10 +585,32 @@ fn show_status(feed: &Feed, title: &str, description: &str, retry: bool) {
     } else {
         "video-display-symbolic"
     }));
-    if let Some(button) = feed.status.child() {
-        button.set_visible(retry);
-    }
+    show_actions(feed, retry, false);
     feed.content.set_visible_child_name("status");
+}
+
+/// What the feed is about, and a "Sign in" button, as youtube.com says it
+/// signed out.
+fn show_signed_out(feed: &Feed) {
+    let (icon, title, description) = super::signin::wording(&feed.state.borrow().browse_id);
+    feed.status.set_icon_name(Some(icon));
+    feed.status.set_title(title);
+    feed.status.set_description(Some(description));
+    show_actions(feed, false, true);
+    feed.content.set_visible_child_name("status");
+}
+
+/// The status page's buttons: "Try again", "Sign in".
+fn show_actions(feed: &Feed, retry: bool, sign_in: bool) {
+    let Some(actions) = feed.status.child() else {
+        return;
+    };
+    if let Some(button) = actions.first_child() {
+        button.set_visible(retry);
+        if let Some(button) = button.next_sibling() {
+            button.set_visible(sign_in);
+        }
+    }
 }
 
 fn rebuild_chips(feed: &Feed) {

@@ -39,6 +39,9 @@ pub struct NavItem {
     /// `main`, `library` or `bottom`.
     #[serde(default = "main_section")]
     pub section: String,
+    /// Only for a signed-in user: hidden signed out.
+    #[serde(default)]
+    pub needs_account: bool,
 }
 
 impl Page {

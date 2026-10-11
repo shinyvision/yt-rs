@@ -1,5 +1,6 @@
 //! The `account_button` component: the signed-in user's picture in the top
-//! bar, with a menu for their channel and signing out.
+//! bar, with a menu for their channel and signing out; signed out, "Sign
+//! in", as on youtube.com.
 
 use adw::prelude::*;
 use serde_json::{Value, json};
@@ -10,6 +11,10 @@ use crate::app::app;
 use crate::social;
 
 pub fn build(_props: &Value) -> gtk::Widget {
+    let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+    root.set_valign(gtk::Align::Center);
+    let sign_in = super::signin::button();
+    root.append(&sign_in);
     let face = adw::Avatar::new(32, None, true);
     let button = gtk::MenuButton::builder()
         .child(&face)
@@ -17,7 +22,19 @@ pub fn build(_props: &Value) -> gtk::Widget {
         .tooltip_text("Your account")
         .build();
     button.set_valign(gtk::Align::Center);
+    root.append(&button);
     show(&button, &face, social::account().as_ref());
+    // Signed out, "Sign in"; signed in, the picture once the account loads.
+    let show_sign_in = move |sign_in: &gtk::Button| sign_in.set_visible(!social::signed_in());
+    show_sign_in(&sign_in);
+    for event in ["auth.signed_in", "auth.signed_out"] {
+        let weak = sign_in.downgrade();
+        follow(&root, event, move |_| {
+            if let Some(sign_in) = weak.upgrade() {
+                show_sign_in(&sign_in);
+            }
+        });
+    }
 
     let (weak, weak_face) = (button.downgrade(), face.downgrade());
     follow(&button, "account.loaded", move |payload| {
@@ -34,7 +51,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
             show(&button, &face, None);
         }
     });
-    button.upcast()
+    root.upcast()
 }
 
 fn show(button: &gtk::MenuButton, face: &adw::Avatar, account: Option<&Account>) {
