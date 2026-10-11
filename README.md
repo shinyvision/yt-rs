@@ -58,9 +58,12 @@ of it.
   subscribe and unsubscribe, your subscriptions in the sidebar, and all of
   them on one page ("Subscriptions ›"), as youtube.com's channel list.
   Channel pictures appear on every video, comment and channel.
-- **Plugins:** Lua (LuaJIT) plugins can replace or wrap any component, command,
-  key, page or style, and add new ones. That includes widgets from C libraries,
-  such as a web browser or a terminal. The app ships with no plugins;
+- **Plugins:** Lua (LuaJIT) plugins can do anything the app does: call and
+  hook every function of its services (YouTube's API, the stream choice,
+  the player, playback, search...), use every library with GObject
+  introspection (GTK, libadwaita, GStreamer, WebKit... and new widget types
+  of their own), and replace or wrap any component, command, key, page or
+  style. The app ships with no plugins;
   [examples](examples/plugins) show what's possible, among them a complete
   [SponsorBlock](examples/plugins/sponsorblock): every category, each set to
   skip, show a button, only show on the seek bar or nothing; "Unskip",
@@ -78,6 +81,7 @@ Arch Linux package names:
 | `gtk4`, `libadwaita` | the UI (GTK 4.18+, libadwaita 1.7+)                |
 | `mpv`        | playback (libmpv)                                          |
 | `luajit`     | plugins                                                    |
+| `glib2` (with libgirepository-2.0, GLib 2.80+) | plugins' access to GTK and other libraries |
 
 Building needs Rust 1.90 or newer and a C compiler (for the bundled QuickJS).
 
@@ -131,12 +135,13 @@ for the API, and [examples/plugins](examples/plugins) for working examples:
 | Example | Shows |
 |---|---|
 | [shortcuts](examples/plugins/shortcuts/init.lua) | key bindings, new commands, raw mpv properties |
+| [quality](examples/plugins/quality/init.lua) | 720p at most: a hook on the stream resolver |
 | [sponsorblock](examples/plugins/sponsorblock/init.lua) | skipping sponsor segments: player events, HTTP, a button in the player |
 | [feed-filter](examples/plugins/feed-filter/init.lua) | hiding videos, a badge on every card, card menu items |
 | [theme](examples/plugins/theme/init.lua) | restyling with CSS, changing built-in widgets |
-| [browser](examples/plugins/browser/init.lua) | a WebKit browser page, through LuaJIT's FFI |
+| [browser](examples/plugins/browser/init.lua) | a WebKit browser page, through GObject introspection |
 | [snake](examples/plugins/snake/init.lua) | a game: Cairo drawing, animation, key input |
-| [terminal](examples/plugins/terminal/init.lua) | a VTE terminal page, through LuaJIT's FFI (needs `vte4`) |
+| [terminal](examples/plugins/terminal/init.lua) | a VTE terminal page, through GObject introspection (needs `vte4`) |
 
 To try one: `ln -s "$PWD/examples/plugins/snake" ~/.config/yt-rs/plugins/`.
 

@@ -2,11 +2,16 @@
 
 ```
 crates/
-  yt-core/   YouTube logic, no UI: sign-in, InnerTube, feeds, watch pages,
-             comments, channels, watch time, streams
-  yt-app/    the GTK app (binary `yt-rs`): registries, UI, player, plugins
-examples/plugins/   example Lua plugins (not loaded by default)
-docs/               this file and the plugin API
+  yt-core/           YouTube logic, no UI: sign-in, InnerTube, feeds, watch
+                     pages, comments, channels, watch time, streams
+  yt-export/         the services as one API: #[export] makes every public
+                     function callable and hookable (yt-export-macros)
+  yt-gi/             GObject introspection for Lua: every introspected
+                     library (GTK, GLib, Gio, ...) from plugins
+  yt-app/            the GTK app (binary `yt-rs`): registries, UI, player,
+                     plugins
+examples/plugins/    example Lua plugins (not loaded by default)
+docs/                this file, the plugin guide and the API reference
 ```
 
 `yt-core` is plain async Rust with no GTK dependency, so everything that talks
@@ -253,13 +258,36 @@ either growing.
 
 ### Plugins (`plugins/`)
 
-LuaJIT, through mlua. `api.rs` builds the `app` and `ui` tables. Lua functions
-are wrapped into the same Rust closures the built-in code registers, with
-errors caught, logged and shown briefly. `object.rs` wraps *any* GObject:
-properties and signals go through GObject's type system, so every GTK (or
-WebKit, VTE, ...) type works without hand-written bindings. LuaJIT's FFI plus
-`ui.from_ffi` covers C libraries with no bindings at all. `prelude.lua` adds
-Lua-side helpers (`ui.build`, `app.bind`).
+LuaJIT, through mlua. Plugins reach the app three ways, none of them
+curated by hand:
+
+- **The toolkit**, through `yt-gi`: GObject introspection
+  (libgirepository-2.0) for Lua. Namespaces load on demand; a method call
+  finds the function in the object's type, its parents or interfaces,
+  converts the Lua arguments as the typelib describes them (in, out,
+  arrays, structs, callbacks with their scopes, GErrors) and calls it
+  through GI's invoker. `gi.subclass` registers GObject types whose
+  virtual functions are Lua closures (libffi through GI). Objects keep
+  their properties and signals through GObject's type system.
+  `widgets.rs` adds the few conveniences GTK has no method for, as Lua
+  functions on `Gtk.Widget`'s class table, where plugins add theirs.
+- **The services**, through `yt-export`: `#[export("service")]` on an impl
+  block (or a function) turns every public function into an entry of a
+  global list, with its parameters and docs, an invoker taking JSON
+  values, and a hook point checked with one atomic load. `hooks.rs` binds
+  them to `app.api` and `app.hook`: hooks run on the main thread as Lua
+  coroutines; a hooked call from another thread or from async code runs
+  the original when the hooks ask for it, through a channel. A test reads
+  the service code and fails on any public function that's neither
+  exported nor skipped with a reason, so nothing becomes privileged by
+  accident.
+- **The registries**: `api.rs` builds the `app` and `ui` tables. Lua
+  functions are wrapped into the same Rust closures the built-in code
+  registers, with errors caught, logged and shown briefly. `prelude.lua`
+  adds Lua-side helpers (`ui.build`, `app.bind`).
+
+LuaJIT's FFI plus `ui.from_ffi` covers C libraries without introspection
+data.
 
 ## Testing
 

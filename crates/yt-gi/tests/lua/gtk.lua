@@ -110,6 +110,20 @@ assert(node and node:get_node_type() == "color-node", "render node: " .. tostrin
 function Swatch:double_level() return self.level * 2 end
 eq(s:double_level(), 0.5, "methods on a Lua class")
 
+-- Class setup, and describing a type.
+local Named = gi.subclass(Gtk.Widget, {
+  name = "TestNamed",
+  class_init = function(class) class:set_css_name("named") end,
+})
+eq(Named():get_css_name(), "named", "class_init")
+local d = gi.describe(Gtk.Label)
+local has = {}
+for _, m in ipairs(d.methods) do has[m] = true end
+assert(has.set_label and has.get_parent, "describe lists methods, inherited ones too")
+local props = {}
+for _, p in ipairs(d.properties) do props[p] = true end
+assert(props.label and props.wrap, "describe lists properties")
+
 -- A subclass of a Lua subclass.
 local Big = gi.subclass(Swatch, {
   name = "TestBigSwatch",

@@ -1,39 +1,34 @@
 -- A terminal page in the sidebar, using VTE (the GTK 4 build) through
--- LuaJIT's FFI. Needs the `vte4` package.
+-- GObject introspection. Needs the `vte4` package.
 --
--- Shows: embedding a widget from a C library that has no Lua bindings.
+-- Shows: embedding a widget from a library the app knows nothing about,
+-- with its own types (flags, callbacks) through `gi`.
 
-local ffi = require("ffi")
-ffi.cdef [[
-  void *vte_terminal_new(void);
-  void vte_terminal_spawn_async(void *terminal, int pty_flags, const char *working_directory,
-                                char **argv, char **envv, int spawn_flags,
-                                void *child_setup, void *child_setup_data, void *child_setup_data_destroy,
-                                int timeout, void *cancellable, void *callback, void *user_data);
-  void vte_terminal_set_font_scale(void *terminal, double scale);
-]]
-
-local ok, vte = pcall(ffi.load, "libvte-2.91-gtk4.so.0")
+local ok, Vte = pcall(gi.require, "Vte", "3.91")
 if not ok then
   app.log("terminal plugin: VTE for GTK 4 isn't installed (package vte4)")
   return
 end
-
-local G_SPAWN_SEARCH_PATH = 4
+local GLib = gi.require("GLib", "2.0")
 
 app.page {
   name = "terminal",
   title = "Terminal",
   build = function()
-    local term_ptr = vte.vte_terminal_new()
-    local shell = os.getenv("SHELL") or "/bin/sh"
-    -- Keep the strings alive while VTE reads them.
-    local shell_c = ffi.new("char[?]", #shell + 1, shell)
-    local argv = ffi.new("char*[2]", { shell_c, nil })
-    vte.vte_terminal_spawn_async(term_ptr, 0, os.getenv("HOME"), argv, nil, G_SPAWN_SEARCH_PATH,
-      nil, nil, nil, -1, nil, nil, nil)
-    local terminal = ui.from_ffi(term_ptr)
-    terminal.hexpand, terminal.vexpand = true, true
+    local terminal = Vte.Terminal { hexpand = true, vexpand = true }
+    terminal:spawn_async(
+      Vte.PtyFlags.DEFAULT,
+      os.getenv("HOME"),
+      { os.getenv("SHELL") or "/bin/sh" },
+      nil, -- the environment: the app's
+      GLib.SpawnFlags.SEARCH_PATH,
+      nil, -- no child setup
+      -1, -- the default timeout
+      nil, -- not cancellable
+      function(_, pid, err)
+        if err then app.log("terminal plugin: " .. tostring(err)) end
+      end
+    )
     return ui.box { orientation = "vertical", class = "terminal-page", children = { terminal } }
   end,
 }

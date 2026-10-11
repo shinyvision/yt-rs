@@ -1,7 +1,8 @@
-//! The Lua API: the `app` table (the registries, player, YouTube, HTTP,
-//! timers) and the `ui` table (widgets). Lua functions handed to the app are
+//! The Lua API: the `app` table (the registries, HTTP, storage, timers)
+//! and the `ui` table (widgets). Lua functions handed to the app are
 //! wrapped into the same kind of Rust closures the built-in code registers,
-//! so plugins and built-ins are equal citizens. See `docs/plugins.md`.
+//! so plugins and built-ins are equal citizens. The app's services are
+//! `app.api` (see `hooks`), the toolkit is `gi`. See `docs/plugins.md`.
 
 use std::cell::Cell;
 use std::rc::Rc;
@@ -641,137 +642,8 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
 
     // YouTube. Each call takes a callback, called with the result or with
     // nil and an error message.
-    let youtube = lua.create_table()?;
-    // app.youtube.call(endpoint, body, callback): any InnerTube endpoint.
-    youtube.set(
-        "call",
-        lua.create_function(
-            |lua, (endpoint, body, callback): (String, mlua::Value, Function)| {
-                let body = lua_to_json(lua, body)?;
-                let api = app().youtube.clone();
-                reply(
-                    lua,
-                    callback,
-                    async move { api.call(&endpoint, body).await },
-                );
-                Ok(())
-            },
-        )?,
-    )?;
-    // app.youtube.browse(browse_id, callback): a feed page.
-    youtube.set(
-        "browse",
-        lua.create_function(|lua, (browse_id, callback): (String, Function)| {
-            let api = app().youtube.clone();
-            reply(lua, callback, async move { api.browse(&browse_id).await });
-            Ok(())
-        })?,
-    )?;
-    // app.youtube.continuation(token, callback): more of a feed or shelf.
-    youtube.set(
-        "continuation",
-        lua.create_function(|lua, (token, callback): (String, Function)| {
-            let api = app().youtube.clone();
-            reply(lua, callback, async move { api.continuation(&token).await });
-            Ok(())
-        })?,
-    )?;
-    // app.youtube.search(query, [options], callback): the first page of
-    // results. `options` are search filters (`type`, `duration`,
-    // `upload_date`, `features`, `sort`, `exact`) and `chip`, a chip's token.
-    youtube.set(
-        "search",
-        lua.create_function(
-            |lua, (query, options, callback): (String, mlua::Value, Option<Function>)| {
-                let (options, callback) = match (options, callback) {
-                    (mlua::Value::Function(f), None) => (None, f),
-                    (mlua::Value::Table(t), Some(f)) => (Some(t), f),
-                    (mlua::Value::Nil, Some(f)) => (None, f),
-                    _ => {
-                        return Err(mlua::Error::runtime(
-                            "usage: app.youtube.search(query, [options], callback)",
-                        ));
-                    }
-                };
-                let (filters, chip) = match options {
-                    Some(t) => (
-                        lua.from_value::<yt_core::search::SearchFilters>(mlua::Value::Table(
-                            t.clone(),
-                        ))
-                        .map_err(|e| {
-                            mlua::Error::runtime(format!("invalid search options: {e}"))
-                        })?,
-                        t.get::<Option<String>>("chip")?,
-                    ),
-                    None => Default::default(),
-                };
-                let api = app().youtube.clone();
-                reply(lua, callback, async move {
-                    api.search(&query, &filters, chip.as_deref()).await
-                });
-                Ok(())
-            },
-        )?,
-    )?;
-    // app.youtube.search_more(page.next, callback): the next page.
-    youtube.set(
-        "search_more",
-        lua.create_function(|lua, (next, callback): (mlua::Value, Function)| {
-            let next: yt_core::search::SearchContinuation = lua.from_value(next)?;
-            let api = app().youtube.clone();
-            reply(lua, callback, async move { api.search_more(&next).await });
-            Ok(())
-        })?,
-    )?;
-    // app.youtube.suggestions(text, callback): what YouTube suggests while
-    // typing.
-    youtube.set(
-        "suggestions",
-        lua.create_function(|lua, (text, callback): (String, Function)| {
-            let api = app().youtube.clone();
-            reply(lua, callback, async move { api.suggestions(&text).await });
-            Ok(())
-        })?,
-    )?;
-    t.set("youtube", youtube)?;
 
     // The player: its state, and mpv itself for anything else.
-    let player = lua.create_table()?;
-    player.set(
-        "state",
-        lua.create_function(|lua, ()| {
-            json_to_lua(
-                lua,
-                &serde_json::to_value(app().player.state()).unwrap_or_default(),
-            )
-        })?,
-    )?;
-    player.set(
-        "command",
-        lua.create_function(|_, args: Vec<String>| {
-            let refs: Vec<&str> = args.iter().map(String::as_str).collect();
-            app()
-                .player
-                .mpv()
-                .command(&refs)
-                .map_err(|e| mlua::Error::runtime(e.to_string()))
-        })?,
-    )?;
-    player.set(
-        "get",
-        lua.create_function(|_, name: String| Ok(app().player.mpv().get_string(&name)))?,
-    )?;
-    player.set(
-        "set",
-        lua.create_function(|_, (name, value): (String, String)| {
-            app()
-                .player
-                .mpv()
-                .set_property(&name, &value)
-                .map_err(|e| mlua::Error::runtime(e.to_string()))
-        })?,
-    )?;
-    t.set("player", player)?;
 
     // JSON and paths.
     // app.array(t): marks a table as a list, so an empty one becomes a JSON
@@ -856,44 +728,7 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
             Ok(table)
         })?,
     )?;
-    let paths = lua.create_table()?;
-    paths.set(
-        "config",
-        yt_core::paths::config_dir().to_string_lossy().into_owned(),
-    )?;
-    paths.set(
-        "cache",
-        yt_core::paths::cache_dir().to_string_lossy().into_owned(),
-    )?;
-    paths.set(
-        "plugins",
-        yt_core::paths::plugins_dir().to_string_lossy().into_owned(),
-    )?;
-    t.set("paths", paths)?;
     Ok(())
-}
-
-/// Runs `call` in the background, then calls `callback` with its result (as
-/// Lua values) or with nil and the error.
-fn reply<T, F>(lua: &Lua, callback: Function, call: F)
-where
-    T: serde::Serialize + Send + 'static,
-    F: std::future::Future<Output = yt_core::Result<T>> + Send + 'static,
-{
-    let lua = lua.clone();
-    runtime::spawn_local(async move {
-        let result = runtime::background(call).await;
-        let called = match result {
-            Ok(value) => serde_json::to_value(value)
-                .map_err(mlua::Error::external)
-                .and_then(|v| json_to_lua(&lua, &v))
-                .and_then(|v| callback.call::<()>(v)),
-            Err(e) => callback.call::<()>((mlua::Value::Nil, e.to_string())),
-        };
-        if let Err(e) = called {
-            report("youtube callback", &e);
-        }
-    });
 }
 
 fn ui_table(lua: &Lua) -> mlua::Result<Table> {

@@ -165,7 +165,7 @@ local function skip(segment, automatic)
   skipped[segment.UUID] = true
   last_skipped = segment
   local to = segment.segment[2]
-  local duration = app.player.state().duration or 0
+  local duration = app.api.player.state().duration or 0
   if duration > 0 then to = math.min(to, duration - 0.05) end
   app.run("player.seek", { position = to })
   log(automatic and "skipped" or "skipped (button)", segment.category, fmt(segment.segment[1]), "->", fmt(to))
@@ -191,7 +191,7 @@ end
 -- Looks at where playback is: skips, mutes, and shows the buttons.
 local function check(position)
   if not video_id then return end
-  local speed = app.player.state().speed or 1
+  local speed = app.api.player.state().speed or 1
   -- Rewound before a segment: it can be skipped again.
   for _, s in ipairs(segments) do
     if position < s.segment[1] - 0.5 then skipped[s.UUID] = nil end
@@ -212,13 +212,13 @@ local function check(position)
   -- Muting.
   local mute = current(position, "mute")
   if mute and action(mute.category) == "auto" and not muted_by_us then
-    if app.player.get("mute") ~= "yes" then
+    if app.api.mpv.get_string("mute") ~= "yes" then
       muted_by_us = true
-      app.player.set("mute", "yes")
+      app.api.mpv.set_property("mute", "yes")
     end
   elseif not (mute and action(mute.category) == "auto") and muted_by_us then
     muted_by_us = false
-    app.player.set("mute", "no")
+    app.api.mpv.set_property("mute", "no")
   end
   -- The highlight, until playback gets there.
   local highlight
@@ -235,7 +235,7 @@ local function check(position)
     if (s.actionType == "skip" or s.actionType == "mute") and wait > 0 and wait < 0.6 and action(s.category) == "auto" then
       exact_timer = app.timer(math.floor(wait * 1000), function()
         exact_timer = nil
-        check(app.player.state().position or 0)
+        check(app.api.player.state().position or 0)
       end)
       break
     end
@@ -249,7 +249,7 @@ end
 local function clear()
   segments, skipped, unskipped, last_skipped = {}, {}, {}, nil
   marks, mark_start = {}, nil
-  if muted_by_us then muted_by_us = false; app.player.set("mute", "no") end
+  if muted_by_us then muted_by_us = false; app.api.mpv.set_property("mute", "no") end
   for name in pairs(overlay) do hide(name) end
   show_label()
 end
@@ -285,7 +285,7 @@ local function look_up(id)
     show_ranges()
     show_label()
     app.emit("sponsorblock.segments", { video_id = id, segments = app.array(segments) })
-    check(app.player.state().position or 0)
+    check(app.api.player.state().position or 0)
   end)
 end
 
@@ -294,7 +294,7 @@ app.on("player.loading", function(e)
   video_id = e.video_id
 end)
 app.on("player.loaded", function()
-  local state = app.player.state()
+  local state = app.api.player.state()
   if state.live or not video_id then return end
   look_up(video_id)
 end)
@@ -347,7 +347,7 @@ end)
 -- "Skip ..." and "Jump to highlight", at the bottom right.
 app.slot("player.overlay", function()
   local skip_button = pill("yt-next-symbolic", "sb-skip-text", "Skip", function()
-    local s = current(app.player.state().position or 0, "skip")
+    local s = current(app.api.player.state().position or 0, "skip")
     if s then skip(s, false) end
   end, "sb-skip")
   skip_button.name = "sb-skip"
@@ -391,7 +391,7 @@ end)
 ---------------------------------------------------------------------------
 
 app.command("sponsorblock.skip", function()
-  local s = current(app.player.state().position or 0, "skip")
+  local s = current(app.api.player.state().position or 0, "skip")
   if not s then return nil end
   skip(s, false)
 end)
@@ -418,7 +418,7 @@ app.command("sponsorblock.segments", function() return app.array(segments) end)
 
 -- ";" where a segment starts, and again where it ends.
 app.command("sponsorblock.mark", function()
-  local state = app.player.state()
+  local state = app.api.player.state()
   if not state.video_id then error("no video is playing") end
   local t = state.position or 0
   if not mark_start then
@@ -438,7 +438,7 @@ app.command("sponsorblock.mark", function()
 end)
 
 local function submit(dialog_rows)
-  local state = app.player.state()
+  local state = app.api.player.state()
   local list = {}
   for i, m in ipairs(marks) do
     local row = dialog_rows and dialog_rows[i]

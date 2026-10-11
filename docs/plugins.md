@@ -1,13 +1,26 @@
 # Plugins
 
-yt-rs is built so that everything in it can be changed by a plugin, and
-anything missing can be added by one. The built-in UI, commands and keys are
-registered in the same registries plugins use, so a plugin can replace or wrap
-any of them. For whatever has no dedicated API, plugins get every widget in
-the window, every GTK type, raw mpv, raw InnerTube, and LuaJIT's FFI to call
-any C library.
+yt-rs is built so that a plugin can do anything the app does, and
+anything it doesn't. Three ways in reach everything:
 
-Plugins are Lua 5.1 running on LuaJIT.
+- **`gi`**: every library with GObject introspection data, from Lua:
+  GTK, libadwaita, GLib, Gio, Pango, GStreamer, libsoup, WebKit... Their
+  functions, classes, methods, structs, enums, callbacks and async
+  functions, and new GObject types of your own (widgets that draw
+  themselves, list models).
+- **`app.api` and `app.hook`**: every function of the app's own services
+  (YouTube's API, the stream resolver, the player and mpv, playback,
+  search, playlists, settings, downloads, the parsers...), to call, and to
+  hook: a hook runs around a function whoever calls it, built-in code
+  included, and can change its arguments and result or replace it. Nothing
+  in the app is out of reach: a test fails on any service function that
+  isn't exported, unless it says why.
+- **The registries**: the app's UI and behaviour by name (components,
+  commands, keys, events, filters, slots, pages, CSS). The built-in UI is
+  made of these, so a plugin can replace or wrap any part of it.
+
+For any other C library, LuaJIT's `ffi` is there too. Plugins are Lua 5.1
+running on LuaJIT.
 
 ## Where plugins live
 
@@ -66,43 +79,123 @@ with their links) look like this:
 --             { kind = "channel", channel_id?, handle? }, { kind = "search", query }
 ```
 
-Widgets, and any other GObject, are **objects**. Their properties and signals
-are reached through GObject's type system, so every GTK type works the same
-way:
+Widgets, and any other GObject, are **objects**. Everything GObject
+introspection describes works on them: properties, signals, and the
+methods of their class, its parents and the interfaces it implements
+(see `gi` below).
 
 ```lua
 local button = ui.new("GtkButton", { label = "Hi", tooltip_text = "Says hi" })
 button.label = "Hello"                     -- set any property ("_" or "-")
 print(button.sensitive)                    -- read any property
+button:set_icon_name("emblem-ok-symbolic") -- any method
 local id = button:on("clicked", function(self) app.toast("hi") end)
 button:off(id)
 ```
 
-Object methods:
+What every object has, besides its own methods:
 
 | Method | |
 |---|---|
-| `o.prop`, `o.prop = v`, `o:get(name)`, `o:set(name, v)` | properties. Enums take their nick (`"vertical"`), flags take `"a\|b"`, colors take CSS strings |
-| `o:on(signal, fn)` → id, `o:off(id)` | signals, including `notify::prop`. `fn` gets the object, then the signal's arguments. Return `true` to stop an event |
-| `o:append(child)`, `o:prepend(child)`, `o:remove(child)`, `o:set_child(child)` | children, for boxes, lists, overlays and single-child widgets |
-| `o:children()`, `o:parent()`, `o:find(query)` | the widget tree. `query` is a widget name, or `.class` |
-| `o:add_class(c)`, `o:remove_class(c)`, `o:has_class(c)` | CSS classes |
-| `o:show()`, `o:hide()`, `o:grab_focus()`, `o:queue_draw()`, `o:size()` | |
-| `o:mapped()` | whether the widget is on screen (shown, and all its parents too) |
-| `o:controllers()` | the widget's event controllers (gestures, key and scroll handlers), as objects |
+| `o.prop`, `o.prop = v`, `o:get(name)`, `o:set(name, v)` | properties. Enums take their nick (`"vertical"`), flags `"a\|b"` or a list, structs a record, a table of fields, or a string they parse (`"#ff0000"` for a color) |
+| `o:on(signal, fn)` → id, `o:on_after(signal, fn)`, `o:off(id)` | signals, including `notify::prop`. `fn` gets the object, then the signal's arguments (full values: a `notify` handler's `pspec:get_name()`). Return `true` to stop an event |
 | `o:emit(signal, ...)` | emits a signal, e.g. `button:emit("clicked")`, and returns its result |
-| `o:add_controller(controller)` | event controllers, e.g. `ui.new("GtkGestureClick")` |
-| `o:add_prefix(w)`, `o:add_suffix(w)` | widgets before and after a libadwaita row's title (`AdwActionRow`, `AdwComboRow`, `AdwEntryRow`, ...); `o:append(row)` adds rows to an `AdwPreferencesGroup` |
-| `o:pick(x, y)` | the widget the pointer would reach at that point, as GTK picks it |
-| `o:on_tick(fn(seconds))` | runs every frame until `fn` returns `false` |
-| `o:type_name()`, `o:is_a(type)`, `o:properties()` | introspection |
+| `o:type_name()`, `o:is_a(type)`, `o:properties()` | introspection; `gi.describe(o)` lists its methods, properties and signals |
 | `o:ptr()` | the C pointer, for LuaJIT's FFI |
+
+and every widget, on top of GTK's own methods (`w:get_parent()`,
+`w:add_css_class(c)`, `w:grab_focus()`, `w:get_mapped()`...):
+
+| Method | |
+|---|---|
+| `w:append(child)`, `w:remove(child)` | children of any container: boxes, lists, overlays (as overlays), libadwaita preferences groups and pages, single-child widgets |
+| `w:children()`, `w:find(query)` | the widget tree. `query` is a widget name, or `.class` |
+| `w:size()` | width, height |
+| `w:controllers()` | the widget's event controllers (gestures, key and scroll handlers), as objects |
+| `w:on_tick(fn(seconds))` | runs every frame until `fn` returns `false` |
+
+These are Lua functions on `Gtk.Widget`'s class table (see "Methods of
+your own" below), as yours can be.
+
+## `gi`: every introspected library
+
+```lua
+local Gtk = gi.require("Gtk", "4.0")       -- a namespace (and what it needs)
+local Gio = gi.require("Gio", "2.0")
+local GLib = gi.require("GLib", "2.0")
+```
+
+| | |
+|---|---|
+| `Gtk.Button.new_with_label("Hi")` | constructors and other functions of a class |
+| `Gtk.Label { label = "Hi", wrap = true }` | a new object with properties (as `ui.new`) |
+| `Gtk.IconTheme.get_for_display(display)` | static functions |
+| `GLib.get_user_name()`, `GLib.MAJOR_VERSION` | functions and constants of a namespace |
+| `Gtk.Orientation.VERTICAL` → `"vertical"` | enum values are their nick; flags (`Gtk.StateFlags.ACTIVE`) are numbers. Both are accepted as numbers or names in any case, flags also as `"a\|b"` or a list |
+| `Gdk.RGBA()`, `Gdk.RGBA { red = 1 }`, `Gdk.RGBA("#3584e4")` | structs: zeroed, from fields, or from a string they parse. Fields read and write as `rgba.red`, methods are `rgba:to_string()` |
+| `local min, nat = label:measure("horizontal", -1)` | out arguments come after the return value |
+| `pcall(GLib.file_get_contents, path)` | a GError is raised as an error record: `err.message`, `err.code`, `err.domain` |
+| `GLib.idle_add(GLib.PRIORITY_DEFAULT, fn)` | Lua functions are callbacks, for as long as the function says (one call, until notified, forever) |
+| `file:load_contents_async(nil, function(f, res) local ok, data = f:load_contents_finish(res) end)` | async functions take their callback, the `_finish` function gets the result |
+| `Gtk.Widget.show(w)` | a class's methods, called on any instance of it; this is also how to reach a method whose name a property has (`has_focus`) |
+
+Strings are bytes: binary data (`guint8` arrays, file contents) comes and
+goes as Lua strings. Lists come back as Lua sequences, hash tables as
+tables, `GValue`s as the value they hold, variants as records
+(`GLib.Variant.new_string("x"):get_string()`).
+
+Callbacks typed `gpointer` (sort and filter functions' items) get plain
+pointers: `gi.wrap(pointer)` makes the object of one. Lua runs on the main
+thread only: a callback called from another thread is refused and
+reported.
+
+### Methods of your own
+
+A class's table takes Lua functions, which become methods of its
+instances, its subclasses' too:
+
+```lua
+function Gtk.Widget:flash() self:add_css_class("flash") end
+app.find("topbar"):flash()
+```
+
+`gi.type(name)` gives the table of any type, also one without
+introspection data (the app's own widgets).
+
+### New types
+
+```lua
+local Meter = gi.subclass(Gtk.Widget, {
+  name = "MyPluginMeter",                                  -- a unique GType name
+  properties = { GObject.param_spec_double("level", nil, nil, 0, 1, 0, GObject.ParamFlags.READWRITE) },
+  signals = { full = { params = { "gint" } } },            -- types by name or class
+  interfaces = { },                                        -- e.g. Gio.ListModel
+  vfuncs = {
+    measure = function(self, orientation, for_size) return 24, 24 end,
+    snapshot = function(self, snapshot)
+      local w = self:get_width() * self.level
+      snapshot:append_color(Gdk.RGBA("#3584e4"), Graphene.Rect():init(0, 0, w, self:get_height()))
+    end,
+  },
+  init = function(self) self.history = {} end,             -- each new instance
+  class_init = function(class) class:set_css_name("meter") end,
+})
+local meter = Meter { level = 0.5 }
+```
+
+Virtual functions of the parent and of the interfaces listed are
+overridden by name; their out arguments are what the function returns (an
+out value returned as nil stays as the caller set it). Chain up with the
+class's own: `Gtk.Widget.vfunc_snapshot(self, snapshot)`. Instances keep
+any other field (`self.history`) until they're finalized. An interface
+implemented in Lua (a `Gio.ListModel` with `get_item_type`, `get_n_items`
+and `get_item`) works wherever GTK takes one.
 
 ## `ui`: making widgets
 
 | Function | |
 |---|---|
-| `ui.new(type, props)` | any GObject type by name: `"GtkBox"`, `"AdwClamp"`, `"GtkGestureClick"`, ... |
+| `ui.new(type, props)` | any GObject type by name: `"GtkBox"`, `"AdwClamp"`, `"GtkGestureClick"`, ... (the same as `Gtk.Box(props)`) |
 | `ui.build(spec)` | a widget tree from a table (below) |
 | `ui.box(spec)`, `ui.label(text, spec)`, `ui.button(label, on_click, spec)`, `ui.scrolled(child, spec)` | shorthands for `ui.build` |
 | `ui.image(url, width)` | a picture loaded through the app's image cache, decoded at `width` px |
@@ -531,19 +624,54 @@ have names: `main-window`, `shell`, `content`, `page-host`, `topbar`,
 `player`, `player-controls`, `page-signin`, `search-box`, `search-results`,
 and `slot:<name>` for slots.
 
-## `app`: services
+## `app.api` and `app.hook`: the app's services
+
+Every function of the app's services can be called and hooked. The list,
+with each function's parameters and what it does, is
+[api.md](api.md); `app.functions()` gives it at run time.
+
+```lua
+-- Calls: arguments in order. Async functions take a callback last.
+local state = app.api.player.state()
+app.api.mpv.set_property("speed", "1.5")
+app.api.youtube.browse("FEwhat_to_watch", function(page, err) ... end)
+app.api.youtube.call("browse", { browseId = "FEtrending" }, function(json, err) end)
+
+-- Hooks: around the function, whoever calls it (the app itself, too).
+local id = app.hook("streams.resolve", function(args, next)
+  local set = next(args)          -- the original (and inner hooks)
+  set.video = set.qualities[#set.qualities]   -- the smallest quality
+  return set
+end)
+app.unhook(id)
+```
+
+A hook gets the arguments by name (`args.video_id`), may change them
+before passing them on (`next(args)`, or `next()` for them as they came),
+may call `next` more than once or not at all, and returns the result,
+changed or replaced. An error in a hook is the call's error. The last hook
+added runs first. Hooks run on the main thread; a call made elsewhere (a
+request on the network threads) waits for them.
+
+Some services, and what hooking them does:
+
+| Service | |
+|---|---|
+| `youtube` | YouTube's API (InnerTube): `call` is every request the app makes as the TV app, signed in; `browse`, `watch`, `search`, `channel`, `playlist`, `comments`, `subscribe`... the parsed ones. Hook `call` to see or change every request and response |
+| `streams` | the stream resolver: `resolve` picks a video's streams. Hook it to choose other qualities or codecs |
+| `player`, `mpv` | the player (`load`, `seek`, `set_quality`, `state`...) and mpv underneath (`command`, `set_property`, `get_string`) |
+| `playback`, `list` | what plays and what plays next: `play`, `next`, the queue and playlists |
+| `app` | pages and toasts: `navigate`, `back`, `toast` |
+| `feed`, `watch`, `channel`, `search_results`, `comments`, `live_chat`... | YouTube's responses read into the app's data: hook `feed.parse` to change every feed the app reads |
+| `settings`, `downloads`, `search_history`, `channels`, `tracker`, `session`, `oauth` | |
+
+Data crosses as tables, as described above. An empty Lua table in a place
+that wants a list reads as an empty list.
+
+## `app`: helpers
 
 | | |
 |---|---|
-| `app.player.state()` | `{ video_id, position, duration, paused, buffering, buffered, volume, muted, ended, live? }`. For a live stream, `live = { start, edge }` is the part that can be watched and `position` is in the stream's own time, between the two; seeking works within it |
-| `app.player.command{ "seek", "10", "relative" }` | any mpv command |
-| `app.player.get(name)`, `app.player.set(name, value)` | any mpv property, as strings |
-| `app.youtube.call(endpoint, body, fn(result, err))` | any InnerTube endpoint, signed in, as the TV app |
-| `app.youtube.browse(browse_id, fn(page, err))` | a parsed feed page |
-| `app.youtube.continuation(token, fn(page, err))` | more of a feed page or shelf |
-| `app.youtube.search(query, [options], fn(page, err))` | the first page of results; `options` are `search.open`'s filters, plus `chip` (a chip's token) |
-| `app.youtube.search_more(page.next, fn(page, err))` | the next page of results |
-| `app.youtube.suggestions(text, fn(suggestions, err))` | what YouTube suggests while typing |
 | `app.http({ url, method?, headers?, body? }, fn(response, err))` | `response = { status, headers, body }`. A table `body` is sent as JSON |
 | `app.timer(ms, fn, repeat?)` → `t:cancel()` | `fn` returning `false` stops a repeating timer |
 | `app.now()` | seconds, with fractions, on a clock that only goes forward: for measuring how long something takes |
@@ -555,24 +683,23 @@ and `slot:<name>` for slots.
 | `app.hash.sha256(text)` | its SHA-256, in hex |
 | `app.storage(name)` → `store` | what a plugin keeps between runs: a table of what was saved under `name` (letters, digits, `-`, `_`); change it and call `store:save()`. A JSON file in the config directory's `plugin-data` |
 | `app.dialog(content, { title?, width? })` | shows `content` (a widget) in a dialog over the window, as the app's own; `app.run("app.close_dialog")` closes it |
-| `app.paths.config`, `.cache`, `.plugins` | |
 | `app.quit()` | |
+
+Where things are: `app.api.paths.config_dir()`, `cache_dir()`,
+`plugins_dir()`, `downloads_dir()`.
 
 ## C libraries
 
-LuaJIT's `ffi` calls any C function. Widgets made in C become objects with
-`ui.from_ffi`, and objects go back to C with `o:ptr()`:
+A library with introspection data is reached through `gi` (see
+[browser](../examples/plugins/browser/init.lua) and
+[terminal](../examples/plugins/terminal/init.lua)). For any other,
+LuaJIT's `ffi` calls C directly. Objects made in C become Lua objects with
+`ui.from_ffi(pointer)` (or `gi.wrap`), and go back to C with `o:ptr()`:
 
 ```lua
 local ffi = require("ffi")
-ffi.cdef [[ void *webkit_web_view_new(void);
-            void webkit_web_view_load_uri(void *view, const char *uri); ]]
-local webkit = ffi.load("libwebkitgtk-6.0.so.4")
-local ptr = webkit.webkit_web_view_new()
-webkit.webkit_web_view_load_uri(ptr, "https://example.org")
-local view = ui.from_ffi(ptr)          -- now a normal widget
-view.vexpand = true
+ffi.cdef [[ void *my_widget_new(void); ]]
+local lib = ffi.load("libmywidget.so")
+local widget = ui.from_ffi(lib.my_widget_new())   -- now a normal widget
+widget.vexpand = true
 ```
-
-See [examples/plugins/browser](../examples/plugins/browser/init.lua) and
-[terminal](../examples/plugins/terminal/init.lua).
