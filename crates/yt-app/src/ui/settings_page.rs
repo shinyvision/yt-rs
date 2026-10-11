@@ -1,11 +1,13 @@
 //! The `settings` component (the Settings page): playback choices, what
 //! plugins add (the `settings.sections` slot, for their own groups of
-//! rows), the account, and about: the version and the keyboard shortcuts.
+//! rows), the account, the plugins, each with a switch, and about: the
+//! version and the keyboard shortcuts.
 
 use adw::prelude::*;
 use serde_json::{Value, json};
 
 use crate::app::app;
+use crate::plugins::{Origin, State};
 
 pub fn build(_props: &Value) -> gtk::Widget {
     let page = adw::PreferencesPage::new();
@@ -29,6 +31,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     page.connect_map(move |_| slot.set_visible(sections.first_child().is_some()));
     page.add(&group);
     page.add(&account());
+    page.add(&plugins());
     page.add(&about());
     page.upcast()
 }
@@ -192,22 +195,59 @@ fn about() -> adw::PreferencesGroup {
     shortcuts.add_suffix(&gtk::Image::from_icon_name("yt-chevron-right-symbolic"));
     shortcuts.connect_activated(|_| run("app.shortcuts", Value::Null));
     group.add(&shortcuts);
+    group
+}
+
+/// Every plugin, each with a switch. Plugins run as the app starts, so a
+/// change takes effect the next time.
+fn plugins() -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder()
+        .title("Plugins")
+        .description("Changes take effect the next time yt-rs starts")
+        .build();
     let plugins = app()
         .plugins()
-        .map(|p| p.loaded().to_vec())
+        .map(|p| p.plugins().to_vec())
         .unwrap_or_default();
-    let row = adw::ActionRow::builder()
-        .title("Plugins")
-        .subtitle(if plugins.is_empty() {
-            format!(
-                "None. Lua plugins go in {}",
-                yt_core::paths::plugins_dir().display()
-            )
-        } else {
-            plugins.join(", ")
-        })
+    let disabled = app().settings.get().disabled_plugins;
+    for plugin in plugins {
+        let subtitle = match (&plugin.state, plugin.origin) {
+            (State::Failed(e), _) => {
+                format!(
+                    "Didn\u{2019}t load: {}",
+                    e.lines().next().unwrap_or_default()
+                )
+            }
+            (_, Origin::Bundled) => "Comes with yt-rs".to_owned(),
+            (_, Origin::User) => "From your plugins folder".to_owned(),
+            (_, Origin::ReplacesBundled) => {
+                "Your copy, in place of the one that comes with yt-rs".to_owned()
+            }
+        };
+        let row = adw::SwitchRow::builder()
+            .title(&plugin.name)
+            .subtitle(subtitle)
+            .use_markup(false)
+            .active(!disabled.contains(&plugin.name))
+            .build();
+        row.connect_active_notify(move |row| {
+            let (name, on) = (plugin.name.clone(), row.is_active());
+            app().settings.update(|s| {
+                s.disabled_plugins.retain(|n| *n != name);
+                if !on {
+                    s.disabled_plugins.push(name);
+                }
+            });
+        });
+        group.add(&row);
+    }
+    let folder = adw::ActionRow::builder()
+        .title("Your plugins folder")
+        .subtitle(yt_core::paths::plugins_dir().display().to_string())
+        .subtitle_selectable(true)
+        .use_markup(false)
         .build();
-    group.add(&row);
+    group.add(&folder);
     group
 }
 

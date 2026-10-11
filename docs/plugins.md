@@ -29,9 +29,19 @@ running on LuaJIT.
 ~/.config/yt-rs/plugins/<name>/init.lua one plugin per directory, alphabetical
 ```
 
+Two plugins come with the app, [sponsorblock](../plugins/sponsorblock) and
+[notifications](../plugins/notifications). They're compiled in, written to
+the cache folder the first time each version starts, and run from there in
+the same alphabetical order as yours. A plugin of yours with the same name
+runs in its place, so to change one, copy it into your plugins folder.
+
+Settings has a switch for every plugin. One that's switched off doesn't run
+from the next start; its name goes in `disabled_plugins` in `settings.json`.
+
 `require("name.module")` finds modules in the plugins directory
-(`plugins/name/module.lua`), and C modules (`.so`) there too. A plugin's main
-file receives its name and directory: `local name, dir = ...`.
+(`plugins/name/module.lua`), then in the bundled plugins', and C modules
+(`.so`) there too. A plugin's main file receives its name and directory:
+`local name, dir = ...`.
 
 Plugins run **before the window is built**, so replacing a built-in component,
 command or key works from the top of the file. To change the widget tree
@@ -583,15 +593,15 @@ pointer pass through the rest to the video. Every other slot is a box.
 A button (or menu button) in `player.controls.start` or `.end` with the
 `control` CSS class looks like the player's own.
 
-[SponsorBlock](../examples/plugins/sponsorblock) is a complete plugin using
+[SponsorBlock](../plugins/sponsorblock) is a complete plugin using
 most of this: segments on the seek bar, widgets over the video, settings,
 storage, its own commands, keys and dialog, and a web API.
 
-[Notifications](../examples/plugins/notifications) adds YouTube's real bell
+[Notifications](../plugins/notifications) adds YouTube's real bell
 through `topbar.end`, with replaceable components, commands, events and a
-`notifications.page` filter. Its asynchronous Python helper detects the
-default browser and owns its web session; no browser-cookie integration is
-built into Rust. The plugin's README lists its extension points.
+`notifications.page` filter. It signs in with an embedded WebKit window,
+keeps its account in the keyring with libsecret and talks to YouTube with
+libsoup, all through `gi`. The plugin's README lists its extension points.
 
 ### Pages and the sidebar
 

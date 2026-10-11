@@ -12,24 +12,28 @@ keyring and renew access automatically. Your browser can remain closed.
 
 ## Install
 
-The plugin currently supports the Linux app and needs **WebKitGTK 6.0**,
-**libsoup 3**, and **libsecret**, with their GObject introspection typelibs
-and a working Secret Service keyring. On Arch Linux the packages are
-`webkitgtk-6.0`, `libsoup3`, and `libsecret`. Python, yt-dlp, browser extensions
-and browser-cookie access are not used.
+The plugin comes with yt-rs and is on by default; Settings has its switch.
+It works in the Linux app and needs **WebKitGTK 6.0**, **libsoup 3**, and
+**libsecret**, with their GObject introspection typelibs and a working
+Secret Service keyring. Without one of those libraries, as on macOS and
+Windows, the plugin adds no bell. The packages are `gir1.2-webkit-6.0`,
+`gir1.2-soup-3.0` and `gir1.2-secret-1` on Debian and Ubuntu,
+`webkitgtk6.0`, `libsoup3` and `libsecret` on Fedora, and `webkitgtk-6.0`,
+`libsoup3` and `libsecret` on Arch Linux. Python, yt-dlp, browser
+extensions and browser-cookie access are not used.
 
-Copy this directory into the plugins directory shown in yt-rs Settings:
+To change it, copy this directory into the plugins directory shown in
+yt-rs Settings, where it takes the place of the bundled one:
 
 ```sh
 mkdir -p ~/.config/yt-rs/plugins
-cp -r examples/plugins/notifications ~/.config/yt-rs/plugins/
+cp -r plugins/notifications ~/.config/yt-rs/plugins/
 ```
 
-Restart yt-rs and click the bell. Existing installations of the old browser
+Click the bell to sign in. Existing installations of the old browser
 helper can delete this plugin's `browser.py`, `requirements.txt` and `.venv`;
 the plugin no longer loads them. Old `python` and `profile` plugin settings
-are ignored. Use a build containing the GI hash-table and record ownership
-fixes introduced with Android notifications.
+are ignored.
 
 The gear opens notification account settings, including **Sign out of
 notifications** and a link to YouTube's notification preferences. Signing

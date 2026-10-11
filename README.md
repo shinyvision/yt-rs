@@ -42,6 +42,10 @@ Without signing in, everything that doesn't need an account still works.
   subscribing, and all your subscriptions on one page.
 - Downloads, to watch videos offline.
 - Media keys and the desktop's media controls on Linux (MPRIS).
+- SponsorBlock, to skip sponsors and the other parts people marked, with
+  the extension's segments on the seek bar, votes and submissions.
+- YouTube's notification bell, on Linux. It needs its own sign-in, once,
+  with the same Google account.
 - No ads. A video with a pre-roll ad starts a few seconds late instead,
   because YouTube doesn't send the stream until the ad could have been
   skipped.
@@ -53,12 +57,34 @@ builds for Linux, macOS and Windows, for x86_64 and arm64.
 
 On Linux you need GTK 4.18 or newer, libadwaita 1.7 or newer, libmpv and
 LuaJIT, plus a Secret Service keyring such as GNOME Keyring or KeePassXC for
-the sign-in. The release build is made on Fedora 42 and runs there or on
-anything newer. On Arch Linux:
+the sign-in. The release build is made on Fedora 42 and runs on anything at
+least as new: Debian 13, Ubuntu 25.10, Fedora 42, Arch and so on. Ubuntu
+24.04's GTK is too old.
+
+Debian and Ubuntu keep the data plugins use to reach GTK and libadwaita in
+separate `gir1.2` packages:
 
 ```sh
-pacman -S gtk4 libadwaita mpv luajit
+sudo apt install libgtk-4-1 libadwaita-1-0 libmpv2 libluajit-5.1-2 libgirepository-2.0-0 gir1.2-adw-1
 ```
+
+Fedora:
+
+```sh
+sudo dnf install gtk4 libadwaita mpv-libs luajit
+```
+
+Arch Linux:
+
+```sh
+sudo pacman -S gtk4 libadwaita mpv luajit
+```
+
+The notification bell also needs WebKitGTK 6.0 (for its sign-in), libsoup 3
+and libsecret. Without them there's no bell, and everything else works.
+They're `gir1.2-webkit-6.0 gir1.2-soup-3.0 gir1.2-secret-1` on Debian and
+Ubuntu, `webkitgtk6.0 libsoup3 libsecret` on Fedora, and
+`webkitgtk-6.0 libsoup3 libsecret` on Arch.
 
 On macOS, install the libraries with Homebrew and run `yt-rs` from the
 archive. The sign-in is kept in the macOS keychain.
@@ -141,8 +167,6 @@ app itself uses:
 
 | Example | What it shows |
 |---|---|
-| [sponsorblock](examples/plugins/sponsorblock/init.lua) | the whole SponsorBlock extension: skipping, the seek bar, votes, marking and submitting segments |
-| [notifications](examples/plugins/notifications) | YouTube's notification bell, with its own sign-in |
 | [quality](examples/plugins/quality/init.lua) | capping videos at 720p with a hook on the stream resolver |
 | [feed-filter](examples/plugins/feed-filter/init.lua) | hiding videos, a badge on every card, extra menu items |
 | [shortcuts](examples/plugins/shortcuts/init.lua) | key bindings, new commands, mpv properties |
@@ -156,6 +180,13 @@ To try one, link it into your plugins folder:
 ```sh
 ln -s "$PWD/examples/plugins/snake" ~/.config/yt-rs/plugins/
 ```
+
+Two plugins come with the app and are on until you switch them off in
+Settings: [sponsorblock](plugins/sponsorblock/init.lua), the whole
+SponsorBlock extension (skipping, the seek bar, votes, marking and
+submitting segments), and [notifications](plugins/notifications), YouTube's
+notification bell. A plugin with the same name in your plugins folder
+takes the place of the one that comes with the app.
 
 ## Environment variables
 
@@ -222,10 +253,9 @@ detail.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The SponsorBlock example uses the SponsorBlock
-extension's own icons, which are GPL-3.0 (see
-[their notice](examples/plugins/sponsorblock/icons/NOTICE)), and the
-notifications example includes the Roboto font under the SIL Open Font
-License.
+MIT, see [LICENSE](LICENSE). The SponsorBlock plugin, which the builds
+include, uses the SponsorBlock extension's own icons, which are GPL-3.0
+(see [their notice](plugins/sponsorblock/icons/NOTICE)). The notifications
+plugin includes the Roboto font under the SIL Open Font License.
 
 yt-rs isn't affiliated with YouTube or Google.

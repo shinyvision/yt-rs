@@ -1,6 +1,14 @@
 -- YouTube's real Android inbox. Authentication and networking stay in Lua;
 -- this account is independent of the app's existing TV sign-in.
 local NAME, DIR = ...
+-- The sign-in needs WebKitGTK, the inbox libsoup, and the account libsecret.
+-- Where one is missing (on macOS and Windows, always), there's no bell.
+for _, library in ipairs({ { "WebKit", "6.0" }, { "Soup", "3.0" }, { "Secret", "1" } }) do
+  if not pcall(gi.require, library[1], library[2]) then
+    app.log(string.format("notifications: no bell without %s %s", library[1], library[2]))
+    return
+  end
+end
 local backend = require(NAME .. ".backend")
 local Gtk = gi.require("Gtk", "4.0")
 local Adw = gi.require("Adw", "1")

@@ -1,10 +1,11 @@
--- SponsorBlock end to end, with the plugin from examples/plugins/sponsorblock
--- and a stand-in server (../sponsorblock_server.py, whose address is in the
--- plugin's storage): looking segments up, the seek bar, auto skip (to the
--- moment), Unskip, the skip button, muting, the highlight, the label,
--- minimum length, votes, marking and submitting, the settings, and that the
--- plugin's widgets over the video let clicks through. Silent (no audio
--- output: muting is part of the test), no watch history.
+-- SponsorBlock end to end, with the plugin that comes with the app
+-- (plugins/sponsorblock) and a stand-in server (../sponsorblock_server.py,
+-- whose address is in the plugin's storage): looking segments up, the seek
+-- bar, auto skip (to the moment), Unskip, the skip button, muting, the
+-- highlight, the label, minimum length, votes, marking and submitting, the
+-- settings, and that the plugin's widgets over the video let clicks
+-- through. Silent (no audio output: muting is part of the test), no watch
+-- history.
 local shots = os.getenv("E2E_SHOTS") or "/tmp"
 local function log(...) app.log("[sbtest]", ...) end
 app.api.mpv.set_property("ao", "null")

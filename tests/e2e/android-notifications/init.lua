@@ -1,7 +1,10 @@
--- Install next to notifications in a throwaway profile with no token.
+-- Runs beside the notifications plugin (the one that comes with the app, or
+-- a copy in the plugins folder) in a throwaway profile with no token.
 -- Fixtures cover account exchange and inbox access. Optional live mode only
 -- opens the public Google sign-in page; it never enters account details.
 local P = require("notifications.protocol")
+-- The plugin's directory, wherever `require` finds it.
+local PLUGIN = assert(package.searchpath("notifications.backend", package.path)):match("^(.*)[/\\]backend%.lua$")
 local Backend = require("notifications.android")
 local passed = 0
 local function check(label, condition)
@@ -171,7 +174,7 @@ local function adapter_tests()
   package.loaded[names[1]] = { new = function() return fake end }
   package.loaded[names[2]] = { new = function() end }
   package.loaded[names[3]] = { new = function() end }
-  local adapter = assert(loadfile(app.api.paths.config_dir() .. "/plugins/notifications/backend.lua"))()
+  local adapter = assert(loadfile(PLUGIN .. "/backend.lua"))()
   adapter.restore(function() end)
   for _, name in ipairs(names) do package.loaded[name] = originals[name] end
   for _, operation in ipairs({ "menu", "more", "interact" }) do
@@ -194,7 +197,7 @@ local function handoff_test(done)
   local original_url = P.login_url
   P.login_url = "about:blank" -- Fixture credentials never reach the network.
   local view, close
-  view, close = Login.new(app.api.paths.config_dir() .. "/plugins/notifications", function(handoff)
+  view, close = Login.new(PLUGIN, function(handoff)
     check("path-scoped Android handoff is received", handoff.token == "fixture-handoff")
     close() -- Closing twice must be harmless.
     app.timer(300, function()

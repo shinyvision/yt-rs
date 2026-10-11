@@ -56,24 +56,34 @@ there takes over the desktop's own accessibility socket and leaves it dead.
 
 ## SponsorBlock
 
-`sponsorblock-test` drives the plugin in `examples/plugins/sponsorblock`
-against a stand-in server (`sponsorblock_server.py`, never the real one):
-install both plugins, start the server, and point the plugin at it through
-its storage:
+`sponsorblock-test` drives the plugin in `plugins/sponsorblock`, which comes
+with the app, against a stand-in server (`sponsorblock_server.py`, never
+the real one): install the test, start the server, and point the plugin at
+it through its storage:
 
 ```sh
 python3 -I tests/e2e/sponsorblock_server.py 18761 /tmp/sb.log &
 mkdir -p "$E/plugin-data" && echo '{"server": "http://127.0.0.1:18761", "min_duration": 3}' > "$E/plugin-data/sponsorblock.json"
-cp -r examples/plugins/sponsorblock tests/e2e/sponsorblock-test "$E/plugins/"
+cp -r tests/e2e/sponsorblock-test "$E/plugins/"
 ```
 
 The server's log then shows the counted skips, the vote and the submission.
 
+## The plugins that come with the app
+
+`bundled-plugins` runs three times on one fresh profile, with
+`E2E_PHASE=on`, `off` and `replace`. It checks that SponsorBlock and
+notifications load without being installed and that `require` looks in the
+plugins folder first. Then it checks that each has a switch in Settings,
+that switching SponsorBlock off is saved and keeps it from loading at the
+next start, and that a copy of `plugins/sponsorblock` in the plugins folder
+(installed for the `replace` run) takes the bundled one's place.
+
 ## Notifications
 
-Install `examples/plugins/notifications` as `plugins/notifications` and
-`tests/e2e/notifications` as `plugins/notifications-test` in a throwaway
-profile, with no token file. Run in a separate headless Sway compositor as
+Install `tests/e2e/notifications` as `plugins/notifications-test` in a
+throwaway profile, with no token file: a folder named `notifications` would
+take the place of the plugin that comes with the app. Run in a separate headless Sway compositor as
 for other GUI tests, with `YT_RS_DRY_RUN=1` and `G_DEBUG=fatal-criticals`.
 Account and network operations use Lua fixtures. The real UI, embedded
 sign-in dialog, link router, commands, filters and events are exercised.
@@ -103,9 +113,10 @@ under the isolated compositor. Screenshots use `E2E_SHOTS`.
 
 ## Notification account and protocol
 
-Install `examples/plugins/notifications` as `plugins/notifications` and
-`tests/e2e/android-notifications` as `plugins/notifications-auth-test`
-in a throwaway profile with no TV token. Run under an isolated headless
+Install `tests/e2e/android-notifications` as
+`plugins/notifications-auth-test` in a throwaway profile with no TV token.
+It finds the notifications plugin (the bundled one, or a copy in the
+plugins folder) through `require`. Run under an isolated headless
 compositor with `YT_RS_DRY_RUN=1`, `G_DEBUG=fatal-criticals`, and
 `YT_RS_LOG=warn,plugin=info`. This needs libsecret and libsoup 3. Fixtures
 exercise exchange, renewal, restart, one retry after HTTP 401, sign-out
@@ -121,7 +132,7 @@ It never enters real credentials, reads a browser profile, or sends a
 signed-in inbox request. This mode reports 58 checks passed. Screenshots use
 `E2E_SHOTS`. For an interactive account test, run
 `bash tests/manual/android-notifications.sh`; see the
-[plugin guide](../../examples/plugins/notifications/README.md).
+[plugin guide](../../plugins/notifications/README.md).
 
 ## Downloads
 

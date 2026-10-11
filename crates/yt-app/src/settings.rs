@@ -1,6 +1,7 @@
 //! Choices the app remembers between runs, as youtube.com does: volume,
-//! captions, autoplay, theater mode and stable volume. Saved as
-//! `settings.json` in the config directory, a moment after they change.
+//! captions, autoplay, theater mode and stable volume, and which plugins
+//! are off. Saved as `settings.json` in the config directory, a moment
+//! after they change.
 
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
@@ -36,6 +37,9 @@ pub struct Settings {
     /// The video's colors glowing around the player (ambient mode).
     #[serde(default = "on")]
     pub ambient: bool,
+    /// Plugins turned off, by name (they're on unless they're here).
+    #[serde(default)]
+    pub disabled_plugins: Vec<String>,
 }
 
 fn on() -> bool {
@@ -54,6 +58,7 @@ impl Default for Settings {
             download_height: None,
             live_chat_hidden: false,
             ambient: true,
+            disabled_plugins: Vec::new(),
         }
     }
 }

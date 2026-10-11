@@ -1,4 +1,5 @@
--- Install beside examples/plugins/notifications, under notifications-test.
+-- Runs beside the notifications plugin that comes with the app; install it
+-- as notifications-test.
 -- All account and network operations use Lua fixtures.
 local _, DIR = ...
 local Gtk = gi.require("Gtk", "4.0")

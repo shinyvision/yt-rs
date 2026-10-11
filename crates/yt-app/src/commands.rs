@@ -95,10 +95,7 @@ pub fn register(this: &Rc<App>) {
     });
     c.register("app.plugins", |_| {
         Ok(json!(
-            app()
-                .plugins()
-                .map(|p| p.loaded().to_vec())
-                .unwrap_or_default()
+            app().plugins().map(|p| p.loaded()).unwrap_or_default()
         ))
     });
     c.register("app.screenshot", |args| {

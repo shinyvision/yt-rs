@@ -4,7 +4,9 @@ set -eu
 repo=$(cd -- "$(dirname -- "$0")/../.." && pwd)
 probe_profile="${XDG_CONFIG_HOME:-$HOME/.config}/yt-rs-android-probe"
 mkdir -p "$probe_profile/plugins"
-cp -R "$repo/examples/plugins/notifications" "$probe_profile/plugins/"
+# The notifications plugin comes with the app; an older copy this script put
+# here would take its place.
+rm -rf "$probe_profile/plugins/notifications"
 # Retire only the old prototype entry point in this script's own test profile.
 rm -f "$probe_profile/plugins/android-notifications/init.lua"
 cat > "$probe_profile/init.lua" <<'LUA'

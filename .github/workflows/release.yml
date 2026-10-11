@@ -158,7 +158,7 @@ jobs:
           cat > notes.md <<'EOF'
           Builds for Linux, macOS and Windows, on x86_64 and arm64.
 
-          - Linux: needs GTK 4.18+, libadwaita 1.7+, libmpv and LuaJIT (Fedora 42, Arch, or as new).
+          - Linux: needs GTK 4.18+, libadwaita 1.7+, libmpv and LuaJIT (Debian 13, Ubuntu 25.10, Fedora 42, Arch, or newer). The notification bell also needs WebKitGTK 6.0, libsoup 3 and libsecret.
           - macOS: needs `brew install gtk4 libadwaita mpv luajit gobject-introspection`.
           - Windows: everything is in the zip. Run `bin/yt-rs.exe`.
           EOF
