@@ -18,7 +18,7 @@ local function own()
   local text = f:read("*a"); f:close()
   return (tonumber(text:match("\nPss:%s+(%d+)")) or 0) / 1024, (tonumber(text:match("Private_Dirty:%s+(%d+)")) or 0) / 1024
 end
--- Where the memory is: the biggest mappings by what they map.
+-- Where the memory is: private dirty memory by what is mapped.
 local function breakdown(tag)
   local f = io.open("/proc/self/smaps"); if not f then return end
   local totals, current = {}, "?"
@@ -27,7 +27,7 @@ local function breakdown(tag)
     if name then
       current = name ~= "" and name:gsub("^.*/", "") or "[anon]"
     else
-      local kb = line:match("^Rss:%s+(%d+)")
+      local kb = line:match("^Private_Dirty:%s+(%d+)")
       if kb then totals[current] = (totals[current] or 0) + tonumber(kb) end
     end
   end
@@ -46,7 +46,11 @@ local leaked, handlers_at_2, handlers_last = 0, nil, nil
 local samples = {}
 local steps = {
   { 3000, function() app.run("app.navigate", { page = "home" }) end },
-  { 4000, function() app.run("video.play", { video = { id = "dQw4w9WgXcQ", title = "Rick Astley" } }) end },
+  -- E2E_NO_VIDEO=1: the pages alone, to tell what playing costs.
+  { 4000, function()
+      if os.getenv("E2E_NO_VIDEO") then return app.run("app.navigate", { page = "subscriptions" }) end
+      app.run("video.play", { video = { id = "dQw4w9WgXcQ", title = "Rick Astley" } })
+    end },
   { 6000, function() app.run("channel.open", { channel_id = "UCuAXFkgsw1L7xaCfnd5JJOw" }) end },
   { 4000, function() app.run("search.open", { query = "hello" }) end },
   { 4000, function() app.run("app.navigate", { page = "playlists" }) end },
@@ -90,6 +94,12 @@ local function run_round()
       return
     end
     app.timer(step[1], function()
+      -- The first round, step by step: what each page costs.
+      if round == 1 then
+        local _, dirty = own()
+        log(string.format("  before step %d: private dirty %.1f MB, page %s", i, dirty, tostring(app.current_page())))
+        if os.getenv("E2E_BREAKDOWN") then breakdown("  step " .. i .. ":") end
+      end
       local ok, err = pcall(step[2])
       if not ok then log("STEP FAILED", i, err) end
       next_step()

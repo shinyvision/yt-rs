@@ -215,11 +215,14 @@ fn fill(root: &impl IsA<gtk::Widget>, card: &Card, video: &Value) {
     app().images.load_into(
         &card.picture,
         thumbnail,
-        // Compact cards decode at twice their width, for sharpness.
-        if card.layout == "compact" {
-            COMPACT_WIDTH * 2
-        } else {
-            THUMBNAIL_WIDTH
+        // Decoded at the size shown: compact cards at twice their width,
+        // for sharpness; shelf and list cards at theirs; grid cards (their
+        // width follows the window's) at the widest they get. Larger only
+        // costs memory: four times as much at twice the width.
+        match card.layout.as_str() {
+            "compact" => COMPACT_WIDTH * 2,
+            "shelf" | "list" => SHELF_WIDTH,
+            _ => THUMBNAIL_WIDTH,
         } * root.scale_factor(),
     );
 }

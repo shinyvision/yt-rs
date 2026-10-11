@@ -22,6 +22,15 @@ mod ui;
 use adw::prelude::*;
 
 fn main() -> gtk::glib::ExitCode {
+    // glibc gives each thread that allocates an arena of its own, which
+    // keeps what it freed; mpv's, tokio's and GTK's threads made that a
+    // few dozen megabytes. Two arenas cost no speed here (measured with
+    // tests/e2e/memory: about 6 % less memory). Set before threads exist.
+    #[cfg(all(target_os = "linux", target_env = "gnu"))]
+    // SAFETY: no other threads exist yet; mallopt only tunes the allocator.
+    unsafe {
+        libc::mallopt(libc::M_ARENA_MAX, 2);
+    }
     // GTK's OpenGL renderer: starts faster than its Vulkan one, and mpv
     // draws video with OpenGL, so frames need no conversion. GSK_RENDERER
     // still wins if set.

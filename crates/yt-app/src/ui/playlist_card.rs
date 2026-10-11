@@ -25,6 +25,8 @@ struct Card {
     title: gtk::Label,
     details: gtk::Label,
     playlist: RefCell<Value>,
+    /// The width its picture is decoded at: the card's widest.
+    decode_width: i32,
 }
 
 pub fn build(props: &Value) -> gtk::Widget {
@@ -95,6 +97,11 @@ pub fn build(props: &Value) -> gtk::Widget {
         title,
         details,
         playlist: RefCell::new(Value::Null),
+        decode_width: if props.get("layout").and_then(Value::as_str) == Some("shelf") {
+            SHELF_WIDTH
+        } else {
+            THUMBNAIL_WIDTH
+        },
     });
     let shelf = props.get("layout").and_then(Value::as_str) == Some("shelf");
     let widget: gtk::Widget = if shelf {
@@ -166,7 +173,7 @@ fn fill(widget: &gtk::Widget, card: &Card, playlist: &Value) {
     app().images.load_into(
         &card.picture,
         playlist.get("thumbnail").and_then(Value::as_str),
-        THUMBNAIL_WIDTH * widget.scale_factor(),
+        card.decode_width * widget.scale_factor(),
     );
 }
 
