@@ -253,7 +253,10 @@ impl Object {
             }),
         );
         // SAFETY: only reads the id of a handler that was just connected.
-        Ok(unsafe { handler.as_raw() })
+        let id = unsafe { handler.as_raw() };
+        // A C `unsigned long`: 64 bits here, 32 on Windows.
+        #[allow(clippy::useless_conversion)]
+        Ok(u64::from(id))
     }
 
     /// Emits a signal with Lua arguments, returning its result.

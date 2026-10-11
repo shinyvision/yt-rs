@@ -4,37 +4,61 @@
 
 use std::ffi::{CStr, c_char, c_int, c_void};
 
-/// Looks up OpenGL functions. GTK uses EGL on Wayland (and on X11 in recent
-/// versions), so `eglGetProcAddress` comes first; `dlsym` on the GL library
-/// is the fallback.
+/// Looks up OpenGL functions the way the platform's GL wants: first through
+/// its "get proc address" function (EGL's, which GTK uses on Wayland and
+/// X11; WGL's on Windows), then as plain symbols of the GL library (which
+/// is all macOS has).
 pub struct GlLoader {
-    egl_get_proc_address: Option<unsafe extern "C" fn(*const c_char) -> *mut c_void>,
-    _egl: Option<libloading::Library>,
+    get_proc_address: Option<unsafe extern "system" fn(*const c_char) -> *mut c_void>,
+    _loader: Option<libloading::Library>,
     gl: Option<libloading::Library>,
 }
 
+/// Where the "get proc address" function is, and its name.
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+const PROC_ADDRESS: Option<(&str, &[u8])> = Some(("libEGL.so.1", b"eglGetProcAddress\0"));
+#[cfg(target_os = "windows")]
+const PROC_ADDRESS: Option<(&str, &[u8])> = Some(("opengl32.dll", b"wglGetProcAddress\0"));
+#[cfg(target_os = "macos")]
+const PROC_ADDRESS: Option<(&str, &[u8])> = None;
+
+/// The GL library itself.
+#[cfg(not(any(target_os = "windows", target_os = "macos")))]
+const GL_LIBRARIES: &[&str] = &["libGL.so.1", "libOpenGL.so.0"];
+#[cfg(target_os = "windows")]
+const GL_LIBRARIES: &[&str] = &["opengl32.dll"];
+#[cfg(target_os = "macos")]
+const GL_LIBRARIES: &[&str] = &["/System/Library/Frameworks/OpenGL.framework/OpenGL"];
+
 impl GlLoader {
     pub fn new() -> Self {
-        let egl = unsafe { libloading::Library::new("libEGL.so.1") }.ok();
-        let egl_get_proc_address = egl.as_ref().and_then(|lib| unsafe {
-            lib.get::<unsafe extern "C" fn(*const c_char) -> *mut c_void>(b"eglGetProcAddress\0")
-                .ok()
-                .map(|f| *f)
-        });
-        let gl = ["libGL.so.1", "libOpenGL.so.0"]
+        let (loader, get_proc_address) = match PROC_ADDRESS {
+            Some((library, symbol)) => {
+                let lib = unsafe { libloading::Library::new(library) }.ok();
+                let f = lib.as_ref().and_then(|lib| unsafe {
+                    lib.get::<unsafe extern "system" fn(*const c_char) -> *mut c_void>(symbol)
+                        .ok()
+                        .map(|f| *f)
+                });
+                (lib, f)
+            }
+            None => (None, None),
+        };
+        let gl = GL_LIBRARIES
             .iter()
             .find_map(|name| unsafe { libloading::Library::new(*name) }.ok());
         Self {
-            egl_get_proc_address,
-            _egl: egl,
+            get_proc_address,
+            _loader: loader,
             gl,
         }
     }
 
     pub fn get(&self, name: &CStr) -> *mut c_void {
-        if let Some(f) = self.egl_get_proc_address {
+        if let Some(f) = self.get_proc_address {
             let ptr = unsafe { f(name.as_ptr()) };
-            if !ptr.is_null() {
+            // WGL answers 1, 2, 3 or -1 for functions it doesn't have.
+            if !matches!(ptr as isize, -1..=3) {
                 return ptr;
             }
         }

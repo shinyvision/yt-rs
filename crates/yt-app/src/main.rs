@@ -1,5 +1,9 @@
 //! yt-rs: a fast native YouTube client for the desktop, moddable with Lua.
 
+// No console window beside the app on Windows (debug builds keep it, for
+// the log).
+#![cfg_attr(all(windows, not(debug_assertions)), windows_subsystem = "windows")]
+
 mod app;
 mod channels;
 mod commands;

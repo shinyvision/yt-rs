@@ -275,6 +275,7 @@ impl Default for VideoView {
 
 /// GTK's Wayland display, which lets mpv hand hardware-decoded frames
 /// straight to OpenGL. Null on other platforms.
+#[cfg(target_os = "linux")]
 fn wayland_display(widget: &impl IsA<gtk::Widget>) -> *mut c_void {
     use gtk::glib::translate::ToGlibPtr;
     let display = widget.display();
@@ -285,4 +286,9 @@ fn wayland_display(widget: &impl IsA<gtk::Widget>) -> *mut c_void {
         },
         None => std::ptr::null_mut(),
     }
+}
+
+#[cfg(not(target_os = "linux"))]
+fn wayland_display(_widget: &impl IsA<gtk::Widget>) -> *mut c_void {
+    std::ptr::null_mut()
 }

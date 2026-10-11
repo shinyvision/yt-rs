@@ -22,5 +22,9 @@ tokio.workspace = true
 tracing.workspace = true
 url.workspace = true
 
+# No prebuilt QuickJS bindings for Windows on ARM with MinGW: generate them.
+[target.'cfg(all(target_os = "windows", target_arch = "aarch64", target_env = "gnu"))'.dependencies]
+rquickjs = { workspace = true, features = ["bindgen"] }
+
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
