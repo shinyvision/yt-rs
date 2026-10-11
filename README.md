@@ -1,4 +1,9 @@
-# yt-rs
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo-light.svg" alt="yt-rs" width="300">
+  </picture>
+</p>
 
 yt-rs is a YouTube app for the desktop, written in Rust. The interface is
 GTK 4 and libadwaita, videos play in mpv, and plugins are written in Lua.
@@ -9,6 +14,10 @@ It signs in the way a smart TV does and talks to YouTube as the YouTube TV
 app. Your Home feed, subscriptions, history and recommendations are your
 own, and what you watch shows up in your history with the place you stopped.
 Without signing in, everything that doesn't need an account still works.
+
+<p align="center">
+  <img src="assets/screenshot.png" alt="The Home page, with subscriptions in the sidebar" width="900">
+</p>
 
 ## What's in it
 
