@@ -214,7 +214,8 @@ impl SearchPage {
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum SearchItem {
-    Video(SearchVideo),
+    /// Boxed: much bigger than the others, and the most common.
+    Video(Box<SearchVideo>),
     Channel(SearchChannel),
     Playlist(SearchPlaylist),
     Shelf(SearchShelf),
@@ -349,7 +350,7 @@ pub fn parse_tv(resp: &Value) -> TvResults {
             let videos: Vec<SearchVideo> = items
                 .into_iter()
                 .filter_map(|i| match i {
-                    SearchItem::Video(v) => Some(v),
+                    SearchItem::Video(v) => Some(*v),
                     _ => None,
                 })
                 .collect();
@@ -444,12 +445,12 @@ fn tv_item(lockup: &Value) -> Option<SearchItem> {
                 .and_then(|b| find(b, "imageName"))
                 .and_then(Value::as_str)
                 == Some("AUDIO");
-            Some(SearchItem::Video(SearchVideo {
+            Some(SearchItem::Video(Box::new(SearchVideo {
                 video,
                 badges,
                 music,
                 ..SearchVideo::default()
-            }))
+            })))
         }
     }
 }
@@ -506,7 +507,9 @@ fn walk_web(node: &Value, results: &mut WebResults, seen_video: &mut bool) {
                     "videoRenderer" => {
                         if let Some(video) = web_video(child) {
                             *seen_video = true;
-                            results.items.push(SearchItem::Video(video.clone()));
+                            results
+                                .items
+                                .push(SearchItem::Video(Box::new(video.clone())));
                             results.videos.insert(video.video.id.clone(), video);
                         }
                     }
@@ -743,7 +746,7 @@ pub fn merge(tv: Option<TvResults>, web: Option<WebResults>) -> SearchPage {
     let mut next_shelf = FIRST_SHELF_AFTER;
     for item in tv.items {
         items.push(match item {
-            SearchItem::Video(v) => SearchItem::Video(enrich(v)),
+            SearchItem::Video(v) => SearchItem::Video(Box::new(enrich(*v))),
             SearchItem::Channel(mut c) => {
                 // The web client knows its description and badge.
                 if let Some(SearchItem::Channel(w)) = web
