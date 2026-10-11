@@ -568,7 +568,21 @@ impl Player {
             let _ = self.mpv.command(&["stop"]);
             // Listeners still see which video stopped.
             self.emit(PlayerEvent::Stopped);
-            self.state.borrow_mut().video_id = None;
+            // Nothing of it stays (where it was, its length and quality),
+            // while the next is looked up or held back: only what the
+            // user set.
+            {
+                let mut state = self.state.borrow_mut();
+                *state = PlayerState {
+                    volume: state.volume,
+                    muted: state.muted,
+                    speed: state.speed,
+                    stable_volume: state.stable_volume,
+                    ..PlayerState::default()
+                };
+            }
+            self.live.borrow_mut().take();
+            self.streams.borrow_mut().take();
         }
     }
 
@@ -780,13 +794,16 @@ impl Player {
                     let Some(position) = double(&value) else {
                         return;
                     };
-                    if self.seeking.get() {
+                    // A stopped video's last positions can come after it
+                    // stopped: nothing is loaded then.
+                    if self.seeking.get() || state.video_id.is_none() {
                         return;
                     }
                     state.position = position;
                     state.live = self.live_window();
                     PlayerEvent::Position(position)
                 }
+                DURATION if state.video_id.is_none() => return,
                 DURATION => {
                     // A recording read in segments: its length, not what
                     // mpv has seen of it.

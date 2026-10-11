@@ -20,7 +20,13 @@ local errors = {}
 for _, name in ipairs({ "player.error", "player.audio_failed", "player.fallback" }) do
   app.on(name, function(e) table.insert(errors, name .. ": " .. tostring(e.message or e.video_id or "")) end)
 end
-app.on("player.waiting", function(e) log("  waiting", e.seconds, "s for", e.video_id) end)
+-- YouTube holding the streams back (a pre-roll ad's length): the checks
+-- wait it out.
+local held_until = 0
+app.on("player.waiting", function(e)
+  log("  waiting", e.seconds, "s for", e.video_id)
+  held_until = app.now() + e.seconds + 2
+end)
 
 local home = {}
 app.on("feed.loaded", function(e)
@@ -38,7 +44,8 @@ local function shot(name) app.screenshot(shots .. "/" .. name .. ".png") end
 -- Waits `settle` ms, then checks the position moves on over 3 s.
 local function check(label, settle, expect, done)
   errors = {}
-  app.timer(settle, function()
+  local function measure()
+    if app.now() < held_until then return app.timer(500, measure) end
     local a = app.player.state()
     app.timer(3000, function()
       local b = app.player.state()
@@ -49,7 +56,8 @@ local function check(label, settle, expect, done)
         b.quality or "-", #errors > 0 and ("| " .. table.concat(errors, "; ")) or ""))
       done()
     end)
-  end)
+  end
+  app.timer(settle, measure)
 end
 
 local function play(id, start)
@@ -101,6 +109,8 @@ step(function(next)
   each()
 end)
 step(function(next)
+  -- A 24/7 radio stream (a stream that ends turns into a recording,
+  -- which plays as a video); E2E_LIVE for another.
   play(os.getenv("E2E_LIVE") or "t1NfmaqyIoI")
   local function near_edge(s) return s.live and s.live.edge - s.position < 30 end
   check("a live stream, at the edge", 9000, near_edge, function() shot("live"); next() end)
