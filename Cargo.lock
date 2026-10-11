@@ -2536,6 +2536,7 @@ dependencies = [
  "libc",
  "libloading",
  "mlua",
+ "rand",
  "reqwest",
  "serde",
  "serde_json",

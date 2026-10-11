@@ -41,14 +41,29 @@ pub fn init() {
     let app = app();
     app.ext.events.on("page.changed", |_| update());
     app.player.connect(|event, _| {
-        if matches!(
-            event,
-            crate::player::PlayerEvent::Loading { .. } | crate::player::PlayerEvent::Stopped
-        ) {
+        use crate::player::PlayerEvent;
+        // mpv needs its renderer before it opens the video, even when the
+        // player isn't on screen yet (a queue starting in the mini player).
+        if matches!(event, PlayerEvent::Loading { .. }) {
+            prepare_video();
+        }
+        if matches!(event, PlayerEvent::Loading { .. } | PlayerEvent::Stopped) {
             // After the player has updated its state.
             glib::idle_add_local_once(update);
         }
     });
+}
+
+/// The video widget inside the player.
+fn video() -> Option<super::video::VideoView> {
+    super::find_widget(&player(), "video").and_downcast::<super::video::VideoView>()
+}
+
+/// Sets the video's renderer up, if it isn't yet.
+fn prepare_video() {
+    if let Some(video) = video() {
+        video.prepare();
+    }
 }
 
 /// Frees the video's renderer, which must go before mpv does.

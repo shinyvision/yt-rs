@@ -179,6 +179,12 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `comment.voted` | `{ comment_id, from, vote }` |
 | `comment.deleted` | `{ video_id, comment_id }` |
 | `video.rated` | `{ video_id, rating }`: `"like"`, `"dislike"` or `"none"` |
+| `playlist.changed` | `{ playlist_id, video_id, added }`: a video went into a playlist (Watch later is `WL`, Liked videos `LL`) or out of it |
+| `playlist.created`, `playlist.deleted` | `{ playlist_id, title? }` |
+| `playlist.loaded` | `{ playlist_id, page }`: a playlist's page loaded (`page.videos`, `page.continuation`, `page.owner`, ...) |
+| `video.hidden` | `{ video_id }`: YouTube was told it isn't wanted ("Not interested", "Don't recommend channel"); feeds drop it |
+| `video.menu_loaded` | `{ video_id }`: YouTube's own menu for a video (sent on request) arrived; `video.menu` now has it |
+| `list.changed` | `{ list }`: the list playing changed (`null`: none). `list = { playlist_id?, title, owner?, videos, order, position, looping, shuffled }`; the queue has no `playlist_id`. `order` holds indices into `videos` (0-based), `position` an index into `order` |
 | `channel.loaded` | `{ channel }`: a channel page (`channel`, `banner`, `description`, `about`, `subscription`, `tabs`, `home`) |
 | `channel.subscription` | `{ channel_id, subscribed }` |
 | `channels.updated` | `{ subscriptions }`: the user's subscriptions, with avatars |
@@ -204,7 +210,7 @@ app.filter("feed.page", function(data) ... return data end, order)
 |---|---|
 | `feed.page` | `{ browse_id, page }`: every feed page before it is shown |
 | `video.card` | a video, before it fills a card |
-| `video.menu` | `{ video, items }`: a card's menu items, `{ label, command, args? }`. The command runs with `{ video }` added to its arguments |
+| `video.menu` | `{ video, items }`: a card's menu items, `{ label, icon?, command, args?, confirm? }`, in youtube.com's order: Add to queue, Save to Watch later, Save to playlist, Copy link, Open in browser, Go to channel, then YouTube's own for the video ("Not interested", "Remove from Watch later", ...). The command runs with `{ video }` added to its arguments |
 | `watch.page` | a video's details, before they are shown (see `watch.loaded`) |
 | `comments.page` | `{ comments, next }`: each page of comments, before it is shown. Remove comments to hide them |
 | `comment` | a comment (plus `by_creator`), before it fills a `comment` component |
@@ -296,6 +302,21 @@ app.commands()                     -- all names
 | `app.confirm` | `{ title, body?, confirm, cancel?, command, args? }`: asks in a dialog, then runs the command |
 | `comments.sort` | `{ video_id, index }` |
 | `video.rate` | `{ video_id, rating }`: `"like"`, `"dislike"` or `"none"` |
+| `video.menu` | `{ video }` → the video's menu items (see the `video.menu` filter); asks YouTube for its own items if they come on request (`video.menu_loaded`) |
+| `video.action` | `{ video, action }`: one of YouTube's menu actions (an item of `video.actions`) |
+| `video.save_to_watch_later` | `{ video_id }`; the toast offers "Undo" |
+| `video.save` | `{ video_id }`: "Save video to..." (the user's playlists, and making one) |
+| `playlist.open` | `{ playlist_id }`: its page |
+| `playlist.play` | `{ playlist_id, index?, shuffle? }`: plays it, from video `index` (0-based) or shuffled |
+| `playlist.add`, `playlist.remove` | `{ playlist_id, video_id, title?, undo? }` |
+| `playlist.create` | `{ title, privacy? = "private" \| "unlisted" \| "public", video_id? }` → reports `playlist.created` |
+| `playlist.delete` | `{ playlist_id }` |
+| `queue.add` | `{ video }`: to the queue, which starts with the video playing (or plays this one, in the mini player, if none is) |
+| `list.current` | → the list playing (see `list.changed`), or nothing |
+| `list.next`, `list.previous`, `list.play_at` | `{ position }` for `play_at`: an index into the list's `order` |
+| `list.set_looping`, `list.set_shuffled` | `{ looping }`, `{ shuffled }` |
+| `list.remove` | `{ position }`: out of the queue |
+| `list.clear` | stops playing the list (the video carries on) |
 | `comment.post` | `{ video_id, text }` |
 | `comment.reply` | `{ video_id, parent_id, text }` |
 | `comment.vote` | `{ video_id, comment_id, thread?, from, to }`: votes are `"none"`, `"like"` or `"dislike"` |
@@ -385,6 +406,12 @@ app.components()
 | `menu` | `{ items }`: a menu's list. An item is `{ label, icon?, command, args?, confirm?, selected? }`; with `confirm` (a `confirm_dialog`'s properties) it asks first |
 | `confirm_dialog` | `{ title, body?, confirm, cancel? }`: a dialog's content. A replacement needs buttons named `dialog-cancel` and `dialog-confirm` |
 | `player_settings` | `{ entries }`: the settings panel's pages |
+| `playlist_card` | a playlist (`{ id, title, thumbnail?, count?, details? }`), plus `layout? = "shelf"` |
+| `playlist` | `{ playlist_id }`: a playlist's page |
+| `library` | the "You" page: rows of history, playlists, Watch later and liked videos |
+| `playlists` | the user's playlists, as a grid |
+| `list_panel` | the list playing, above "Up next" on the watch page |
+| `save_dialog` | `{ video_id }`: "Save video to..." |
 | `search_box` | the search field in the top bar, with its list of earlier searches and suggestions |
 | `search` | `{ query, filters?, chip?, chips? }`: the search page |
 | `search_video`, `search_channel`, `search_playlist`, `search_shelf` | a result (an item of `search.page`); shelves are "People also watched", a row of Shorts, ... |
@@ -412,7 +439,8 @@ app.unslot(id)
 the search box), `topbar.end`, `feed.header`, `search.header`,
 `watch.actions`, `watch.below_player`,
 `player.overlay`, `player.controls.start`, `player.controls.end`,
-`mini_player.info` (under the mini player's title),
+`mini_player.info` (under the mini player's title), `playlist.panel` (under
+a playlist page's details), `library.bottom` (the end of the "You" page),
 `comments.header`, `channel.header.actions`.
 
 ### Pages and the sidebar

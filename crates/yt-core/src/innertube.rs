@@ -78,7 +78,25 @@ pub struct InnerTube {
     base: String,
     session: Arc<Session>,
     player_script: Mutex<Option<PlayerScript>>,
+    /// Requests that would change the account are answered here, not sent.
+    dry_run: std::sync::atomic::AtomicBool,
 }
+
+/// The endpoints that change the account (for [`InnerTube::set_dry_run`]).
+const WRITES: &[&str] = &[
+    "browse/edit_playlist",
+    "comment/create_comment",
+    "comment/create_comment_reply",
+    "comment/perform_comment_action",
+    "feedback",
+    "like/dislike",
+    "like/like",
+    "like/removelike",
+    "playlist/create",
+    "playlist/delete",
+    "subscription/subscribe",
+    "subscription/unsubscribe",
+];
 
 /// The TV app's player script: its version (the ID in its URL), where it
 /// is, and its `signatureTimestamp`. `player` requests send the timestamp,
@@ -125,6 +143,7 @@ impl InnerTube {
             base: base.to_owned(),
             session,
             player_script: Mutex::new(player_script),
+            dry_run: Default::default(),
         }
     }
 
@@ -142,6 +161,9 @@ impl InnerTube {
 
     /// Like [`InnerTube::call`], as a specific version of the TV app.
     pub async fn call_as(&self, client: TvClient, endpoint: &str, body: Value) -> Result<Value> {
+        if self.dry_run.load(std::sync::atomic::Ordering::Relaxed) && WRITES.contains(&endpoint) {
+            return dry_run_answer(endpoint, &body);
+        }
         let body = with_tv_context(client, body);
         let token = self.session.access_token().await?;
         match self.send(client, endpoint, &body, Some(&token)).await {
@@ -300,6 +322,22 @@ async fn read_json(resp: reqwest::Response, endpoint: &str) -> Result<Value> {
     Ok(serde_json::from_slice(&bytes)?)
 }
 
+/// What a write answers in a dry run: success, and for a new playlist an ID
+/// that is clearly not one. Comments can't be faked convincingly, so they
+/// fail.
+fn dry_run_answer(endpoint: &str, body: &Value) -> Result<Value> {
+    tracing::info!(target: "dry_run", "not sent: {endpoint} {body}");
+    match endpoint {
+        "playlist/create" => Ok(json!({ "playlistId": "PLdry-run" })),
+        e if e.starts_with("comment/create") => Err(Error::Api {
+            endpoint: endpoint.into(),
+            status: 0,
+            message: Some("not posted: dry run".into()),
+        }),
+        _ => Ok(json!({ "status": "STATUS_SUCCEEDED" })),
+    }
+}
+
 /// Puts one page of results together from the two clients' replies (`None`
 /// for a client that wasn't asked); an error only if nothing came back.
 fn merge_search(tv: Option<Result<Value>>, web: Option<Result<Value>>) -> Result<SearchPage> {
@@ -325,6 +363,14 @@ fn merge_search(tv: Option<Result<Value>>, web: Option<Result<Value>>) -> Result
 }
 
 impl InnerTube {
+    /// With `on`, requests that would change the account (rating,
+    /// subscribing, playlists, comments, feedback) aren't sent: they
+    /// succeed as far as the caller can tell, and are logged. For trying
+    /// things, and for tests.
+    pub fn set_dry_run(&self, on: bool) {
+        self.dry_run.store(on, std::sync::atomic::Ordering::Relaxed);
+    }
+
     /// Loads a feed page by browse ID, e.g. [`HOME`].
     pub async fn browse(&self, browse_id: &str) -> Result<FeedPage> {
         Ok(feed::parse(
@@ -533,6 +579,18 @@ impl InnerTube {
         self.call("playlist/delete", json!({ "playlistId": playlist_id }))
             .await
             .map(drop)
+    }
+
+    /// What YouTube offers to do with a video whose menu comes on request
+    /// (its `menu`).
+    pub async fn video_actions(&self, menu: &str) -> Result<Vec<crate::actions::VideoAction>> {
+        let resp = self
+            .call(
+                "get_panel",
+                json!({ "panelId": "PAcontext_menu", "params": menu }),
+            )
+            .await?;
+        Ok(crate::actions::from_panel(&resp))
     }
 
     /// Tells YouTube something about a video ("Not interested", "Don't
@@ -769,4 +827,43 @@ fn between<'a>(text: &'a str, start: &str, end: &str) -> Option<&'a str> {
     let from = text.find(start)? + start.len();
     let len = text[from..].find(end)?;
     Some(&text[from..from + len])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::OAuth;
+    use crate::playlist::Privacy;
+
+    /// Signed out (no token file), so a request that got through would fail.
+    fn api() -> InnerTube {
+        let http = reqwest::Client::new();
+        let session = Arc::new(Session::load(
+            OAuth::new(http.clone()),
+            std::path::PathBuf::from("/nonexistent/token.json"),
+        ));
+        InnerTube::new(http, session)
+    }
+
+    #[tokio::test]
+    async fn a_dry_run_sends_no_writes() {
+        let api = api();
+        api.set_dry_run(true);
+        api.add_to_playlist("WL", "dQw4w9WgXcQ").await.unwrap();
+        api.remove_from_playlist("WL", "dQw4w9WgXcQ").await.unwrap();
+        api.rate_video("dQw4w9WgXcQ", Rating::Like).await.unwrap();
+        api.feedback("token").await.unwrap();
+        api.delete_playlist("PL1").await.unwrap();
+        let id = api
+            .create_playlist("Test", Privacy::Private, None)
+            .await
+            .unwrap();
+        assert_eq!(id, "PLdry-run");
+        assert!(api.post_comment("dQw4w9WgXcQ", "hi").await.is_err());
+        // Reads still go out (and fail here, signed out and offline).
+        assert!(api.browse(HOME).await.is_err());
+        // Off again, writes go out too.
+        api.set_dry_run(false);
+        assert!(api.add_to_playlist("WL", "dQw4w9WgXcQ").await.is_err());
+    }
 }

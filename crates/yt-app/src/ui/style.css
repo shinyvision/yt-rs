@@ -602,3 +602,71 @@ dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
 .shelf-row { background: none; }
 .shelf-row > row { padding: 0 8px 0 0; background: none; }
 .video-card.shelf .title { font-size: 14px; }
+
+/* Playlists. A card's picture has two edges stacked behind it. */
+.playlist-stack { margin-top: 0; }
+.playlist-edge { border-radius: 12px 12px 0 0; }
+.playlist-edge.back { min-height: 4px; margin: 0 24px; background: #3a3a3a; }
+.playlist-edge.middle { min-height: 4px; margin: 0 12px; background: #606060; }
+.playlist-card .thumb { background: var(--yt-raised); }
+.playlist-count { padding: 2px 6px; }
+.playlist-view { font-weight: 500; }
+.page-title { font-size: 28px; font-weight: 700; }
+.playlists-page { padding: 24px 32px 48px 32px; }
+.playlist-grid > flowboxchild { padding: 0; }
+
+/* A playlist's page: the panel on the left, its videos on the right. */
+.playlist-layout { padding: 24px 24px 0 24px; }
+.playlist-panel {
+  min-width: 312px;
+  padding: 24px;
+  border-radius: 16px;
+  background: linear-gradient(to bottom, #4a4a4a, #272727 45%, #1a1a1a);
+}
+.playlist-layout.vertical .playlist-panel { min-width: 0; }
+.playlist-thumb { border-radius: 12px; background: var(--yt-raised); }
+.playlist-title { font-size: 28px; font-weight: 700; line-height: 1.2; }
+.playlist-owner { font-weight: 600; font-size: 14px; }
+.playlist-meta { font-size: 12px; }
+.playlist-description { font-size: 13px; color: var(--yt-text-dim); }
+.playlist-button { min-height: 36px; border-radius: 18px; padding: 0 16px; font-weight: 600; background: rgba(255, 255, 255, 0.2); color: white; }
+.playlist-button:hover { background: rgba(255, 255, 255, 0.3); }
+.playlist-button.primary { background: white; color: #0f0f0f; }
+.playlist-button.primary:hover { background: #d9d9d9; }
+.playlist-videos { background: none; }
+.playlist-row { padding: 4px 8px 4px 0; border-radius: 12px; }
+.playlist-row:hover { background: rgba(255, 255, 255, 0.05); }
+.playlist-index { min-width: 32px; font-size: 14px; }
+.playlist-row .video-card.compact .title { font-size: 16px; }
+
+/* The list playing, above "Up next". */
+.list-panel { border: 1px solid #3f3f3f; border-radius: 12px; background: var(--yt-bg); }
+.list-header { padding: 12px 8px 4px 16px; background: #212121; border-radius: 12px 12px 0 0; }
+.list-title { font-size: 20px; font-weight: 700; }
+.list-subtitle { font-size: 12px; }
+.list-panel .icon-button:checked { color: var(--yt-text); background: rgba(255, 255, 255, 0.2); }
+.list-videos { background: none; }
+.list-row { padding: 4px 8px 4px 0; }
+.list-row:hover { background: rgba(255, 255, 255, 0.1); }
+.list-row.current { background: rgba(255, 255, 255, 0.15); }
+.list-mark { min-width: 24px; font-size: 12px; }
+.list-video-title { font-size: 14px; font-weight: 500; }
+
+/* The "You" page. */
+.library { padding: 24px 32px 48px 32px; }
+.library-header { margin-bottom: 24px; }
+.library-name { font-size: 36px; font-weight: 700; }
+.library-view-channel { color: #3ea6ff; padding: 0; }
+.shelf-header { margin: 8px 0 16px 0; }
+.shelf-header .shelf-title { margin: 0; }
+.pill-button.outline { border: 1px solid #3f3f3f; background: none; padding: 0 16px; min-height: 36px; border-radius: 18px; }
+.pill-button.outline:hover { background: var(--yt-raised); }
+.sidebar .section-link .section-title { margin: 0; padding: 0; }
+
+/* "Save video to..." */
+.save-dialog { min-width: 320px; }
+.save-list { padding: 8px 0; }
+.save-option { padding: 8px 0; }
+.save-option label { font-size: 14px; }
+.save-new { padding: 8px 4px; font-size: 14px; }
+.save-form { padding: 8px 0 16px 0; }

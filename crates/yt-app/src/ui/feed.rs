@@ -127,6 +127,16 @@ pub fn build(props: &Value) -> gtk::Widget {
         scroller,
     });
     attach(&root, feed.clone());
+    // A video the user told YouTube they don't want goes, as on youtube.com.
+    let weak = Rc::downgrade(&feed);
+    follow(&root, "video.hidden", move |payload| {
+        if let (Some(feed), Some(id)) = (
+            weak.upgrade(),
+            payload.get("video_id").and_then(Value::as_str),
+        ) {
+            hide(&feed, id);
+        }
+    });
 
     // Load more when scrolled near the end, and also when the content
     // doesn't fill the view yet (then there is nothing to scroll).
@@ -441,6 +451,22 @@ fn merge(feed: &Feed, page: FeedPage) {
         if shelf.continuation.is_some() {
             section.continuation = shelf.continuation;
         }
+    }
+}
+
+/// Takes a video out of every section and off the grid.
+fn hide(feed: &Feed, video_id: &str) {
+    for section in &mut feed.state.borrow_mut().sections {
+        section.videos.retain(|v| v.id != video_id);
+    }
+    let model = feed.model.borrow();
+    if let Some(position) = (0..model.n_items()).find(|&i| {
+        model
+            .item(i)
+            .and_downcast::<glib::BoxedAnyObject>()
+            .is_some_and(|o| o.borrow::<Video>().id == video_id)
+    }) {
+        model.remove(position);
     }
 }
 

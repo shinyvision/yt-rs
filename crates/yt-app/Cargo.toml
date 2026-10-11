@@ -12,6 +12,7 @@ path = "src/main.rs"
 [dependencies]
 yt-core.workspace = true
 adw.workspace = true
+rand.workspace = true
 anyhow.workspace = true
 gdk-wayland.workspace = true
 gtk.workspace = true

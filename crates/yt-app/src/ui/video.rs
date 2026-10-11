@@ -199,6 +199,12 @@ impl VideoView {
         imp.failed.set(true);
     }
 
+    /// Sets up OpenGL and mpv's renderer now, rather than when the widget
+    /// first shows: mpv needs it before it opens a video.
+    pub fn prepare(&self) {
+        self.start();
+    }
+
     /// Sets up OpenGL and mpv's renderer, once.
     fn start(&self) {
         let imp = self.imp();

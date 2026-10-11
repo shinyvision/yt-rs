@@ -50,6 +50,60 @@ pub struct Confirm {
     pub button: String,
 }
 
+/// For a tile whose menu comes on request (a context menu panel): the
+/// params to ask for it with.
+pub fn menu_params(tile: &Value) -> Option<String> {
+    let panel = tile.pointer("/onLongPressCommand/showEngagementPanelEndpoint")?;
+    (str_at(panel, "/identifier/tag") == Some("PAcontext_menu"))
+        .then(|| str_at(panel, "/globalConfiguration/params").map(str::to_owned))
+        .flatten()
+}
+
+/// The actions in a menu sent on request (`get_panel`): a list of items,
+/// each with what a tap does.
+pub fn from_panel(resp: &Value) -> Vec<VideoAction> {
+    let mut actions = Vec::new();
+    crate::channel::collect(resp, "listItemViewModel", &mut |item| {
+        let label = str_at(item, "/title/content")
+            .unwrap_or_default()
+            .to_owned();
+        let Some(tap) = item.pointer("/rendererContext/commandContext/onTap") else {
+            return;
+        };
+        if let Some(kind) = deep_kind(tap)
+            && !label.is_empty()
+        {
+            actions.push(VideoAction { label, kind });
+        }
+    });
+    actions
+}
+
+/// What a tap does, from wherever in its commands the endpoint is. Saving
+/// comes first: it also shows a popup, a notice ("Saved to Watch later")
+/// rather than a question.
+fn deep_kind(tap: &Value) -> Option<ActionKind> {
+    if let Some(edit) = find(tap, "playlistEditEndpoint") {
+        return Some(ActionKind::EditPlaylist {
+            playlist_id: str_at(edit, "/playlistId")?.to_owned(),
+            actions: edit.get("actions")?.clone(),
+            params: str_at(edit, "/params").map(str::to_owned),
+        });
+    }
+    if find(tap, "overlayPanelRenderer").is_some() {
+        return kind(tap);
+    }
+    if let Some(feedback) = find(tap, "feedbackEndpoint") {
+        return Some(ActionKind::Feedback {
+            token: str_at(feedback, "/feedbackToken")?.to_owned(),
+            confirm: None,
+        });
+    }
+    find(tap, "likeEndpoint")
+        .filter(|like| str_at(like, "/status") == Some("INDIFFERENT"))
+        .map(|_| ActionKind::Unlike)
+}
+
 /// The actions in a tile's menu (`onLongPressCommand`), less the ones the
 /// app has its own way to do (play, go to the channel).
 pub fn from_tile(tile: &Value) -> Vec<VideoAction> {
@@ -191,6 +245,61 @@ mod tests {
         assert_eq!(json[2]["kind"], "feedback");
         let back: Vec<VideoAction> = serde_json::from_value(json).unwrap();
         assert_eq!(back, actions);
+    }
+
+    #[test]
+    fn reads_a_menu_sent_on_request() {
+        let item = |label: &str, tap: Value| {
+            json!({ "listItemViewModel": { "title": { "content": label },
+                "rendererContext": { "commandContext": { "onTap": tap } } } })
+        };
+        let panel = json!({ "engagementPanelSectionListRenderer": { "content": { "listViewModel": { "listItems": [
+            item("Play", json!({ "innertubeCommand": { "watchEndpoint": { "videoId": "v1" } } })),
+            item("Save to Watch later", json!({ "innertubeCommand": { "commandExecutorCommand": { "commands": [
+                { "signalServiceEndpoint": { "signal": "CLIENT_SIGNAL" } },
+                { "playlistEditEndpoint": { "playlistId": "WL", "actions": [{ "addedVideoId": "v1", "action": "ACTION_ADD_VIDEO" }] } },
+                { "openPopupAction": { "popup": { "overlayToastRenderer": { "title": { "simpleText": "Saved" } } }, "popupType": "TOAST" } } ] } } })),
+            item("Not interested", json!({ "innertubeCommand": { "feedbackEndpoint": { "feedbackToken": "T1",
+                "actions": [{ "openClientOverlayAction": { "type": "CLIENT_OVERLAY_TYPE_DISM" } }] } } })),
+            item("Don't recommend channel", json!({ "innertubeCommand": { "openPopupAction": { "popup": { "overlaySectionRenderer": {
+                "overlay": { "overlayTwoPanelRenderer": { "actionPanel": { "overlayPanelRenderer": {
+                    "header": { "overlayPanelHeaderRenderer": { "title": { "runs": [{ "text": "Don't recommend channel" }] } } },
+                    "content": { "overlayPanelItemListRenderer": { "items": [
+                        { "compactLinkRenderer": { "title": { "runs": [{ "text": "Confirm" }] },
+                            "serviceEndpoint": { "commandExecutorCommand": { "commands": [
+                                { "feedbackEndpoint": { "feedbackToken": "T2" } } ] } } } } ] } } } } } } } } } } }))
+        ] } } } });
+        let actions = from_panel(&panel);
+        let labels: Vec<&str> = actions.iter().map(|a| a.label.as_str()).collect();
+        assert_eq!(
+            labels,
+            [
+                "Save to Watch later",
+                "Not interested",
+                "Don't recommend channel"
+            ]
+        );
+        assert!(
+            matches!(&actions[0].kind, ActionKind::EditPlaylist { playlist_id, .. } if playlist_id == "WL")
+        );
+        assert_eq!(
+            actions[1].kind,
+            ActionKind::Feedback {
+                token: "T1".into(),
+                confirm: None
+            }
+        );
+        assert!(
+            matches!(&actions[2].kind, ActionKind::Feedback { token, confirm: Some(_) } if token == "T2")
+        );
+    }
+
+    #[test]
+    fn knows_when_the_menu_comes_on_request() {
+        let tile = json!({ "onLongPressCommand": { "showEngagementPanelEndpoint": {
+            "identifier": { "tag": "PAcontext_menu" }, "globalConfiguration": { "params": "P1" } } } });
+        assert_eq!(menu_params(&tile).as_deref(), Some("P1"));
+        assert_eq!(menu_params(&json!({})), None);
     }
 
     #[test]

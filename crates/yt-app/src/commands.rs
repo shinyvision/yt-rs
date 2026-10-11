@@ -86,8 +86,80 @@ pub fn register(this: &Rc<App>) {
     });
 
     c.register("video.play", |args| {
-        playback::play(video_arg(&args)?, args.get("start").and_then(Value::as_f64));
+        let video = video_arg(&args)?;
+        // A video of a playlist's page plays the playlist from it.
+        if let (Some(playlist_id), Some(index)) = (
+            args.pointer("/video/playlist_id").and_then(Value::as_str),
+            args.pointer("/video/playlist_index")
+                .and_then(Value::as_u64),
+        ) {
+            crate::lists::play_playlist(playlist_id, Some(index as usize), false);
+            return Ok(Value::Null);
+        }
+        playback::play(video, args.get("start").and_then(Value::as_f64));
         Ok(Value::Null)
+    });
+    // Lists: a playlist, or the queue (see `lists`).
+    c.register("playlist.play", |args| {
+        let playlist_id = str_arg(&args, "playlist_id")?;
+        let index = args
+            .get("index")
+            .and_then(Value::as_u64)
+            .map(|i| i as usize);
+        let shuffle = args
+            .get("shuffle")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
+        crate::lists::play_playlist(playlist_id, index, shuffle);
+        Ok(Value::Null)
+    });
+    c.register("queue.add", |args| {
+        crate::lists::add_to_queue(video_arg(&args)?);
+        Ok(Value::Null)
+    });
+    c.register("list.current", |_| Ok(json!(crate::lists::current())));
+    c.register("list.next", |_| crate::lists::next().map(|()| Value::Null));
+    c.register("list.previous", |_| {
+        crate::lists::previous().map(|()| Value::Null)
+    });
+    c.register("list.play_at", |args| {
+        let position = args
+            .get("position")
+            .and_then(Value::as_u64)
+            .ok_or("no position")?;
+        crate::lists::play_at(position as usize).map(|()| Value::Null)
+    });
+    c.register("list.set_looping", |args| {
+        crate::lists::set_looping(args.get("looping").and_then(Value::as_bool).unwrap_or(true));
+        Ok(Value::Null)
+    });
+    c.register("list.set_shuffled", |args| {
+        crate::lists::set_shuffled(
+            args.get("shuffled")
+                .and_then(Value::as_bool)
+                .unwrap_or(true),
+        );
+        Ok(Value::Null)
+    });
+    c.register("list.remove", |args| {
+        let position = args
+            .get("position")
+            .and_then(Value::as_u64)
+            .ok_or("no position")?;
+        crate::lists::remove(position as usize);
+        Ok(Value::Null)
+    });
+    c.register("list.clear", |_| {
+        crate::lists::clear();
+        Ok(Value::Null)
+    });
+    // The video's ⋮ menu, as `{ label, icon, command, args, confirm? }`.
+    // YouTube's own items for some videos come on request: they are asked
+    // for here, and `video.menu_loaded` says when the menu has them.
+    c.register("video.menu", |args| {
+        let video = args.get("video").cloned().ok_or("no video")?;
+        crate::ui::video_input::load_actions(&video, || {});
+        Ok(crate::ui::video_input::menu_items(&video))
     });
     c.register("video.prefetch", |args| {
         app().streams.prefetch(&video_arg(&args)?.id);

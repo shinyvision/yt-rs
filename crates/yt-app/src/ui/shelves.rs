@@ -90,29 +90,78 @@ fn fill(shelves: &Rc<Shelves>, props: &Value) {
 
 fn add(shelves: &Shelves, page: FeedPage) {
     *shelves.continuation.borrow_mut() = page.continuation;
-    for shelf in page.shelves.into_iter().filter(|s| !s.videos.is_empty()) {
-        shelves.column.append(&row(shelves, shelf));
+    for shelf in page.shelves {
+        if let Some(row) = shelf_row(shelf, shelves.on_channel) {
+            shelves.column.append(&row);
+        }
     }
 }
 
-/// A shelf: its title over its row of cards.
-fn row(shelves: &Shelves, shelf: Shelf) -> gtk::Widget {
-    let title = gtk::Label::new(Some(&shelf.title));
-    title.add_css_class("shelf-title");
-    title.set_xalign(0.0);
-    title.set_visible(!shelf.title.is_empty());
+/// A shelf as a row: its videos, or its playlists; none if it has neither.
+fn shelf_row(shelf: Shelf, on_channel: bool) -> Option<gtk::Widget> {
+    let items = if !shelf.videos.is_empty() {
+        Items::Videos(shelf.videos)
+    } else if !shelf.playlists.is_empty() {
+        Items::Playlists(shelf.playlists)
+    } else {
+        return None;
+    };
+    Some(row(&shelf.title, items, on_channel, None))
+}
+
+/// What a row shows.
+pub enum Items {
+    Videos(Vec<yt_core::feed::Video>),
+    Playlists(Vec<yt_core::playlist::Playlist>),
+}
+
+/// A titled row of cards that scrolls sideways; `link` (a page and its
+/// arguments) adds "View all" beside the title.
+pub fn row(
+    title: &str,
+    items: Items,
+    on_channel: bool,
+    link: Option<(&str, Value)>,
+) -> gtk::Widget {
+    let heading = gtk::Label::new(Some(title));
+    heading.add_css_class("shelf-title");
+    heading.set_xalign(0.0);
+    heading.set_hexpand(true);
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    header.add_css_class("shelf-header");
+    header.append(&heading);
+    header.set_visible(!title.is_empty());
+    if let Some((page, args)) = link {
+        let all = gtk::Button::with_label("View all");
+        all.add_css_class("pill-button");
+        all.add_css_class("outline");
+        all.set_valign(gtk::Align::Center);
+        let page = page.to_owned();
+        all.connect_clicked(move |_| {
+            app().navigate(&page, args.clone(), true);
+        });
+        header.append(&all);
+    }
 
     let model = gtk::gio::ListStore::new::<glib::BoxedAnyObject>();
-    for video in shelf.videos {
-        model.append(&glib::BoxedAnyObject::new(video));
-    }
-    let list = gtk::ListView::new(
-        Some(gtk::NoSelection::new(Some(model))),
-        Some(super::feed::card_factory(
-            json!({ "layout": "shelf" }),
-            json!({ "on_channel": shelves.on_channel }),
-        )),
-    );
+    let factory = match items {
+        Items::Videos(videos) => {
+            for video in videos {
+                model.append(&glib::BoxedAnyObject::new(video));
+            }
+            super::feed::card_factory(
+                json!({ "layout": "shelf" }),
+                json!({ "on_channel": on_channel }),
+            )
+        }
+        Items::Playlists(playlists) => {
+            for playlist in playlists {
+                model.append(&glib::BoxedAnyObject::new(playlist));
+            }
+            super::playlist_card::factory(json!({ "layout": "shelf" }))
+        }
+    };
+    let list = gtk::ListView::new(Some(gtk::NoSelection::new(Some(model))), Some(factory));
     list.set_orientation(gtk::Orientation::Horizontal);
     list.add_css_class("shelf-row");
     list.set_can_focus(false);
@@ -127,7 +176,7 @@ fn row(shelves: &Shelves, shelf: Shelf) -> gtk::Widget {
 
     let shelf_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     shelf_box.add_css_class("shelf");
-    shelf_box.append(&title);
+    shelf_box.append(&header);
     shelf_box.append(&overlay);
     shelf_box.upcast()
 }

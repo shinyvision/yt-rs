@@ -157,12 +157,25 @@ pub fn play(video: Video, start: Option<f64>) {
     app().navigate("watch", json!({ "video": video }), true);
 }
 
+/// Plays a video where the player is: on the watch page if that is shown,
+/// otherwise in the mini player, without leaving the page.
+pub fn play_here(video: Video) {
+    if app().current_page().as_deref() == Some("watch") {
+        play(video, None);
+    } else {
+        SHOWN.with(|s| s.borrow_mut().take());
+        START.with(|s| s.borrow_mut().take());
+        start(video);
+    }
+}
+
 /// Starts the video the watch page now shows, unless it already did.
 fn start(video: Video) {
     if SHOWN.with(|s| s.borrow().as_deref() == Some(video.id.as_str())) {
         return;
     }
     SHOWN.with(|s| *s.borrow_mut() = Some(video.id.clone()));
+    crate::lists::started(&video.id);
     cancel_up_next();
     UP_NEXT.with(|u| u.borrow_mut().clear());
     let start = START
@@ -327,15 +340,22 @@ pub fn expand() -> Result<(), String> {
     Ok(())
 }
 
-/// The video after the one shown, if YouTube suggested any.
+/// The video after the one shown: the next in the list playing (a
+/// playlist, the queue), or else YouTube's first suggestion.
 pub fn up_next() -> Option<Video> {
+    if crate::lists::playing() {
+        return crate::lists::next_video();
+    }
     UP_NEXT.with(|u| u.borrow().first().cloned())
 }
 
-/// Plays the next video.
+/// Plays the next video, where the player is.
 pub fn next() -> Result<(), String> {
+    if crate::lists::playing() {
+        return crate::lists::next();
+    }
     let video = up_next().ok_or("there is no next video")?;
-    play(video, None);
+    play_here(video);
     Ok(())
 }
 
@@ -359,7 +379,17 @@ fn ended(state: &PlayerState) {
         app().toast("Sleep timer: paused at the end of the video");
         return;
     }
-    if state.looping || !app().settings.get().autoplay {
+    if state.looping {
+        return;
+    }
+    // A list plays on at once, autoplay or not, as on youtube.com.
+    if crate::lists::playing() {
+        if let Err(e) = crate::lists::next() {
+            tracing::info!("end of the list: {e}");
+        }
+        return;
+    }
+    if !app().settings.get().autoplay {
         return;
     }
     let Some(video) = up_next() else { return };

@@ -114,6 +114,8 @@ To try one: `ln -s "$PWD/examples/plugins/snake" ~/.config/yt-rs/plugins/`.
 | `YT_RS_CACHE_DIR` | `~/.cache/yt-rs` | thumbnails |
 | `YT_RS_APP_ID` | `dev.ytrs.YtRs` | the app ID, which is also the window's class: another one lets window-manager rules tell an instance apart |
 | `YT_RS_LOG` | `warn,yt_app=info,yt_core=info` | log filter (`tracing` syntax) |
+| `YT_RS_MPV_LOG` | `warn` | how much of mpv's own log to pass on (`v`, `debug`, `trace`; shown with `YT_RS_LOG=mpv=debug`) |
+| `YT_RS_DRY_RUN` | unset | `1`: nothing that would change the account is sent (rating, subscribing, playlists, comments, "Not interested"); the app acts as if it had |
 | `GSK_RENDERER` | `gl` | GTK's renderer |
 
 ## Performance

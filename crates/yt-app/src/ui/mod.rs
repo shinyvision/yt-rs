@@ -14,14 +14,19 @@ pub mod cursor;
 pub mod dialog;
 pub mod feed;
 pub mod icons;
+pub mod library;
+pub mod list_panel;
 pub mod logo;
 pub mod menu;
 pub mod mini_player;
 pub mod player_dock;
 pub mod player_settings;
 pub mod player_view;
+pub mod playlist_card;
+pub mod playlist_page;
 pub mod preview;
 pub mod richtext;
+pub mod save_dialog;
 pub mod scroll_arrows;
 pub mod search;
 pub mod search_box;
@@ -76,6 +81,21 @@ pub fn register(app: &App) {
     c.define("player", Component::new(player_view::build));
     c.define("mini_player", Component::new(mini_player::build));
     c.define("toast", Component::new(toast::build));
+    c.define("save_dialog", Component::new(save_dialog::build));
+    c.define(
+        "playlist_card",
+        Component::new(playlist_card::build).with_update(playlist_card::update),
+    );
+    c.define(
+        "playlist",
+        Component::new(playlist_page::build).with_update(playlist_page::update),
+    );
+    c.define("library", Component::new(library::build_library));
+    c.define("list_panel", Component::new(list_panel::build));
+    c.define(
+        "playlists",
+        Component::new(library::build_playlists).with_update(library::update_playlists),
+    );
     c.define("player_controls", Component::new(controls::build));
     c.define("player_settings", Component::new(player_settings::build));
     c.define("signin", Component::new(signin::build));
@@ -164,6 +184,19 @@ pub fn register(app: &App) {
         args: Value::Null,
         keep: true,
     });
+    for (name, title, keep) in [
+        ("playlist", "Playlist", true),
+        ("library", "You", false),
+        ("playlists", "Playlists", false),
+    ] {
+        pages.register(Page {
+            name: name.into(),
+            title: title.into(),
+            component: None,
+            args: Value::Null,
+            keep,
+        });
+    }
     pages.register(Page {
         name: "signin".into(),
         title: "Sign in".into(),
@@ -196,6 +229,33 @@ pub fn register(app: &App) {
         0,
         "library",
     ));
+    pages.add_nav(nav(
+        "playlists",
+        "Playlists",
+        "yt-playlist-symbolic",
+        10,
+        "library",
+    ));
+    for (id, title, icon, list, order) in [
+        (
+            "watch_later",
+            "Watch later",
+            "yt-watch-later-symbolic",
+            "WL",
+            20,
+        ),
+        ("liked", "Liked videos", "yt-like-symbolic", "LL", 30),
+    ] {
+        pages.add_nav(NavItem {
+            id: id.into(),
+            title: title.into(),
+            icon: icon.into(),
+            page: "playlist".into(),
+            args: json!({ "playlist_id": list }),
+            order,
+            section: "library".into(),
+        });
+    }
 }
 
 /// Calls `handler` on every `event` for as long as `widget` exists.

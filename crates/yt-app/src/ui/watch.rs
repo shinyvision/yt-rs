@@ -144,13 +144,20 @@ pub fn build(props: &Value) -> gtk::Widget {
     related.set_widget_name("watch-related");
     related.set_valign(gtk::Align::Start);
 
+    // The list playing (a playlist, the queue) goes above "Up next".
+    let side = gtk::Box::new(gtk::Orientation::Vertical, 16);
+    side.append(&app.ext.components.build("list_panel", &Value::Null));
+    side.append(&related);
     // Long titles would make it as wide as they are.
     let related_column = adw::Clamp::builder()
-        .child(&related)
+        .child(&side)
         .maximum_size(RELATED_WIDTH)
         .tightening_threshold(RELATED_WIDTH)
         .valign(gtk::Align::Start)
         .build();
+    // Never wider than "Up next" is: what expands inside (the list panel's
+    // rows) mustn't take width from the player.
+    related_column.set_hexpand(false);
 
     // The player itself moves between these and the mini player.
     let frame = AspectBin::empty(9.0 / 16.0);
@@ -251,6 +258,12 @@ fn connect(watch: &Rc<Watch>, root: &adw::BreakpointBin) {
     arrange(watch);
 
     // The player's size follows the view's.
+    let weak = Rc::downgrade(watch);
+    watch.scroller.connect_map(move |_| {
+        if let Some(watch) = weak.upgrade() {
+            fit_player(&watch);
+        }
+    });
     for adjustment in [watch.scroller.vadjustment(), watch.scroller.hadjustment()] {
         let weak = Rc::downgrade(watch);
         adjustment.connect_changed(move |_| {
@@ -431,8 +444,12 @@ fn show_related(watch: &Watch, page: &WatchPage) {
 /// the window is short and wide); in theater mode, full width and no taller
 /// than the view less a little; the whole view in fullscreen.
 fn fit_player(watch: &Watch) {
-    let view = watch.scroller.vadjustment().page_size() as i32;
-    let width = watch.scroller.hadjustment().page_size() as i32;
+    // The scroller's own size: its adjustments pass through odd values
+    // while the page refills, which would flash a small player.
+    if !watch.scroller.is_mapped() {
+        return;
+    }
+    let (width, view) = (watch.scroller.width(), watch.scroller.height());
     if view <= 0 || width <= 0 {
         return;
     }

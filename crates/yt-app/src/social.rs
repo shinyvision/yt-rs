@@ -473,7 +473,7 @@ fn comment_text(args: &Value) -> Result<String, String> {
 }
 
 /// Runs `make(youtube)` on the tokio runtime.
-async fn app_youtube<T, F>(
+pub(crate) async fn app_youtube<T, F>(
     make: impl FnOnce(std::sync::Arc<yt_core::innertube::InnerTube>) -> F + Send + 'static,
 ) -> Result<T, String>
 where
@@ -487,7 +487,7 @@ where
 }
 
 /// Runs `work` on the main loop and hands its result to `done`.
-fn run<T: 'static>(
+pub(crate) fn run<T: 'static>(
     work: impl Future<Output = Result<T, String>> + 'static,
     done: impl FnOnce(Result<T, String>) + 'static,
 ) {
@@ -496,7 +496,7 @@ fn run<T: 'static>(
 
 /// Emits `event` with `context` and the result's fields, or
 /// `<event>.failed` with `context` and the error (and shows it).
-fn outcome(event: &str, context: Value, result: Result<Value, String>) {
+pub(crate) fn outcome(event: &str, context: Value, result: Result<Value, String>) {
     match result {
         Ok(fields) => {
             let mut payload = context;

@@ -19,7 +19,14 @@ async fn main() -> yt_core::Result<()> {
     ));
     let api = InnerTube::new(http, session);
     for p in api.playlists().await? {
-        println!("{} | {} | {:?} | {:?} | picture {}", p.id, p.title, p.count, p.details, p.thumbnail.is_some());
+        println!(
+            "{} | {} | {:?} | {:?} | picture {}",
+            p.id,
+            p.title,
+            p.count,
+            p.details,
+            p.thumbnail.is_some()
+        );
     }
     let page = api.playlist(&playlist_id).await?;
     println!(
@@ -36,16 +43,25 @@ async fn main() -> yt_core::Result<()> {
     );
     for v in page.videos.iter().take(3) {
         let actions: Vec<&str> = v.actions.iter().map(|a| a.label.as_str()).collect();
-        println!("   {} | {} | {:?} | {:?}", v.id, v.title, v.duration, actions);
+        println!(
+            "   {} | {} | {:?} | {:?}",
+            v.id, v.title, v.duration, actions
+        );
     }
     if let Some(token) = &page.continuation {
         let more = api.continuation(token).await?;
         let n: usize = more.shelves.iter().map(|s| s.videos.len()).sum();
-        println!("   + {n} more videos, more after: {}", more.continuation.is_some());
+        println!(
+            "   + {n} more videos, more after: {}",
+            more.continuation.is_some()
+        );
     }
     println!("\nsave {video_id} to:");
     for o in api.save_options(&video_id).await? {
-        println!("   {} | {} | {:?} | holds it: {}", o.playlist_id, o.title, o.privacy, o.contains);
+        println!(
+            "   {} | {} | {:?} | holds it: {}",
+            o.playlist_id, o.title, o.privacy, o.contains
+        );
     }
     Ok(())
 }

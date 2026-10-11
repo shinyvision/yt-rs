@@ -13,6 +13,10 @@ E2E_SHOTS=/tmp/yt-rs-shots YT_RS_CONFIG_DIR="$E" YT_RS_APP_ID=dev.ytrs.YtRsTest 
   G_DEBUG=fatal-criticals ./target/release/yt-rs
 ```
 
+`YT_RS_DRY_RUN=1` sends nothing that would change the account (rating,
+subscribing, playlists, comments, feedback): the app acts as if it had. The
+`playlists` test needs it.
+
 `YT_RS_APP_ID` gives the test window its own class, so a window-manager
 rule can move it out of the way without catching a yt-rs you're using. The
 plugins are silent (mpv's null audio output, muted) and don't report

@@ -18,6 +18,8 @@ fn main() {
                 "   {} | {:.50} | {:?} | {:?} | {:?} | progress {:?}",
                 v.id, v.title, v.channel, v.published, v.duration, v.progress
             );
+            let actions: Vec<&str> = v.actions.iter().map(|a| a.label.as_str()).collect();
+            println!("      actions: {actions:?}");
         }
     }
     println!(

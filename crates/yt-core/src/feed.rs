@@ -37,6 +37,10 @@ pub struct Video {
     /// interested", ...), from the tile's menu.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub actions: Vec<crate::actions::VideoAction>,
+    /// For a tile whose menu YouTube sends on request: what to ask for
+    /// ([`crate::innertube::InnerTube::video_actions`]).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub menu: Option<String>,
 }
 
 impl Video {
@@ -224,6 +228,7 @@ fn from_tile(tile: &Value) -> Option<Video> {
     ));
     video.live = video.duration.as_deref() == Some("LIVE");
     video.actions = crate::actions::from_tile(tile);
+    video.menu = crate::actions::menu_params(tile);
     (!video.title.is_empty()).then_some(video)
 }
 

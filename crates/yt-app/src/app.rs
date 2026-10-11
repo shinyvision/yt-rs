@@ -88,6 +88,11 @@ impl App {
             yt_core::paths::token_file(),
         ));
         let youtube = Arc::new(InnerTube::new(http.clone(), session.clone()));
+        // YT_RS_DRY_RUN=1: nothing that would change the account is sent.
+        if std::env::var_os("YT_RS_DRY_RUN").is_some_and(|v| v != "0") {
+            tracing::warn!("dry run: changes to the account are not sent");
+            youtube.set_dry_run(true);
+        }
         let streams = Arc::new(Resolver::new(
             youtube.clone(),
             ResolverOptions::default(),
@@ -138,6 +143,7 @@ impl App {
         ui::cursor::install();
         commands::register(&app);
         social::register(&app);
+        crate::playlists::register(&app);
         search::register(&app);
         ui::register(&app);
         step("theme, commands, components");

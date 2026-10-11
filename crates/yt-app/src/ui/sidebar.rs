@@ -70,7 +70,7 @@ pub fn build(props: &Value) -> gtk::Widget {
             .and_then(Value::as_str)
             .unwrap_or_default();
         if let Some(items) = weak.upgrade() {
-            highlight(&items, page);
+            highlight(&items, page, payload.get("args").unwrap_or(&Value::Null));
         }
     });
     sidebar.upcast()
@@ -82,25 +82,59 @@ fn fill(items: &gtk::Box, mini: bool) {
         items.remove(&child);
     }
     let nav = app().ext.pages.nav();
-    let mut section = String::new();
-    for item in &nav {
-        if item.section != section {
-            if !section.is_empty() {
-                items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
-            }
-            if item.section == "library" && !mini {
-                let title = gtk::Label::new(Some("You"));
-                title.set_xalign(0.0);
-                title.add_css_class("section-title");
-                items.append(&title);
-            }
-            section = item.section.clone();
+    // The rail is youtube.com's: the main pages, then "You".
+    if mini {
+        for item in nav.iter().filter(|i| i.section == "main") {
+            items.append(&nav_button(item, mini));
         }
-        items.append(&nav_button(item, mini));
+        items.append(&nav_button(&you(), mini));
+    } else {
+        let mut section = String::new();
+        for item in &nav {
+            if item.section != section {
+                if !section.is_empty() {
+                    items.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+                }
+                if item.section == "library" {
+                    items.append(&you_heading());
+                }
+                section = item.section.clone();
+            }
+            items.append(&nav_button(item, mini));
+        }
     }
     if let Some(page) = app().current_page() {
-        highlight(items, &page);
+        highlight(items, &page, &app().current_args().unwrap_or_default());
     }
+}
+
+/// The "You" page's entry.
+fn you() -> NavItem {
+    NavItem {
+        id: "library".into(),
+        title: "You".into(),
+        icon: "yt-library-symbolic".into(),
+        page: "library".into(),
+        args: Value::Null,
+        order: 0,
+        section: "library".into(),
+    }
+}
+
+/// "You ›", which opens the "You" page, over the user's own pages.
+fn you_heading() -> gtk::Button {
+    let content = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let title = gtk::Label::new(Some("You"));
+    title.add_css_class("section-title");
+    content.append(&title);
+    content.append(&gtk::Image::from_icon_name("yt-chevron-right-symbolic"));
+    let button = gtk::Button::builder()
+        .child(&content)
+        .css_classes(["nav-item", "section-link"])
+        .build();
+    button.set_widget_name("nav:library");
+    button.connect_clicked(|_| app().navigate("library", Value::Null, true));
+    button
 }
 
 fn nav_button(item: &NavItem, mini: bool) -> gtk::Button {
@@ -145,12 +179,25 @@ fn nav_button(item: &NavItem, mini: bool) -> gtk::Button {
     button
 }
 
-fn highlight(items: &gtk::Box, page: &str) {
-    let nav = app().ext.pages.nav();
+/// Marks the entry for the page shown: the same page, and (for entries with
+/// arguments, as Watch later and Liked videos are both playlists) the same
+/// arguments.
+fn highlight(items: &gtk::Box, page: &str, args: &Value) {
+    let mut nav = app().ext.pages.nav();
+    nav.push(you());
+    let matches = |item: &NavItem| {
+        item.page == page
+            && item.args.as_object().is_none_or(|wanted| {
+                wanted
+                    .iter()
+                    .all(|(key, value)| args.get(key) == Some(value))
+            })
+    };
     let mut child = items.first_child();
     while let Some(w) = child {
         if let Some(id) = w.widget_name().strip_prefix("nav:") {
-            let current = nav.iter().any(|i| i.id == id && i.page == page);
+            let current =
+                !w.has_css_class("section-link") && nav.iter().any(|i| i.id == id && matches(i));
             if current {
                 w.add_css_class("current");
             } else {
