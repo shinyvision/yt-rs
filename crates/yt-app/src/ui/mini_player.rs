@@ -18,11 +18,13 @@ use super::follow;
 use crate::app::app;
 use crate::player::{PlayerEvent, PlayerState};
 
-/// youtube.com's size.
+/// youtube.com's size; smaller on a narrow window.
 const WIDTH: i32 = 400;
+const NARROW_WIDTH: i32 = 320;
 
 struct Mini {
     root: gtk::Box,
+    frame: AspectBin,
     title: gtk::Label,
     channel: gtk::Label,
     play: gtk::Button,
@@ -142,6 +144,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
 
     let mini = Rc::new(Mini {
         root: root.clone(),
+        frame: frame.clone(),
         title,
         channel,
         play,
@@ -154,6 +157,15 @@ pub fn build(_props: &Value) -> gtk::Widget {
 }
 
 fn connect(mini: &Rc<Mini>) {
+    let weak = Rc::downgrade(mini);
+    follow(&mini.root, "shell.layout", move |payload| {
+        if let Some(mini) = weak.upgrade() {
+            let narrow = payload.get("size").and_then(Value::as_str) == Some("narrow");
+            let width = if narrow { NARROW_WIDTH } else { WIDTH };
+            mini.frame.set_natural_width(width);
+            mini.frame.set_size_request(width, -1);
+        }
+    });
     let weak = Rc::downgrade(mini);
     follow(&mini.root, "player.docked", move |payload| {
         if let Some(mini) = weak.upgrade() {

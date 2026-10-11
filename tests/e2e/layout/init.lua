@@ -9,8 +9,17 @@ local function shot(name) n = n + 1; app.screenshot(string.format("%s/%s%02d-%s.
 local steps = {
   { 6000, function() shot("home") end },
   { 100, function() app.run("sidebar.toggle") end },
-  { 900, function() shot("home-toggled") end },
+  { 900, function()
+      local drawer = app.find("sidebar-drawer")
+      log("toggled: rail", tostring(app.find("sidebar-mini"):mapped()), "| docked", tostring(app.find("sidebar"):mapped()),
+        "| drawer", tostring(drawer and drawer:mapped()))
+      shot("home-toggled")
+    end },
   { 100, function() app.run("sidebar.toggle") end },
+  { 400, function()
+      app.toast("Saved to Watch later", { action = { label = "Undo", command = "app.dismiss_toast" } })
+    end },
+  { 600, function() shot("toast") end },
   { 600, function() app.run("video.play", { video = { id = "dQw4w9WgXcQ" }, start = 30 }) end },
   { 8000, function() shot("watch") end },
   { 100, function() app.run("sidebar.toggle") end },

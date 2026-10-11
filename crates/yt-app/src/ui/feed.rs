@@ -540,7 +540,9 @@ fn select_from_event(weak: &Weak<Feed>, payload: &Value) {
 }
 
 /// The `chip_bar` component: a row of chips. Clicking one emits `event`
-/// (`feed.chip_selected` by default) with `{ browse_id, index }`.
+/// (`feed.chip_selected` by default) with `{ browse_id, index }`. A row
+/// wider than the bar fades out at its ends, with a button there that
+/// scrolls it, as on youtube.com.
 pub fn build_chip_bar(props: &Value) -> gtk::Widget {
     let event = props
         .get("event")
@@ -586,8 +588,67 @@ pub fn build_chip_bar(props: &Value) -> gtk::Widget {
         .vscrollbar_policy(gtk::PolicyType::Never)
         .hscrollbar_policy(gtk::PolicyType::External)
         .build();
-    scroller.set_widget_name("chip-bar");
-    scroller.upcast()
+    let bar = gtk::Overlay::new();
+    bar.set_child(Some(&scroller));
+    bar.set_widget_name("chip-bar");
+    let adjustment = scroller.hadjustment();
+    let arrows: Vec<(gtk::Box, f64)> = [
+        ("yt-chevron-left-symbolic", "start", gtk::Align::Start, -1.0),
+        ("yt-chevron-right-symbolic", "end", gtk::Align::End, 1.0),
+    ]
+    .into_iter()
+    .map(|(icon, side, align, direction)| {
+        let button = gtk::Button::from_icon_name(icon);
+        button.add_css_class("chip-arrow");
+        button.set_valign(gtk::Align::Center);
+        let (scroller, adjustment) = (scroller.downgrade(), adjustment.clone());
+        button.connect_clicked(move |_| {
+            let Some(scroller) = scroller.upgrade() else {
+                return;
+            };
+            let from = adjustment.value();
+            let to = (from + direction * adjustment.page_size() * 0.8).clamp(
+                adjustment.lower(),
+                adjustment.upper() - adjustment.page_size(),
+            );
+            let target = adjustment.clone();
+            let animation = adw::TimedAnimation::new(
+                &scroller,
+                from,
+                to,
+                250,
+                adw::CallbackAnimationTarget::new(move |v| target.set_value(v)),
+            );
+            animation.set_easing(adw::Easing::EaseOutCubic);
+            adw::prelude::AnimationExt::play(&animation);
+        });
+        let fade = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        fade.add_css_class("chip-fade");
+        fade.add_css_class(side);
+        fade.set_halign(align);
+        fade.append(&button);
+        fade.set_visible(false);
+        bar.add_overlay(&fade);
+        (fade, direction)
+    })
+    .collect();
+    let show_arrows = move |adjustment: &gtk::Adjustment| {
+        let (value, end) = (
+            adjustment.value(),
+            adjustment.upper() - adjustment.page_size(),
+        );
+        for (fade, direction) in &arrows {
+            fade.set_visible(if *direction < 0.0 {
+                value > 1.0
+            } else {
+                value < end - 1.0
+            });
+        }
+    };
+    let show = show_arrows.clone();
+    adjustment.connect_changed(move |a| show(a));
+    adjustment.connect_value_changed(move |a| show_arrows(a));
+    bar.upcast()
 }
 
 /// Makes the grid's cards through the `video_card` component, refilling

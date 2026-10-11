@@ -169,6 +169,7 @@ app.emit("my_plugin.something", { any = "data" })   -- plugins can define events
 | `watch.tracking` | `{ enabled }` |
 | `window.fullscreen` | `{ fullscreen }` |
 | `sidebar.toggled` | `{ mini, drawer }`: the docked guide is now its rail of icons (`mini`), or the drawer is open (`drawer`) |
+| `shell.layout` | `{ size, docked, mini }`: the window layout changed: `size` is `"wide"` (1313 px and up), `"medium"` or `"narrow"` (under 792 px); `docked` whether the guide is beside the pages (not on the watch page, nor in fullscreen), `mini` whether as its rail |
 | `auth.signed_in`, `auth.signed_out` | |
 | `account.loaded` | `{ account = { name, handle, photo } }`: the signed-in user |
 | `watch.loaded` | `{ video_id, page }`: a video's details (`title`, `views`, `published`, `likes`, `vote`, `description`, `chapters = { { start, title, thumbnail? } }`, `owner`, `subscription`, `comments = { count, sorts }`, `related`) |
@@ -257,7 +258,8 @@ app.commands()                     -- all names
 | `app.navigate` | `{ page, args? }` |
 | `app.back`, `app.forward` | go back or forward through the pages visited (the arrows, Alt+← / Alt+→ and the mouse's side buttons run these) |
 | `app.quit`, `app.plugins` (loaded plugin names) | |
-| `app.toast` | `{ message }` |
+| `app.toast` | `{ message, action?, seconds? }`: a toast in the bottom-left corner; `action = { label, command, args? }` adds a button ("Undo") that runs the command |
+| `app.dismiss_toast` | hides the toast showing |
 | `app.screenshot` | `{ path }`, a PNG of the window after the next frame |
 | `sidebar.toggle`, `window.toggle_fullscreen` | |
 | `window.fullscreen` | `{ fullscreen }` |
@@ -365,6 +367,7 @@ app.components()
 | `sidebar` | `{ mini? }`: YouTube's guide; with `mini`, its rail of icons |
 | `topbar` | |
 | `mini_player` | the video in the bottom-right corner while another page shows; the player itself moves into it |
+| `toast` | `{ message, action?, seconds? }`: a toast's content |
 | `feed` | `{ browse_id, params?, untitled?, refresh_on_show?, page? }`: a feed page. `params` picks a channel tab; `page` is a first page to show instead of loading it |
 | `chip_bar` | `{ chips, selected, browse_id?, event? }`: clicking a chip emits `event` (`feed.chip_selected` by default) with `{ browse_id, index }` |
 | `video_card` | a video |
@@ -472,7 +475,8 @@ and `slot:<name>` for slots.
 | `app.timer(ms, fn, repeat?)` → `t:cancel()` | `fn` returning `false` stops a repeating timer |
 | `app.now()` | seconds, with fractions, on a clock that only goes forward: for measuring how long something takes |
 | `app.idle(fn)` | |
-| `app.toast(message)`, `app.log(...)` | |
+| `app.toast(message, options?)` | `options` as for the `app.toast` command: `{ action = { label, command, args }, seconds }` |
+| `app.log(...)` | |
 | `app.screenshot(path)` | |
 | `app.json.encode(v)`, `app.json.decode(s)`, `app.array(t)` | |
 | `app.paths.config`, `.cache`, `.plugins` | |

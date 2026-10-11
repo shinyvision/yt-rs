@@ -32,6 +32,7 @@ pub mod sidebar;
 pub mod signin;
 pub mod split;
 pub mod subscribe;
+pub mod toast;
 pub mod topbar;
 pub mod video;
 pub mod video_input;
@@ -68,6 +69,7 @@ pub fn register(app: &App) {
     );
     c.define("player", Component::new(player_view::build));
     c.define("mini_player", Component::new(mini_player::build));
+    c.define("toast", Component::new(toast::build));
     c.define("player_controls", Component::new(controls::build));
     c.define("player_settings", Component::new(player_settings::build));
     c.define("signin", Component::new(signin::build));

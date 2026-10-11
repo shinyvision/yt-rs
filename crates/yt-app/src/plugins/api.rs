@@ -449,8 +449,14 @@ fn install_services(lua: &Lua, t: &Table) -> mlua::Result<()> {
     )?;
     t.set(
         "toast",
-        lua.create_function(|_, message: String| {
-            app().toast(&message);
+        lua.create_function(|lua, (message, options): (String, Option<mlua::Table>)| {
+            // app.toast(message, { action = { label, command, args }, seconds })
+            let mut props = match options {
+                Some(options) => super::convert::lua_to_json(lua, mlua::Value::Table(options))?,
+                None => serde_json::json!({}),
+            };
+            props["message"] = message.into();
+            app().toast_with(&props);
             Ok(())
         })?,
     )?;

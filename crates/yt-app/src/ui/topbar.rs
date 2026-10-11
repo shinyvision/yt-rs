@@ -9,8 +9,9 @@ use super::follow;
 use super::logo::LogoMark;
 use crate::app::app;
 
-pub fn build(_props: &Value) -> gtk::Widget {
-    let app = app();
+/// The menu button (☰) and the logo, which start the top bar and the
+/// sidebar's drawer.
+pub fn menu_and_logo() -> gtk::Box {
     // A glyph rather than an icon, since icon themes draw "menu" differently.
     let menu = gtk::Button::with_label("☰");
     menu.add_css_class("icon-button");
@@ -30,6 +31,14 @@ pub fn build(_props: &Value) -> gtk::Widget {
         .build();
     logo.set_tooltip_text(Some("Home"));
     logo.connect_clicked(|_| run("app.navigate", json!({ "page": "home" })));
+    let both = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    both.append(&menu);
+    both.append(&logo);
+    both
+}
+
+pub fn build(_props: &Value) -> gtk::Widget {
+    let app = app();
 
     let back = nav_button("go-previous-symbolic", "Back (Alt+←)", "app.back");
     let forward = nav_button("go-next-symbolic", "Forward (Alt+→)", "app.forward");
@@ -47,8 +56,7 @@ pub fn build(_props: &Value) -> gtk::Widget {
     });
 
     let start = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    start.append(&menu);
-    start.append(&logo);
+    start.append(&menu_and_logo());
     start.append(&history);
     start.append(
         &app.ext

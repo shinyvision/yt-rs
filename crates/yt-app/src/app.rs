@@ -61,7 +61,7 @@ pub struct App {
     pub settings: Rc<SettingsStore>,
     pub search_history: Rc<SearchHistory>,
     window: OnceCell<adw::ApplicationWindow>,
-    toasts: adw::ToastOverlay,
+    toasts: crate::ui::toast::Toaster,
     page_host: gtk::Stack,
     nav: RefCell<NavState>,
     plugins: OnceCell<PluginHost>,
@@ -121,7 +121,7 @@ impl App {
             settings: SettingsStore::load(),
             search_history: SearchHistory::load(),
             window: OnceCell::new(),
-            toasts: adw::ToastOverlay::new(),
+            toasts: crate::ui::toast::Toaster::new(),
             page_host,
             nav: RefCell::default(),
             plugins: OnceCell::new(),
@@ -184,8 +184,8 @@ impl App {
         window.add_css_class("yt-window");
         window.set_widget_name("main-window");
         self.toasts
-            .set_child(Some(&self.ext.components.build("shell", &Value::Null)));
-        window.set_content(Some(&self.toasts));
+            .set_child(&self.ext.components.build("shell", &Value::Null));
+        window.set_content(Some(self.toasts.widget()));
         window.add_controller(crate::commands::key_controller());
         window.add_controller(crate::commands::mouse_controller());
         window.connect_fullscreened_notify(|w| {
@@ -219,10 +219,19 @@ impl App {
         self.page_host.clone()
     }
 
+    /// Shows a message in a toast.
     pub fn toast(&self, message: &str) {
-        let toast = adw::Toast::new(message);
-        toast.set_timeout(4);
-        self.toasts.add_toast(toast);
+        self.toasts.show(&serde_json::json!({ "message": message }));
+    }
+
+    /// Shows a toast with the `toast` component's properties: a message,
+    /// and maybe an action (`{ label, command, args }`) and how long.
+    pub fn toast_with(&self, props: &Value) {
+        self.toasts.show(props);
+    }
+
+    pub fn dismiss_toast(&self) {
+        self.toasts.dismiss();
     }
 
     pub fn current_page(&self) -> Option<String> {

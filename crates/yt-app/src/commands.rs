@@ -42,7 +42,12 @@ pub fn register(this: &Rc<App>) {
         Ok(Value::Null)
     });
     c.register("app.toast", |args| {
-        app().toast(str_arg(&args, "message")?);
+        str_arg(&args, "message")?;
+        app().toast_with(&args);
+        Ok(Value::Null)
+    });
+    c.register("app.dismiss_toast", |_| {
+        app().dismiss_toast();
         Ok(Value::Null)
     });
     c.register("app.plugins", |_| {
@@ -509,6 +514,10 @@ pub fn key_controller() -> gtk::EventControllerKey {
         let mut scopes = vec![page.as_str()];
         if crate::ui::player_dock::current().is_some() {
             scopes.push(PLAYER);
+        }
+        // Escape closes the sidebar's drawer first.
+        if key == gdk::Key::Escape && crate::ui::shell::close_drawer() {
+            return glib::Propagation::Stop;
         }
         let Some(binding) = app.ext.keymap.lookup(key, modifiers, &scopes) else {
             return glib::Propagation::Proceed;

@@ -8,13 +8,24 @@
   --yt-text-dim: #aaaaaa;
   --yt-accent: #ff0033;
   --yt-radius: 12px;
+}
 
+/* libadwaita's colors, YouTube's way. Set on the nodes below the window
+   rather than on it: a GTK theme sets them on the window, from a provider
+   that outranks the app's, and would show through (purple sidebars and
+   menus). */
+window.yt-window > *, popover, dialog, toast {
   --window-bg-color: var(--yt-bg);
   --window-fg-color: var(--yt-text);
   --view-bg-color: var(--yt-bg);
   --view-fg-color: var(--yt-text);
   --headerbar-bg-color: var(--yt-bg);
+  --headerbar-fg-color: var(--yt-text);
+  --headerbar-backdrop-color: var(--yt-bg);
   --popover-bg-color: #282828;
+  --popover-fg-color: var(--yt-text);
+  --card-bg-color: var(--yt-raised);
+  --card-fg-color: var(--yt-text);
   /* The sidebar's pane and drawer (libadwaita's split view). */
   --sidebar-bg-color: var(--yt-bg);
   --sidebar-fg-color: var(--yt-text);
@@ -22,7 +33,9 @@
   --sidebar-border-color: transparent;
   --sidebar-shade-color: transparent;
   --dialog-bg-color: #282828;
+  --dialog-fg-color: var(--yt-text);
   --accent-bg-color: var(--yt-accent);
+  --accent-fg-color: white;
   --accent-color: #ff4e45;
 }
 
@@ -40,12 +53,12 @@ window.yt-window {
   padding: 0 16px;
 }
 /* The logo: the play button (drawn in `color`) and the name. */
-.topbar .logo {
+.topbar .logo, .drawer-header .logo {
   font-weight: 700;
   font-size: 20px;
   letter-spacing: -1.2px;
 }
-.topbar .logo-mark { color: var(--yt-accent); min-height: 20px; }
+.topbar .logo-mark, .drawer-header .logo-mark { color: var(--yt-accent); min-height: 20px; }
 .icon-button {
   font-size: 20px;
   min-width: 40px;
@@ -98,6 +111,11 @@ window.yt-window {
   font-size: 14px;
 }
 .chip:hover { background: #3f3f3f; }
+/* Where a row of chips goes on past the bar's edge. */
+.chip-fade.start { background: linear-gradient(to right, var(--yt-bg) 55%, transparent); padding: 0 32px 0 16px; }
+.chip-fade.end { background: linear-gradient(to left, var(--yt-bg) 55%, transparent); padding: 0 16px 0 32px; }
+.chip-arrow { min-width: 40px; min-height: 40px; padding: 0; border-radius: 20px; background: none; color: var(--yt-text); }
+.chip-arrow:hover { background: var(--yt-raised); }
 .chip:checked { background: var(--yt-text); color: var(--yt-bg); }
 
 /* Video grid and cards */
@@ -141,8 +159,11 @@ window.yt-window {
 .theater-player { background: black; }
 .theater-player .player { border-radius: 0; }
 
-/* The page dims behind the sidebar's drawer. */
+/* The window dims behind the sidebar's drawer, which starts with ☰ and
+   the logo where the top bar has them. */
 .guide-scrim { background: rgba(0, 0, 0, 0.5); }
+.guide-drawer { background: var(--yt-bg); }
+.drawer-header { min-height: 56px; padding: 0 16px; }
 
 /* The mini player, in the bottom-right corner. */
 .mini-player {
@@ -551,3 +572,24 @@ popover.search-popover > contents {
 .search-filter-option.selected { color: var(--yt-text); font-weight: 700; }
 .search-filter-option image { -gtk-icon-size: 16px; }
 dialog.search-filters-dialog .yt-dialog-content { padding-bottom: 24px; }
+
+/* Toasts: bottom left, light on the dark page, as on youtube.com. */
+.toast-place { margin: 0 0 24px 24px; }
+.yt-toast {
+  background: #f1f1f1;
+  color: #0f0f0f;
+  border-radius: 8px;
+  padding: 6px 8px 6px 16px;
+  min-height: 36px;
+  font-size: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+}
+.yt-toast > label { margin: 6px 0; }
+.yt-toast .toast-action {
+  color: #065fd4;
+  font-weight: 500;
+  padding: 0 12px;
+  min-height: 36px;
+  border-radius: 18px;
+}
+.yt-toast .toast-action:hover { background: rgba(6, 95, 212, 0.1); }
