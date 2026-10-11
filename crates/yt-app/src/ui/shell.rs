@@ -171,9 +171,13 @@ pub fn build(_props: &Value) -> gtk::Widget {
     let weak = Rc::downgrade(&shell);
     app.ext.events.on("page.changed", move |payload| {
         let Some(shell) = weak.upgrade() else { return };
-        shell
-            .watch
-            .set(payload.get("page").and_then(Value::as_str) == Some("watch"));
+        let watch = payload.get("page").and_then(Value::as_str) == Some("watch");
+        shell.watch.set(watch);
+        // Only the video fills the screen: another page leaves fullscreen
+        // (going back from a fullscreen video, say).
+        if !watch && shell.fullscreen.get() {
+            crate::app::app().set_fullscreen(false);
+        }
         if let Some(drawer) = shell.drawer() {
             drawer.set_show_sidebar(false);
         }

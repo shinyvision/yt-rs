@@ -11,7 +11,7 @@ use serde_json::{Value, json};
 use yt_core::feed::Video;
 
 use crate::app::{App, app};
-use crate::ext::keymap::{GLOBAL, PLAYER};
+use crate::ext::keymap::{FULLSCREEN, GLOBAL, PLAYER};
 use crate::{playback, ui};
 
 pub fn register(this: &Rc<App>) {
@@ -610,6 +610,13 @@ fn default_keys(app: &App) {
             .expect("built-in key bindings are valid");
     };
     bind("Escape", GLOBAL, "app.back", Value::Null);
+    // In fullscreen, Escape only leaves it, as on youtube.com.
+    bind(
+        "Escape",
+        FULLSCREEN,
+        "window.fullscreen",
+        json!({ "fullscreen": false }),
+    );
     bind("alt+Left", GLOBAL, "app.back", Value::Null);
     bind("alt+Right", GLOBAL, "app.forward", Value::Null);
     bind("Back", GLOBAL, "app.back", Value::Null);
@@ -691,7 +698,11 @@ pub fn key_controller() -> gtk::EventControllerKey {
     controller.connect_key_pressed(|controller, key, _code, modifiers| {
         let app = app();
         let page = app.current_page().unwrap_or_default();
-        let mut scopes = vec![page.as_str()];
+        let mut scopes = Vec::new();
+        if app.window().is_some_and(|w| w.is_fullscreen()) {
+            scopes.push(FULLSCREEN);
+        }
+        scopes.push(page.as_str());
         if crate::ui::player_dock::current().is_some() {
             scopes.push(PLAYER);
         }

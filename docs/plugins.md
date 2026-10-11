@@ -480,7 +480,9 @@ app.bind("ctrl+g", function() app.toast("hi") end)      -- a Lua function
 
 Keys use GTK's names (`space`, `Left`, `F5`, `<Control>f`) or the short form
 (`ctrl+shift+f`). Shifted symbols are named by what they type: Shift+. is
-`greater`. The `player` scope applies on the watch page and wherever the mini
+`greater`. The `fullscreen` scope applies while the video fills the screen,
+before every other (Escape leaves fullscreen there; elsewhere it goes back).
+The `player` scope applies on the watch page and wherever the mini
 player shows (k, j, l, m, c, <, >, Shift+N are there by default; space, the
 arrows, digits, f and t only on the watch page; Shift+P plays the list's previous video). A page's own bindings win
 over `player` ones, and those over global ones. Keys without Ctrl or

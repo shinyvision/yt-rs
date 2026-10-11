@@ -8,7 +8,7 @@ use adw::prelude::*;
 use serde_json::Value;
 
 use crate::app::app;
-use crate::ext::keymap::{GLOBAL, PLAYER};
+use crate::ext::keymap::{FULLSCREEN, GLOBAL, PLAYER};
 
 pub fn present() {
     let app = app();
@@ -24,8 +24,9 @@ pub fn present() {
         let (order, title) = match scope.as_str() {
             GLOBAL => (0, "Everywhere".to_owned()),
             PLAYER => (1, "Wherever the video shows".to_owned()),
-            "watch" => (2, "On the watch page".to_owned()),
-            other => (3, format!("On the {other} page")),
+            FULLSCREEN => (2, "In full screen".to_owned()),
+            "watch" => (3, "On the watch page".to_owned()),
+            other => (4, format!("On the {other} page")),
         };
         let entry = scopes.entry(order).or_insert((title, Vec::new()));
         let mut keys = key_name(&key);
@@ -138,6 +139,9 @@ fn describe(command: &str, args: &Value) -> String {
         "app.quit" => "Quit",
         "app.shortcuts" => "Keyboard shortcuts",
         "window.toggle_fullscreen" => "Full screen",
+        "window.fullscreen" if args.get("fullscreen") == Some(&Value::Bool(false)) => {
+            "Exit full screen"
+        }
         "player.mini" => "Mini player",
         "search.focus" => "Search",
         "feed.refresh" => "Refresh the feed",

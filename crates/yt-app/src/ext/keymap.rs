@@ -9,6 +9,8 @@ pub const GLOBAL: &str = "global";
 /// Bindings that apply wherever the video shows: the watch page, and the
 /// mini player over any other page.
 pub const PLAYER: &str = "player";
+/// Bindings that apply while the video fills the screen, before any other.
+pub const FULLSCREEN: &str = "fullscreen";
 
 #[derive(Clone, Debug)]
 pub struct Binding {
